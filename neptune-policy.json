@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "neptune-db:connect",
+        "neptune-db:ReadDataViaQuery",
+        "neptune-db:WriteDataViaQuery",
+        "neptune-db:DeleteDataViaQuery"
+      ],
+      "Resource": "arn:aws:neptune-db:us-east-1:211125459951:cluster:titan-dev-neptune/*"
+    }
+  ]
+}
