@@ -20,6 +20,7 @@ const authOptions = {
   providers: [
     CognitoProvider({
       id: "cognito",
+      name: "Cognito",
       clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER!,
@@ -34,6 +35,7 @@ const authOptions = {
         },
       },
       token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
+      userinfo: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/userInfo`,
       checks: ["pkce", "state", "nonce"],
       profile(profile: Record<string, unknown>) {
         console.log("Cognito Profile Callback:", profile);

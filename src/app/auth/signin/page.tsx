@@ -58,39 +58,17 @@ export default function SignIn() {
         return;
       }
 
-      // Handle sign in with login_hint support using custom header (from old app pattern)
-      try {
-        // Create a custom request to NextAuth with login_hint in header
-        const authUrl = "/api/auth/signin/cognito";
-        const csrfResponse = await fetch("/api/auth/csrf");
-        const csrfData = await csrfResponse.json();
-
-        const response = await fetch(authUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "X-Login-Hint": email, // Pass login_hint in custom header
-          },
-          body: new URLSearchParams({
-            csrfToken: csrfData.csrfToken,
-            callbackUrl: "/",
-            json: "true",
-          }).toString(),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.url) {
-            window.location.href = data.url;
-            return;
-          }
-        }
-
-        // Fallback to regular NextAuth signIn
-        await signIn("cognito", { callbackUrl: "/" });
-      } catch (err) {
-        console.error("Sign in error:", err);
-        setError("Failed to initiate sign in. Please try again.");
+      // Direct sign in with Cognito provider - this will redirect to https://login.anautics.ai
+      const result = await signIn("cognito", { 
+        callbackUrl: "/",
+        redirect: false  // Let NextAuth handle the redirect
+      });
+      
+      if (result?.url) {
+        // NextAuth will redirect to Cognito IDP
+        window.location.href = result.url;
+      } else if (result?.error) {
+        setError(result.error);
         setIsLoading(false);
       }
     } catch (outerErr) {
