@@ -51,6 +51,7 @@ interface AuthUser {
 
 const authOptions = {
   debug: true,
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt" as const,
     maxAge: 60 * 60 * 24, // 24 hours
@@ -214,6 +215,7 @@ async function customAuthHandler(
 
     const modifiedAuthOptions = {
       ...authOptions,
+      secret: process.env.NEXTAUTH_SECRET,
       providers: [
         CognitoProvider({
           id: "cognito",

@@ -3,10 +3,6 @@ import {
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
 import { fromEnv } from "@aws-sdk/credential-providers";
-import type {
-  AwsCredentialIdentityProvider,
-  AwsCredentialIdentity,
-} from "@aws-sdk/types";
 
 // Simple ID generator for this provider
 function generateId(): string {
@@ -96,9 +92,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
     const warnings: LanguageModelV2CallWarning[] = [];
 
     // Extract the last user message as input text
-    const userMessages = options.prompt.filter(
-      (msg) => msg.role === "user"
-    );
+    const userMessages = options.prompt.filter((msg) => msg.role === "user");
     const lastUserMessage = userMessages[userMessages.length - 1];
 
     let inputText = "";

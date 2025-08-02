@@ -12,7 +12,8 @@ export function UnifiedSearchPage() {
     null
   );
 
-  const handleResultClick = (result: SearchResultItem) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const handleResultClick = (result: SearchResultItem) => {
+    // eslint-disable-line @typescript-eslint/no-unused-vars
     setSelectedResult(result);
     // Open URL in new tab for AWS services or handle Neptune results differently
     if (result.source === "aws" && result.url) {
