@@ -63,14 +63,16 @@ export default NextAuth({
       clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER!,
-      wellKnown: `https://${process.env.COGNITO_ISSUER}/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
+      wellKnown: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
       authorization: {
         url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/authorize`,
         params: {
           scope: "openid profile email",
           response_type: "code",
           client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
+          redirect_uri: `${
+            process.env.NEXTAUTH_URL || "https://www.anautics.ai"
+          }/api/auth/callback/cognito`,
         },
       },
       token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
