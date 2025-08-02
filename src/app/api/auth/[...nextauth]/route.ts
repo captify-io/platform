@@ -1,57 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth from "next-auth/next";
 import CognitoProvider from "next-auth/providers/cognito";
 
-interface ExtendedToken {
-  accessToken?: string;
-  idToken?: string;
-  refreshToken?: string;
-  expiresAt?: number;
-  sub?: string;
-  name?: string;
-  email?: string;
-  picture?: string;
-}
-
-interface AuthAccount {
-  access_token?: string;
-  id_token?: string;
-  refresh_token?: string;
-  expires_at?: number;
-  providerAccountId?: string;
-  provider?: string;
-  type?: string;
-}
-
-interface AuthProfile {
-  name?: string;
-  email?: string;
-  picture?: string;
-  sub?: string;
-}
-
-interface CognitoSession {
-  accessToken?: string;
-  idToken?: string;
-  refreshToken?: string;
-  expiresAt?: number;
-  user?: {
-    id?: string;
-    email?: string;
-    name?: string;
-    picture?: string;
-    image?: string;
-  };
-}
-
-interface AuthUser {
-  id?: string;
-  email?: string;
-  name?: string;
-}
+// Debug logging for NEXTAUTH_SECRET
+console.log("Environment debug:", {
+  hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+  nextAuthSecretLength: process.env.NEXTAUTH_SECRET?.length,
+  nodeEnv: process.env.NODE_ENV,
+  allEnvKeys: Object.keys(process.env).filter(key => key.includes('NEXTAUTH')),
+});
 
 const authOptions = {
   debug: true,
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
   session: {
     strategy: "jwt" as const,
     maxAge: 60 * 60 * 24, // 24 hours
@@ -87,74 +47,74 @@ const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({
-      token,
-      account,
-      profile,
-    }: {
-      token: ExtendedToken;
-      account: AuthAccount | null;
-      profile?: AuthProfile;
+    async jwt({ token, account, profile }: {
+      token: unknown;
+      account: unknown;
+      profile?: unknown;
     }) {
+      const typedToken = token as Record<string, unknown>;
+      const typedAccount = account as Record<string, unknown> | null;
+      
       console.log("JWT callback:", {
-        token: token?.sub,
-        account: account?.provider,
+        token: typedToken?.sub,
+        account: typedAccount?.provider,
       });
-      if (account) {
-        token.accessToken = account.access_token;
-        token.idToken = account.id_token;
-        token.refreshToken = account.refresh_token;
-        token.expiresAt = account.expires_at;
-        token.sub = account.providerAccountId;
+      
+      if (typedAccount) {
+        typedToken.accessToken = typedAccount.access_token;
+        typedToken.idToken = typedAccount.id_token;
+        typedToken.refreshToken = typedAccount.refresh_token;
+        typedToken.expiresAt = typedAccount.expires_at;
+        typedToken.sub = typedAccount.providerAccountId;
         console.log("Account data:", {
-          provider: account.provider,
-          type: account.type,
-          hasAccessToken: !!account.access_token,
-          hasIdToken: !!account.id_token,
+          provider: typedAccount.provider,
+          type: typedAccount.type,
+          hasAccessToken: !!typedAccount.access_token,
+          hasIdToken: !!typedAccount.id_token,
         });
       }
 
       if (profile) {
-        token.name = profile.name;
-        token.email = profile.email;
-        token.picture = profile.picture || undefined;
+        const typedProfile = profile as Record<string, unknown>;
+        typedToken.name = typedProfile.name;
+        typedToken.email = typedProfile.email;
+        typedToken.picture = typedProfile.picture;
       }
 
-      return token;
+      return typedToken;
     },
-    async session({
-      session,
-      token,
-    }: {
-      session: CognitoSession;
-      token: ExtendedToken;
+    async session({ session, token }: {
+      session: unknown;
+      token: unknown;
     }) {
+      const typedSession = session as Record<string, unknown> & { expires: string };
+      const typedToken = token as Record<string, unknown>;
+      
       console.log("Session callback:", {
-        user: session?.user?.email,
-        hasToken: !!token,
+        user: (typedSession?.user as Record<string, unknown>)?.email,
+        hasToken: !!typedToken,
       });
+      
       // Add token data to session
-      session.accessToken = token.accessToken;
-      session.idToken = token.idToken;
-      session.refreshToken = token.refreshToken;
-      session.expiresAt = token.expiresAt;
+      typedSession.accessToken = typedToken.accessToken;
+      typedSession.idToken = typedToken.idToken;
+      typedSession.refreshToken = typedToken.refreshToken;
+      typedSession.expiresAt = typedToken.expiresAt;
 
       // Update user data
-      if (session.user) {
-        session.user.id = token.sub;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.image = token.picture;
+      if (typedSession.user) {
+        const user = typedSession.user as Record<string, unknown>;
+        user.id = typedToken.sub;
+        user.name = typedToken.name;
+        user.email = typedToken.email;
+        user.image = typedToken.picture;
       }
 
-      return session;
+      return typedSession;
     },
-    async signIn({
-      account,
-      profile,
-    }: {
-      account: AuthAccount | null;
-      profile?: AuthProfile;
+    async signIn({ account, profile }: {
+      account: unknown;
+      profile?: unknown;
     }) {
       console.log("SignIn Callback Invoked", { account, profile });
       if (!account || !profile) return false;
@@ -166,19 +126,17 @@ const authOptions = {
     error: "/auth/error",
   },
   events: {
-    async signIn({
-      user,
-      account,
-      isNewUser,
-    }: {
-      user: AuthUser;
-      account: AuthAccount | null;
+    async signIn({ user, account, isNewUser }: {
+      user: unknown;
+      account: unknown;
       isNewUser?: boolean;
     }) {
       if (process.env.NODE_ENV === "development") {
+        const typedUser = user as Record<string, unknown>;
+        const typedAccount = account as Record<string, unknown> | null;
         console.log("Sign-in successful", {
-          userId: user.id,
-          provider: account?.provider,
+          userId: typedUser.id,
+          provider: typedAccount?.provider,
           isNewUser,
         });
       }
@@ -186,76 +144,6 @@ const authOptions = {
   },
 };
 
-// Custom handler to process login_hint from headers
-async function customAuthHandler(
-  req: Request,
-  context: { params: Promise<{ nextauth: string[] }> }
-): Promise<Response> {
-  const params = await context.params;
-  const url = new URL(req.url);
-  const loginHint = req.headers.get("X-Login-Hint");
+const handler = NextAuth(authOptions);
 
-  console.log("NextAuth request:", {
-    pathname: url.pathname,
-    nextauth: params.nextauth,
-    loginHint: loginHint,
-    method: req.method,
-  });
-
-  // If login_hint is provided in headers and this is a signin request
-  if (
-    loginHint &&
-    params.nextauth[0] === "signin" &&
-    params.nextauth[1] === "cognito"
-  ) {
-    console.log(
-      "Creating modified auth options with login_hint from header:",
-      loginHint
-    );
-
-    const modifiedAuthOptions = {
-      ...authOptions,
-      secret: process.env.NEXTAUTH_SECRET,
-      providers: [
-        CognitoProvider({
-          id: "cognito",
-          clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-          clientSecret: process.env.COGNITO_CLIENT_SECRET!,
-          issuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER!,
-          wellKnown: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
-          authorization: {
-            url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/authorize`,
-            params: {
-              scope: "openid profile email",
-              response_type: "code",
-              client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-              redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
-              login_hint: loginHint, // Add the login_hint from header
-            },
-          },
-          token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
-          checks: ["pkce", "state", "nonce"],
-          profile(profile: Record<string, unknown>) {
-            console.log("Cognito Profile Callback:", profile);
-            return {
-              id: profile.sub as string,
-              name: (profile.name ?? profile.email) as string,
-              email: profile.email as string,
-              image: (profile.picture ?? null) as string | null,
-            };
-          },
-        }),
-      ],
-    };
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - NextAuth v4 compatibility issue
-    return NextAuth(modifiedAuthOptions)(req, context);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore - NextAuth v4 compatibility issue
-  return NextAuth(authOptions)(req, context);
-}
-
-export { customAuthHandler as GET, customAuthHandler as POST };
+export { handler as GET, handler as POST };
