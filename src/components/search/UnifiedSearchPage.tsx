@@ -8,21 +8,10 @@ import { UnifiedSearchInput } from "@/components/search/UnifiedSearchInput";
 import type { SearchResultItem } from "@/hooks/useUnifiedSearch";
 
 export function UnifiedSearchPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(
     null
   );
-
-  const handleResultClick = (result: SearchResultItem) => {
-    // eslint-disable-line @typescript-eslint/no-unused-vars
-    setSelectedResult(result);
-    // Open URL in new tab for AWS services or handle Neptune results differently
-    if (result.source === "aws" && result.url) {
-      window.open(result.url, "_blank", "noopener,noreferrer");
-    } else {
-      // Handle Neptune results - could navigate to internal pages or show details
-      console.log("Neptune result selected:", result);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

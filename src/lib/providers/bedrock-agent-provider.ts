@@ -3,6 +3,7 @@ import {
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
 import { fromEnv } from "@aws-sdk/credential-providers";
+import type { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "@aws-sdk/types";
 
 // Simple ID generator for this provider
 function generateId(): string {

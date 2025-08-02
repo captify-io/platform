@@ -53,6 +53,9 @@ importers:
       '@aws-sdk/credential-providers':
         specifier: ^3.857.0
         version: 3.859.0
+      '@aws-sdk/types':
+        specifier: ^3.840.0
+        version: 3.840.0
       '@radix-ui/react-label':
         specifier: ^2.1.7
         version: 2.1.7(@types/react-dom@19.1.7(@types/react@19.1.9))(@types/react@19.1.9)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
