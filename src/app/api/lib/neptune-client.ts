@@ -1,6 +1,7 @@
 import { driver } from "gremlin";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
+import type { AwsCredentialIdentity } from "@aws-sdk/types";
 
 // AWS Configuration
 const AWS_REGION = process.env.REGION || "us-east-1";
@@ -74,7 +75,7 @@ interface GremlinResponse {
  */
 export class NeptuneClient {
   private client: GremlinClient;
-  private credentials: unknown = null;
+  private credentials: ReturnType<typeof fromCognitoIdentityPool> | null = null;
   private options: NeptuneClientOptions;
 
   constructor(options: NeptuneClientOptions = {}) {
@@ -139,7 +140,7 @@ export class NeptuneClient {
       // Verify credentials work
       const stsClient = new STSClient({
         region: AWS_REGION,
-        credentials: this.credentials as any,
+        credentials: this.credentials,
       });
 
       const identity = await stsClient.send(new GetCallerIdentityCommand({}));
