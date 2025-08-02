@@ -1,7 +1,6 @@
 import { driver } from "gremlin";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
-import type { AwsCredentialIdentity } from "@aws-sdk/types";
 
 // AWS Configuration
 const AWS_REGION = process.env.REGION || "us-east-1";

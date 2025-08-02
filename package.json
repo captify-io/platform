@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "validate": "pnpm run lint && pnpm run type-check && pnpm run build",
     "deploy": "bash deploy.sh",
     "deploy:windows": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
   },
