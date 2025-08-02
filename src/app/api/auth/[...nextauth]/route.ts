@@ -23,7 +23,7 @@ const authOptions = {
       name: "Cognito",
       clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
-      issuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER!,
+      issuer: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
       wellKnown: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
       authorization: {
         url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/authorize`,
