@@ -63,7 +63,7 @@ export default NextAuth({
       clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER!,
-      wellKnown: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
+      wellKnown: `https://cognito-idp.${process.env.REGION || 'us-east-1'}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
       authorization: {
         url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/authorize`,
         params: {
