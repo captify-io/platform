@@ -9,7 +9,14 @@ import { SearchResults } from "./SearchResults";
 interface UnifiedSearchInputProps {
   placeholder?: string;
   className?: string;
-  onResultSelect?: (result: any) => void;
+  onResultSelect?: (result: SearchResult) => void;
+}
+
+interface SearchResult {
+  title: string;
+  url: string;
+  source: string;
+  description?: string;
 }
 
 export const UnifiedSearchInput: React.FC<UnifiedSearchInputProps> = ({
@@ -60,7 +67,7 @@ export const UnifiedSearchInput: React.FC<UnifiedSearchInputProps> = ({
     setIsOpen(false);
   };
 
-  const handleResultClick = (result: any) => {
+  const handleResultClick = (result: SearchResult) => {
     setIsOpen(false);
     if (onResultSelect) {
       onResultSelect(result);

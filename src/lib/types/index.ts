@@ -17,7 +17,7 @@ export interface UserProfile {
   name?: string;
   organizationId: string;
   role: "admin" | "user" | "viewer";
-  preferences: Record<string, any>;
+  preferences: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 
@@ -76,8 +76,8 @@ export interface DecisionSession {
 
   // Session state
   status: "active" | "completed" | "archived";
-  outcome?: Record<string, any>;
-  contextData: Record<string, any>;
+  outcome?: Record<string, unknown>;
+  contextData: Record<string, unknown>;
 
   // AWS integration
   s3DataPath?: string;
@@ -98,11 +98,11 @@ export interface SessionMessage {
   // Message content
   role: "user" | "assistant" | "system";
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 
   // Bedrock integration
   bedrockTraceId?: string;
-  bedrockResponseMetadata?: Record<string, any>;
+  bedrockResponseMetadata?: Record<string, unknown>;
 
   createdAt: Date;
 }
@@ -167,7 +167,7 @@ export interface BedrockInvokeRequest {
 
 export interface BedrockInvokeResponse {
   completion: string;
-  trace?: any;
+  trace?: unknown;
   sessionId: string;
-  citations?: any[];
+  citations?: unknown[];
 }

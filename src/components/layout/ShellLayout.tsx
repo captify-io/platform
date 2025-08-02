@@ -1,7 +1,6 @@
 "use client";
 
 import React, { ReactNode, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useApps } from "@/context/AppsContext";
 import { ApplicationSidebar } from "@/components/layout/ApplicationSidebar";
 
@@ -26,7 +25,7 @@ export default function ShellLayout({ children, params }: ShellLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   if (!currentApp) {
-    return <div>Application "{params.alias}" not found.</div>;
+    return <div>Application &quot;{params.alias}&quot; not found.</div>;
   }
 
   return (

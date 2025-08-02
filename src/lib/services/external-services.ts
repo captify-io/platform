@@ -11,14 +11,14 @@ export interface ServiceConnection {
   region?: string;
   authentication: {
     type: "iam" | "api-key" | "oauth" | "custom";
-    config: Record<string, any>;
+    config: Record<string, unknown>;
   };
   healthCheck?: {
     enabled: boolean;
     endpoint: string;
     interval: number;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ServiceConnectionManager {

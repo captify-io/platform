@@ -177,7 +177,10 @@ export default function ConsolePage() {
     }
   };
 
-  const handleChartClick = (data: any, chartType: string) => {
+  const handleChartClick = (
+    data: Record<string, unknown>,
+    chartType: string
+  ) => {
     let message = "";
 
     switch (chartType) {

@@ -1,12 +1,23 @@
 import { getSession } from "next-auth/react";
 
+interface ExtendedSession {
+  accessToken?: string;
+  idToken?: string;
+  user?: {
+    id?: string;
+    email?: string;
+    name?: string;
+    image?: string;
+  };
+}
+
 export interface ApiClientConfig {
   baseUrl?: string;
   timeout?: number;
   retries?: number;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   status: number;
@@ -35,23 +46,30 @@ export class ApiClient {
         throw new Error("No active session found");
       }
 
+      const extendedSession = session as ExtendedSession;
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
 
       // Add session data to headers for server-side API routes
-      if (session.accessToken) {
-        headers["Authorization"] = `Bearer ${session.accessToken}`;
+      if (extendedSession.accessToken) {
+        headers["Authorization"] = `Bearer ${extendedSession.accessToken}`;
       }
 
       // CRITICAL: Add ID token for Cognito Identity Pool authentication
       // Neptune/AWS services require ID tokens, not access tokens for Identity Pool
-      if (session.idToken) {
-        headers["X-ID-Token"] = session.idToken;
-      } else if ((session as any).id_token) {
+      if (extendedSession.idToken) {
+        headers["X-ID-Token"] = extendedSession.idToken;
+      } else if (
+        typeof session === "object" &&
+        session !== null &&
+        "id_token" in session &&
+        typeof (session as { id_token?: string }).id_token === "string"
+      ) {
         // Fallback for different session structures
-        headers["X-ID-Token"] = (session as any).id_token;
+        headers["X-ID-Token"] = (session as { id_token: string }).id_token;
       } else {
+        // No ID token found
         console.warn(
           "No ID token found in session - Neptune authentication may fail"
         );
@@ -62,19 +80,39 @@ export class ApiClient {
       }
 
       // Use sub from JWT token if available
-      if ((session as any).user?.id) {
-        headers["X-User-ID"] = (session as any).user.id;
+      if (
+        typeof session === "object" &&
+        session !== null &&
+        "user" in session &&
+        typeof (session as { user?: { id?: string } }).user === "object" &&
+        (session as { user?: { id?: string } }).user?.id
+      ) {
+        headers["X-User-ID"] = (
+          session as unknown as { user: { id: string } }
+        ).user.id;
       }
 
       // Debug logging for token availability
       console.debug("Auth headers prepared:", {
-        hasAccessToken: !!session.accessToken,
-        hasIdToken: !!(session.idToken || (session as any).id_token),
+        hasAccessToken: !!extendedSession.accessToken,
+        hasIdToken: !!(
+          extendedSession.idToken ||
+          (typeof session === "object" &&
+            session !== null &&
+            "id_token" in session &&
+            typeof (session as { id_token?: string }).id_token === "string" &&
+            (session as { id_token: string }).id_token)
+        ),
         hasEmail: !!session.user?.email,
         tokenTypes: {
-          accessToken: session.accessToken ? "present" : "missing",
+          accessToken: extendedSession.accessToken ? "present" : "missing",
           idToken:
-            session.idToken || (session as any).id_token
+            extendedSession.idToken ||
+            (typeof session === "object" &&
+              session !== null &&
+              "id_token" in session &&
+              typeof (session as { id_token?: string }).id_token === "string" &&
+              (session as { id_token: string }).id_token)
               ? "present"
               : "missing",
         },
@@ -123,7 +161,7 @@ export class ApiClient {
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       } else {
-        data = (await response.text()) as any;
+        data = (await response.text()) as T;
       }
 
       const result: ApiResponse<T> = {
@@ -135,14 +173,18 @@ export class ApiClient {
       if (!response.ok) {
         result.error =
           typeof data === "object" && data && "error" in data
-            ? (data as any).error
+            ? (data as { error?: string }).error
             : `Request failed with status ${response.status}`;
       }
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle timeout and network errors
-      if (error.name === "AbortError") {
+      const isError = error instanceof Error;
+      const errorName = isError ? error.name : "Unknown";
+      const errorMessage = isError ? error.message : "Unknown error occurred";
+
+      if (errorName === "AbortError") {
         if (attempt < this.retries) {
           console.warn(
             `Request timeout, retrying... (${attempt}/${this.retries})`
@@ -157,11 +199,11 @@ export class ApiClient {
       }
 
       if (
-        error.message === "Authentication required" ||
-        error.message === "No active session found"
+        errorMessage === "Authentication required" ||
+        errorMessage === "No active session found"
       ) {
         return {
-          error: error.message,
+          error: errorMessage,
           status: 401,
           ok: false,
         };
@@ -170,7 +212,7 @@ export class ApiClient {
       // Retry on network errors
       if (
         attempt < this.retries &&
-        (error.name === "TypeError" || error.name === "NetworkError")
+        (errorName === "TypeError" || errorName === "NetworkError")
       ) {
         console.warn(`Network error, retrying... (${attempt}/${this.retries})`);
         await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
@@ -178,7 +220,7 @@ export class ApiClient {
       }
 
       return {
-        error: error.message || "Network error",
+        error: errorMessage || "Network error",
         status: 0,
         ok: false,
       };
@@ -200,7 +242,7 @@ export class ApiClient {
    */
   async post<T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options: Omit<RequestInit, "method" | "body"> = {}
   ): Promise<ApiResponse<T>> {
     const body = data ? JSON.stringify(data) : undefined;
@@ -212,7 +254,7 @@ export class ApiClient {
    */
   async put<T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options: Omit<RequestInit, "method" | "body"> = {}
   ): Promise<ApiResponse<T>> {
     const body = data ? JSON.stringify(data) : undefined;
@@ -234,7 +276,7 @@ export class ApiClient {
    */
   async patch<T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options: Omit<RequestInit, "method" | "body"> = {}
   ): Promise<ApiResponse<T>> {
     const body = data ? JSON.stringify(data) : undefined;
@@ -252,13 +294,13 @@ export const api = {
 
   post: <T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options?: Omit<RequestInit, "method" | "body">
   ) => apiClient.post<T>(url, data, options),
 
   put: <T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options?: Omit<RequestInit, "method" | "body">
   ) => apiClient.put<T>(url, data, options),
 
@@ -267,7 +309,7 @@ export const api = {
 
   patch: <T>(
     url: string,
-    data?: any,
+    data?: unknown,
     options?: Omit<RequestInit, "method" | "body">
   ) => apiClient.patch<T>(url, data, options),
 };

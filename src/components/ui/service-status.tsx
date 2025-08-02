@@ -20,14 +20,8 @@ export function ServiceStatus({
   serviceId,
   showDetails = false,
 }: ServiceStatusProps) {
-  const {
-    connection,
-    isConnected,
-    isHealthy,
-    isLoading,
-    error,
-    testConnection,
-  } = useService(serviceId);
+  const { connection, isHealthy, isLoading, error, testConnection } =
+    useService(serviceId);
   const [testing, setTesting] = useState(false);
 
   const handleTest = async () => {

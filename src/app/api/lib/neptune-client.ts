@@ -12,6 +12,16 @@ interface NeptuneClientOptions {
   accessToken?: string;
 }
 
+interface SearchOptions {
+  searchFields?: string[];
+  limit?: number;
+  filters?: Record<string, unknown>;
+}
+
+interface NeptuneResponseItem {
+  [key: string]: unknown;
+}
+
 /**
  * Basic Gremlin client for Neptune connections without IAM authentication
  * Used for development and VPC-secured environments
@@ -49,13 +59,22 @@ export function GremlinClient() {
   return new driver.Client(url, clientOptions);
 }
 
+interface GremlinClient {
+  submit(query: string, bindings?: Record<string, unknown>): Promise<unknown>;
+  close(): void;
+}
+
+interface GremlinResponse {
+  _items: unknown[];
+}
+
 /**
  * Enhanced Neptune client with session authentication and search capabilities
  * Supports IAM authentication via Cognito Identity Pool
  */
 export class NeptuneClient {
-  private client: any;
-  private credentials: any;
+  private client: GremlinClient;
+  private credentials: unknown = null;
   private options: NeptuneClientOptions;
 
   constructor(options: NeptuneClientOptions = {}) {
@@ -120,7 +139,8 @@ export class NeptuneClient {
       // Verify credentials work
       const stsClient = new STSClient({
         region: AWS_REGION,
-        credentials: this.credentials,
+        credentials: this
+          .credentials as import("@aws-sdk/types").AwsCredentialIdentityProvider,
       });
 
       const identity = await stsClient.send(new GetCallerIdentityCommand({}));
@@ -142,12 +162,8 @@ export class NeptuneClient {
   async search(
     label: string,
     query: string,
-    options: {
-      searchFields?: string[];
-      limit?: number;
-      filters?: Record<string, any>;
-    } = {}
-  ): Promise<any[]> {
+    options: SearchOptions = {}
+  ): Promise<NeptuneResponseItem[]> {
     const {
       searchFields = ["name", "description"],
       limit = 20,
@@ -213,13 +229,13 @@ export class NeptuneClient {
       });
 
       const response = await this.client.submit(gremlinQuery);
-      const results = (response as any)._items || [];
+      const results = (response as GremlinResponse)._items || [];
 
       console.log(
         `Neptune search found ${results.length} results for "${query}"`
       );
 
-      return results;
+      return results as NeptuneResponseItem[];
     } catch (error) {
       console.error("Neptune search error:", error);
       throw error;
@@ -231,8 +247,8 @@ export class NeptuneClient {
    */
   async submit(
     query: string,
-    parameters: Record<string, any> = {}
-  ): Promise<any> {
+    parameters: Record<string, unknown> = {}
+  ): Promise<unknown> {
     try {
       console.log("Executing Gremlin query:", query);
       console.log("Parameters:", parameters);
@@ -248,7 +264,10 @@ export class NeptuneClient {
   /**
    * Get all vertices of a specific label
    */
-  async findByLabel(label: string, limit: number = 100): Promise<any[]> {
+  async findByLabel(
+    label: string,
+    limit: number = 100
+  ): Promise<NeptuneResponseItem[]> {
     const query = `g.V().hasLabel('${label}').limit(${limit})
       .project('id', 'alias', 'name', 'description', 'status')
         .by(id())
@@ -258,13 +277,14 @@ export class NeptuneClient {
         .by(coalesce(values('status'), constant('active')))`;
 
     const response = await this.submit(query);
-    return (response as any)._items || [];
+    return ((response as GremlinResponse)._items ||
+      []) as NeptuneResponseItem[];
   }
 
   /**
    * Find a vertex by ID
    */
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<NeptuneResponseItem | null> {
     const query = `g.V('${id}')
       .project('id', 'alias', 'name', 'description', 'status', 'properties')
         .by(id())
@@ -275,8 +295,8 @@ export class NeptuneClient {
         .by(valueMap())`;
 
     const response = await this.submit(query);
-    const results = (response as any)._items || [];
-    return results.length > 0 ? results[0] : null;
+    const results = (response as GremlinResponse)._items || [];
+    return results.length > 0 ? (results[0] as NeptuneResponseItem) : null;
   }
 
   /**
@@ -285,7 +305,7 @@ export class NeptuneClient {
   async testConnection(): Promise<boolean> {
     try {
       const response = await this.submit("g.V().limit(1).count()");
-      const count = (response as any)._items?.[0] || 0;
+      const count = (response as GremlinResponse)._items?.[0] || 0;
       console.log("Neptune connection test successful, vertex count:", count);
       return true;
     } catch (error) {

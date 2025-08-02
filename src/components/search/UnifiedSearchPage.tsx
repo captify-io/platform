@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { UnifiedSearchInput } from "@/components/search/UnifiedSearchInput";
-import { SearchResults } from "@/components/search/SearchResults";
 import type { SearchResultItem } from "@/hooks/useUnifiedSearch";
 
 export function UnifiedSearchPage() {
@@ -13,7 +12,7 @@ export function UnifiedSearchPage() {
     null
   );
 
-  const handleResultClick = (result: SearchResultItem) => {
+  const handleResultClick = (result: SearchResultItem) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     setSelectedResult(result);
     // Open URL in new tab for AWS services or handle Neptune results differently
     if (result.source === "aws" && result.url) {
@@ -133,8 +132,9 @@ export function UnifiedSearchPage() {
             <DynamicIcon name="info" className="w-4 h-4" />
             <AlertDescription>
               <strong>Search Tips:</strong> Use specific service names (e.g.,
-              "S3", "Lambda") or describe functionality (e.g., "serverless
-              computing", "object storage") for better results.
+              &quot;S3&quot;, &quot;Lambda&quot;) or describe functionality
+              (e.g., &quot;serverless computing&quot;, &quot;object
+              storage&quot;) for better results.
             </AlertDescription>
           </Alert>
 

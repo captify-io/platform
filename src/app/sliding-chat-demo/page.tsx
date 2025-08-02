@@ -15,9 +15,10 @@ export default function SlidingChatDemo() {
             Sliding Chat Interface Demo
           </h1>
           <p className="text-lg text-gray-600 mb-6">
-            This page demonstrates the new sliding chat panel with sleek, straight-line design.
+            This page demonstrates the new sliding chat panel with sleek,
+            straight-line design.
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 border border-gray-200 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-3">
@@ -31,7 +32,7 @@ export default function SlidingChatDemo() {
                 <li>• Collapsible interface</li>
               </ul>
             </div>
-            
+
             <div className="bg-white p-6 border border-gray-200 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-3">
                 ⚡ Functionality
@@ -62,10 +63,13 @@ export default function SlidingChatDemo() {
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((item) => (
               <div key={item} className="bg-white p-4 border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-2">Content Block {item}</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Content Block {item}
+                </h4>
                 <p className="text-sm text-gray-600">
-                  This is sample content to demonstrate how the main area responds to the sliding chat panel.
-                  The content adjusts its width when the panel opens and closes.
+                  This is sample content to demonstrate how the main area
+                  responds to the sliding chat panel. The content adjusts its
+                  width when the panel opens and closes.
                 </p>
               </div>
             ))}

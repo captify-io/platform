@@ -4,17 +4,16 @@ import { ApplicationWithSidebarLayout } from "@/components/layout/ApplicationWit
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Database, 
-  BarChart3, 
-  TrendingUp, 
-  Activity, 
+import {
+  Database,
+  BarChart3,
+  Activity,
   Zap,
   GitBranch,
   Users,
   Settings,
   Server,
-  LineChart
+  LineChart,
 } from "lucide-react";
 
 const menuItems = [
@@ -115,13 +114,18 @@ export default function DataOpsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">DataOps Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              DataOps Dashboard
+            </h1>
             <p className="text-gray-600 mt-1">
               Data operations and analytics platform for Air Force systems
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
+            <Badge
+              variant="outline"
+              className="text-green-700 border-green-200 bg-green-50"
+            >
               All Systems Operational
             </Badge>
             <Button size="sm" variant="outline">
@@ -138,8 +142,12 @@ export default function DataOpsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {stat.value}
+                    </p>
                     <div className="flex items-center mt-2">
                       <span
                         className={`text-xs font-medium ${
@@ -152,23 +160,29 @@ export default function DataOpsPage() {
                       >
                         {stat.change}
                       </span>
-                      <span className="text-xs text-gray-500 ml-1">vs last week</span>
+                      <span className="text-xs text-gray-500 ml-1">
+                        vs last week
+                      </span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg ${
-                    stat.trend === "up" 
-                      ? "bg-green-100" 
-                      : stat.trend === "down" 
-                      ? "bg-red-100" 
-                      : "bg-gray-100"
-                  }`}>
-                    <stat.icon className={`h-6 w-6 ${
-                      stat.trend === "up" 
-                        ? "text-green-600" 
-                        : stat.trend === "down" 
-                        ? "text-red-600" 
-                        : "text-gray-600"
-                    }`} />
+                  <div
+                    className={`p-3 rounded-lg ${
+                      stat.trend === "up"
+                        ? "bg-green-100"
+                        : stat.trend === "down"
+                        ? "bg-red-100"
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    <stat.icon
+                      className={`h-6 w-6 ${
+                        stat.trend === "up"
+                          ? "text-green-600"
+                          : stat.trend === "down"
+                          ? "text-red-600"
+                          : "text-gray-600"
+                      }`}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -186,19 +200,31 @@ export default function DataOpsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col space-y-2">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-2"
+              >
                 <GitBranch className="h-6 w-6" />
                 <span className="text-sm">New Pipeline</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col space-y-2">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-2"
+              >
                 <Activity className="h-6 w-6" />
                 <span className="text-sm">Monitor Health</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col space-y-2">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-2"
+              >
                 <Database className="h-6 w-6" />
                 <span className="text-sm">Data Sources</span>
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col space-y-2">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-2"
+              >
                 <LineChart className="h-6 w-6" />
                 <span className="text-sm">Analytics</span>
               </Button>
@@ -216,22 +242,34 @@ export default function DataOpsPage() {
               <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">B-52 Maintenance Data Pipeline - Completed</p>
-                  <p className="text-xs text-gray-500">Processed 45,230 records • 5 minutes ago</p>
+                  <p className="text-sm font-medium">
+                    B-52 Maintenance Data Pipeline - Completed
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Processed 45,230 records • 5 minutes ago
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Supply Chain ETL - Running</p>
-                  <p className="text-xs text-gray-500">75% complete • ETA 12 minutes</p>
+                  <p className="text-sm font-medium">
+                    Supply Chain ETL - Running
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    75% complete • ETA 12 minutes
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Flight Operations Analytics - Completed</p>
-                  <p className="text-xs text-gray-500">Generated daily reports • 1 hour ago</p>
+                  <p className="text-sm font-medium">
+                    Flight Operations Analytics - Completed
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Generated daily reports • 1 hour ago
+                  </p>
                 </div>
               </div>
             </div>

@@ -53,7 +53,7 @@ export interface AgentTool {
   name: string;
   description: string;
   type: "api" | "function" | "database" | "external";
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 export interface ApplicationUI {
@@ -83,7 +83,7 @@ export interface Widget {
   type: "chart" | "table" | "metric" | "text" | "input" | "custom";
   title: string;
   position: { x: number; y: number; width: number; height: number };
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   dataSource?: string;
 }
 
@@ -130,7 +130,7 @@ export interface Application {
 export interface DemoData {
   sampleQueries: string[];
   sampleResponses: string[];
-  mockData: Record<string, any>;
+  mockData: Record<string, unknown>;
   scenarios: DemoScenario[];
 }
 
@@ -145,7 +145,7 @@ export interface DemoStep {
   id: string;
   type: "message" | "action" | "data-load" | "ui-change";
   content: string;
-  data?: any;
+  data?: Record<string, unknown>;
   delay?: number;
 }
 

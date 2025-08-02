@@ -12,7 +12,7 @@ interface AuthenticatedLayoutProps {
   currentApplication?: {
     id: string;
     name: string;
-    sidebar?: any;
+    sidebar?: unknown;
   };
   showSidebar?: boolean;
   sidebarContent?: React.ReactNode;
@@ -76,7 +76,7 @@ export function AuthenticatedLayout({
       {applicationMenuOpen && (
         <ApplicationMenu
           onClose={() => setApplicationMenuOpen(false)}
-          onSelect={(app: any) => {
+          onSelect={(app: { id: string; name: string }) => {
             setApplicationMenuOpen(false);
             // Handle navigation to selected application
             console.log("Navigate to app:", app);

@@ -93,7 +93,8 @@ export default function SignIn() {
         setError("Failed to initiate sign in. Please try again.");
         setIsLoading(false);
       }
-    } catch (err) {
+    } catch (outerErr) {
+      console.error("Outer sign in error:", outerErr);
       setError("An error occurred. Please try again.");
       setIsLoading(false);
     }
@@ -103,9 +104,7 @@ export default function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            Welcome to TITAN
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome to TITAN</CardTitle>
           <CardDescription>Enter your email to continue</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -136,7 +135,7 @@ export default function SignIn() {
 
           <div className="text-center text-sm text-gray-600">
             <p>
-              We'll redirect you to our secure login page to complete
+              We&apos;ll redirect you to our secure login page to complete
               authentication.
             </p>
           </div>

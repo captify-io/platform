@@ -3,7 +3,7 @@
 import { ReactNode, useState } from "react";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ChevronLeft } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SlidingChatLayoutProps {
@@ -40,13 +40,13 @@ export function SlidingChatLayout({
   return (
     <div className={cn("flex h-full bg-gray-50", className)}>
       {/* Main Application Content */}
-      <div 
+      <div
         className={cn(
           "flex-1 transition-all duration-300 ease-in-out overflow-auto bg-white",
           isChatOpen ? `mr-[${chatWidth}px]` : "mr-0"
         )}
         style={{
-          marginRight: isChatOpen ? `${chatWidth}px` : "0px"
+          marginRight: isChatOpen ? `${chatWidth}px` : "0px",
         }}
       >
         {children}
@@ -71,10 +71,10 @@ export function SlidingChatLayout({
           "fixed right-0 bg-white border-l border-gray-200 shadow-xl transition-all duration-300 ease-in-out z-40",
           isChatOpen ? "translate-x-0" : "translate-x-full"
         )}
-        style={{ 
+        style={{
           width: `${chatWidth}px`,
-          top: '88px', // Account for navigation (48px) + favorites (40px)
-          height: 'calc(100vh - 88px)'
+          top: "88px", // Account for navigation (48px) + favorites (40px)
+          height: "calc(100vh - 88px)",
         }}
       >
         <ChatInterface

@@ -225,7 +225,7 @@ export function GlobalSearch({ onClose, onSelect }: GlobalSearchProps) {
                 </Badge>
               </div>
 
-              {results.map((result, index) => {
+              {results.map((result) => {
                 const globalIndex = filteredResults.indexOf(result);
                 return (
                   <button
@@ -271,7 +271,7 @@ export function GlobalSearch({ onClose, onSelect }: GlobalSearchProps) {
           {filteredResults.length === 0 && (
             <div className="p-8 text-center text-gray-500">
               <Search className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-              <p>No results found for "{query}"</p>
+              <p>No results found for &quot;{query}&quot;</p>
               <p className="text-sm mt-1">
                 Try searching for services, applications, or resources
               </p>

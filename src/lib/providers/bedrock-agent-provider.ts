@@ -1,22 +1,60 @@
 import {
-  LanguageModelV2,
-  LanguageModelV2CallOptions,
-  LanguageModelV2Content,
-  LanguageModelV2StreamPart,
-  LanguageModelV2Prompt,
-  LanguageModelV2CallWarning,
-  ProviderV2,
-} from "@ai-sdk/provider";
-import {
-  generateId,
-  loadApiKey,
-  withoutTrailingSlash,
-} from "@ai-sdk/provider-utils";
-import {
   BedrockAgentRuntimeClient,
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
 import { fromEnv } from "@aws-sdk/credential-providers";
+import type {
+  AwsCredentialIdentityProvider,
+  AwsCredentialIdentity,
+} from "@aws-sdk/types";
+
+// Simple ID generator for this provider
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
+
+// Types for LanguageModelV2
+
+export interface LanguageModelV2CallOptions {
+  prompt: Array<{ role: string; content: LanguageModelV2Content[] }>;
+}
+
+export interface LanguageModelV2CallWarning {
+  message: string;
+  code?: string;
+}
+
+export interface LanguageModelV2Content {
+  type: string;
+  text: string;
+}
+
+export interface LanguageModelV2StreamPart {
+  type: string;
+  id?: string;
+  delta?: string;
+  finishReason?: string;
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  error?: unknown;
+  warnings?: LanguageModelV2CallWarning[];
+}
+
+export interface LanguageModelV2 {
+  readonly specificationVersion: "v2";
+  readonly provider: string;
+  readonly modelId: string;
+  readonly defaultObjectGenerationMode?: unknown;
+  doGenerate: (options: LanguageModelV2CallOptions) => Promise<unknown>;
+  doStream: (options: LanguageModelV2CallOptions) => Promise<unknown>;
+}
+
+export interface ProviderV2 {
+  languageModel: (modelId: string, settings?: unknown) => unknown;
+}
 
 interface BedrockAgentConfig {
   provider: string;
@@ -50,15 +88,17 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
     this.settings = settings;
   }
 
-  get supportedUrls() {
-    return {};
+  get defaultObjectGenerationMode() {
+    return undefined;
   }
 
   private getArgs(options: LanguageModelV2CallOptions) {
     const warnings: LanguageModelV2CallWarning[] = [];
 
     // Extract the last user message as input text
-    const userMessages = options.prompt.filter((msg) => msg.role === "user");
+    const userMessages = options.prompt.filter(
+      (msg) => msg.role === "user"
+    );
     const lastUserMessage = userMessages[userMessages.length - 1];
 
     let inputText = "";
@@ -127,7 +167,11 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
         warnings,
       };
     } catch (error) {
-      this.handleError(error);
+      throw new Error(
+        `Bedrock Agent error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -145,7 +189,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
       const response = await this.config.client.send(command);
 
       // Create a transform stream that converts Bedrock Agent response to AI SDK format
-      const self = this;
+      const { config } = this;
       const stream = new ReadableStream<LanguageModelV2StreamPart>({
         async start(controller) {
           controller.enqueue({ type: "stream-start", warnings });
@@ -166,7 +210,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
                     // Stream each chunk as text-delta
                     controller.enqueue({
                       type: "text-delta",
-                      id: self.config.generateId(),
+                      id: config.generateId(),
                       delta: text,
                     });
                   }
@@ -178,7 +222,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
             if (!hasContent) {
               controller.enqueue({
                 type: "text-delta",
-                id: self.config.generateId(),
+                id: config.generateId(),
                 delta:
                   "I apologize, but I didn't receive a response from the agent. Please try again.",
               });
@@ -206,37 +250,24 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
 
       return { stream, warnings };
     } catch (error) {
-      this.handleError(error);
+      throw new Error(
+        `Bedrock Agent stream error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-  }
-
-  private handleError(error: unknown): never {
-    if (error instanceof Response) {
-      const status = error.status;
-
-      if (status === 429) {
-        throw new Error(`Too many requests: ${error.statusText}`);
-      }
-
-      throw new Error(`API Error ${status}: ${error.statusText}`);
-    }
-
-    throw error;
   }
 }
 
 // Provider interface
 interface BedrockAgentProvider extends ProviderV2 {
   (modelId: string, settings?: BedrockAgentSettings): BedrockAgentLanguageModel;
-  languageModel(
-    modelId: string,
-    settings?: BedrockAgentSettings
-  ): BedrockAgentLanguageModel;
+  languageModel(modelId: string, settings?: unknown): unknown;
 }
 
 interface BedrockAgentProviderSettings {
   region?: string;
-  credentials?: any;
+  credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
   generateId?: () => string;
 }
 

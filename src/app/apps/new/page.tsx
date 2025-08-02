@@ -27,8 +27,8 @@ export default function NewAppPage() {
         throw new Error(data.message || "Failed to register");
       }
       router.push(`/apps/${alias}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
   };

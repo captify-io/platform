@@ -1,7 +1,6 @@
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
-  RespondToAuthChallengeCommand,
   GetUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
@@ -138,14 +137,23 @@ export class CognitoAuth {
     }
   }
 
-  async getUser(accessToken: string): Promise<any> {
+  async getUser(accessToken: string): Promise<{
+    Username: string;
+    UserAttributes: Array<{ Name: string; Value: string }>;
+  }> {
     try {
       const command = new GetUserCommand({
         AccessToken: accessToken,
       });
 
       const response = await cognitoClient.send(command);
-      return response;
+      return {
+        Username: response.Username || "",
+        UserAttributes: (response.UserAttributes || []).map((attr) => ({
+          Name: attr.Name || "",
+          Value: attr.Value || "",
+        })),
+      };
     } catch (error) {
       console.error("Get user error:", error);
       throw error;

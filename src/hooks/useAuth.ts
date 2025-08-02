@@ -3,6 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 
+interface ExtendedSession {
+  accessToken?: string;
+  idToken?: string;
+  user?: {
+    id?: string;
+    email?: string;
+    name?: string;
+    image?: string;
+  };
+}
+
 interface AuthUser {
   id: string;
   email: string;
@@ -34,11 +45,12 @@ export function useAuth() {
         isAuthenticated: false,
       });
     } else if (status === "authenticated" && session) {
+      const extendedSession = session as ExtendedSession;
       const user: AuthUser = {
         id: session.user?.email || "unknown",
         email: session.user?.email || "",
         name: session.user?.name || "",
-        accessToken: session.accessToken || "",
+        accessToken: extendedSession.accessToken || "",
       };
 
       setAuthState({

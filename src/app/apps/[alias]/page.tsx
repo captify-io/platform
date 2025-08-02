@@ -9,31 +9,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Star,
-  Users,
-  Clock,
-  MessageSquare,
-  Settings,
-  BarChart3,
-} from "lucide-react";
+import { Star, Users, MessageSquare, Settings, BarChart3 } from "lucide-react";
 
 interface AppPageProps {
-  params: { alias: string };
+  params: Promise<{ alias: string }>;
 }
 
 export default function AppPage({ params }: AppPageProps) {
-  const { alias } = params;
+  const [alias, setAlias] = useState<string>("");
   const { getApplicationByAlias, markAsRecent, favoriteApps, toggleFavorite } =
     useApps();
   const [application, setApplication] = useState<Application | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    const app = getApplicationByAlias(alias);
-    if (app) {
-      setApplication(app);
-      markAsRecent(alias);
+    async function resolveParams() {
+      const resolvedParams = await params;
+      setAlias(resolvedParams.alias);
+    }
+    resolveParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (alias) {
+      const app = getApplicationByAlias(alias);
+      if (app) {
+        setApplication(app);
+        markAsRecent(alias);
+      }
     }
   }, [alias, getApplicationByAlias, markAsRecent]);
 
@@ -45,7 +48,7 @@ export default function AppPage({ params }: AppPageProps) {
             Application Not Found
           </h1>
           <p className="text-gray-600">
-            The application "{alias}" could not be found.
+            The application &quot;{alias}&quot; could not be found.
           </p>
         </div>
       </div>

@@ -14,15 +14,16 @@ import {
   Wrench,
   BarChart3,
   Database,
-  TrendingUp,
   Zap,
   Package,
   Hammer,
   Target,
   DollarSign,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -165,7 +166,7 @@ const availableApplications = [
 
 export function TopNavigation({
   onSearchFocus,
-  onApplicationMenuClick,
+  onApplicationMenuClick, // eslint-disable-line @typescript-eslint/no-unused-vars
   currentApplication,
 }: TopNavigationProps) {
   const { data: session } = useSession();
@@ -179,14 +180,18 @@ export function TopNavigation({
   // Close application menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (applicationMenuRef.current && !applicationMenuRef.current.contains(event.target as Node)) {
+      if (
+        applicationMenuRef.current &&
+        !applicationMenuRef.current.contains(event.target as Node)
+      ) {
         setApplicationMenuOpen(false);
       }
     }
 
     if (applicationMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [applicationMenuOpen]);
 
@@ -214,7 +219,7 @@ export function TopNavigation({
     setTimeout(() => setSearchFocused(false), 200);
   };
 
-  const handleSearchItemClick = (item: any) => {
+  const handleSearchItemClick = (item: { url: string; title: string }) => {
     setSearchFocused(false);
     setSearchQuery("");
     clearResults();
@@ -245,62 +250,72 @@ export function TopNavigation({
         <div className="flex items-center justify-between px-4 h-12">
           {/* Left side */}
           <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 relative">
-                <span className="font-medium">
-                  <span className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]">
-                    AFSC
-                  </span>
-                  <span className="text-white ml-1">TITAN</span>
+            <div className="flex items-center space-x-3 relative">
+              <span className="font-medium">
+                <span className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]">
+                  AFSC
                 </span>
+                <span className="text-white ml-1">TITAN</span>
+              </span>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setApplicationMenuOpen(!applicationMenuOpen)}
-                  className="text-white hover:bg-gray-800 hover:text-white p-1 cursor-pointer"
-                >
-                  <Grid3X3 className="h-3 w-3" />
-                </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setApplicationMenuOpen(!applicationMenuOpen)}
+                className="text-white hover:bg-gray-800 hover:text-white p-1 cursor-pointer"
+              >
+                <Grid3X3 className="h-3 w-3" />
+              </Button>
 
-                {/* Application Menu Dropdown */}
-                {applicationMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 shadow-lg z-50 max-h-96 overflow-y-auto rounded-lg">
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Applications</h3>
-                      <div className="grid grid-cols-1 gap-3">
-                        {availableApplications.map((app) => {
-                          const isActive = currentApplication?.id === app.id;
-                          const IconComponent = app.icon;
-                          return (
+              {/* Application Menu Dropdown */}
+              {applicationMenuOpen && (
+                <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 shadow-lg z-50 max-h-96 overflow-y-auto rounded-lg">
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Available Applications
+                    </h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      {availableApplications.map((app) => {
+                        const isActive = currentApplication?.id === app.id;
+                        const IconComponent = app.icon;
+                        return (
+                          <div
+                            key={app.id}
+                            onClick={() => {
+                              router.push(app.href);
+                              setApplicationMenuOpen(false);
+                            }}
+                            className={`flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors border ${
+                              isActive
+                                ? "bg-blue-50 border-blue-200 hover:bg-blue-100"
+                                : "border-gray-100 hover:bg-gray-50 hover:border-gray-200"
+                            }`}
+                          >
                             <div
-                              key={app.id}
-                              onClick={() => {
-                                router.push(app.href);
-                                setApplicationMenuOpen(false);
-                              }}
-                              className={`flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors border ${
-                                isActive
-                                  ? "bg-blue-50 border-blue-200 hover:bg-blue-100"
-                                  : "border-gray-100 hover:bg-gray-50 hover:border-gray-200"
-                              }`}
+                              className={`w-10 h-10 rounded-lg ${app.color} flex items-center justify-center text-white flex-shrink-0`}
                             >
-                              <div className={`w-10 h-10 rounded-lg ${app.color} flex items-center justify-center text-white flex-shrink-0`}>
-                                <IconComponent className="h-5 w-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className={`text-sm font-medium truncate ${
-                                  isActive ? "text-blue-900" : "text-gray-900"
-                                }`}>{app.name}</h4>
-                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{app.description}</p>
-                              </div>
+                              <IconComponent className="h-5 w-5" />
                             </div>
-                          );
-                        })}
-                      </div>
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className={`text-sm font-medium truncate ${
+                                  isActive ? "text-blue-900" : "text-gray-900"
+                                }`}
+                              >
+                                {app.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {app.description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Center - Search */}
@@ -340,8 +355,9 @@ export function TopNavigation({
                       <div className="p-4 text-center text-gray-500">
                         <div className="text-sm">No results found</div>
                         <div className="text-xs text-gray-400 mt-1">
-                          Try searching for AWS services like "lambda", "s3", or
-                          "cognito"
+                          Try searching for AWS services like
+                          &quot;lambda&quot;, &quot;s3&quot;, or
+                          &quot;cognito&quot;
                         </div>
                       </div>
                     ) : (
@@ -430,6 +446,18 @@ export function TopNavigation({
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/agents")}
+              className="text-white hover:bg-gray-800 hover:text-white p-1 cursor-pointer"
+              title="Agent Management"
+            >
+              <Bot className="h-4 w-4" />
+            </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -478,7 +506,9 @@ export function TopNavigation({
                     : "text-white hover:bg-gray-800 hover:text-white border border-transparent hover:border-gray-700"
                 }`}
               >
-                <div className={`w-4 h-4 rounded flex items-center justify-center ${app.color}`}>
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center ${app.color}`}
+                >
                   <IconComponent className="h-3 w-3 text-white" />
                 </div>
                 <span>{app.name}</span>

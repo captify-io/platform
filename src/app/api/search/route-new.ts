@@ -13,6 +13,15 @@ interface SearchResult {
   source: string;
 }
 
+interface NeptuneSearchItem {
+  name?: string;
+  alias?: string;
+  id?: string;
+  description?: string;
+  category?: string;
+  status?: string;
+}
+
 interface SearchResponse {
   query: string;
   totalResults: number;
@@ -73,12 +82,12 @@ async function searchNeptune(query: string): Promise<SearchResult[]> {
     console.log(`Found ${results.length} results`);
 
     // Transform Neptune results to SearchResult format
-    return results.map((item: any) => ({
+    return results.map((item: NeptuneSearchItem) => ({
       title: item.name || item.alias || "Unknown",
       url: `/apps/${item.alias || item.id}`,
       description:
         item.description || `${item.category || "Item"} - ${item.status}`,
-      serviceId: item.alias || item.id,
+      serviceId: item.alias || item.id || "",
       source: "neptune",
     }));
   } catch (error) {

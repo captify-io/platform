@@ -3,25 +3,11 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
-import {
-  Search,
-  RefreshCw,
-  Plus,
-  Filter,
-  MoreVertical,
-  Settings,
-} from "lucide-react";
+import { Search, RefreshCw, MoreVertical, Settings } from "lucide-react";
 
 // Mock Neptune clusters data
 const mockClusters = [
@@ -70,7 +56,7 @@ const mockClusters = [
 export default function NeptunePage() {
   const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
-  const [groupResources, setGroupResources] = useState(true);
+  const [groupResources] = useState(true);
 
   const filteredClusters = mockClusters.filter(
     (cluster) =>

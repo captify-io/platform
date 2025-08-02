@@ -136,7 +136,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="p-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-600">
-            {results.totalResults} results for "{query}"
+            {results.totalResults} results for &quot;{query}&quot;
           </p>
           <p className="text-xs text-gray-500">
             {results.executionTime.toFixed(3)}s

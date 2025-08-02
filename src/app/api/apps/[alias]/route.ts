@@ -3,10 +3,10 @@ import { getApplicationByAlias } from "@/apps/applications-loader";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { alias: string } }
+  { params }: { params: Promise<{ alias: string }> }
 ) {
   try {
-    const { alias } = params;
+    const { alias } = await params;
     const application = getApplicationByAlias(alias);
 
     if (!application) {
@@ -28,10 +28,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { alias: string } }
+  { params }: { params: Promise<{ alias: string }> }
 ) {
   try {
-    const { alias } = params;
+    const { alias } = await params;
     const body = await request.json();
 
     // In a real implementation, this would update the application

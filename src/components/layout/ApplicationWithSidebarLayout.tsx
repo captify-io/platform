@@ -42,8 +42,8 @@ export function ApplicationWithSidebarLayout({
   onChatReady,
   menuItems,
 }: ApplicationWithSidebarLayoutProps) {
-  const [showApplicationMenu, setShowApplicationMenu] = useState(false);
-  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showApplicationMenu, setShowApplicationMenu] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
   const router = useRouter();
   const pathname = usePathname();
 
@@ -58,15 +58,17 @@ export function ApplicationWithSidebarLayout({
         onSearchFocus={() => setShowGlobalSearch(true)}
         onApplicationMenuClick={() => setShowApplicationMenu(true)}
       />
-      
+
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex">
         {/* Left Sidebar Menu */}
         <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">{applicationName}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {applicationName}
+            </h2>
           </div>
-          
+
           <nav className="flex-1 p-4 space-y-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
@@ -103,9 +105,7 @@ export function ApplicationWithSidebarLayout({
             chatWidth={chatWidth}
             onChatReady={onChatReady}
           >
-            <div className="p-6 h-full overflow-auto">
-              {children}
-            </div>
+            <div className="p-6 h-full overflow-auto">{children}</div>
           </SlidingChatLayout>
         </div>
       </div>

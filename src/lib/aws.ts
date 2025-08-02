@@ -1,7 +1,6 @@
 import {
   CognitoIdentityProviderClient,
   GetUserCommand,
-  ListUsersCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 

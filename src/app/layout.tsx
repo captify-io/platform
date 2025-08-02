@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import AuthWrapper from "@/components/AuthWrapper";
+import { ThemeProvider } from "next-themes";
 import { AppsProvider } from "@/context/AppsContext";
 
 const geistSans = Geist({
@@ -15,26 +15,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const metadata: Metadata = {
-  title: "TITAN",
-  description: "AI-powered decision making platform",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <AuthWrapper>
-            <AppsProvider>{children}</AppsProvider>
-          </AuthWrapper>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <AuthWrapper>
+              <AppsProvider>{children}</AppsProvider>
+            </AuthWrapper>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

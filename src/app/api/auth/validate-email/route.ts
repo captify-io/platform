@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   CognitoIdentityProviderClient,
-  AdminGetUserCommand,
   ListUsersCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
@@ -55,12 +54,12 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Email validated successfully",
       });
-    } catch (cognitoError: any) {
+    } catch (cognitoError: unknown) {
       // If we can't validate against Cognito, still allow the email through
       // This prevents errors from blocking legitimate users
       console.warn(
         "Cognito validation failed, allowing email through:",
-        cognitoError.message
+        cognitoError instanceof Error ? cognitoError.message : "Unknown error"
       );
 
       return NextResponse.json({
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
         message: "Email format validated",
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Email validation error:", error);
 
     return NextResponse.json(

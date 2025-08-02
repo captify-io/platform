@@ -33,8 +33,8 @@ export class BedrockAgentService {
 
       // Process the streaming response
       let completion = "";
-      let trace: any = null;
-      let citations: any[] = [];
+      let trace: unknown = null;
+      const citations: unknown[] = [];
 
       if (response.completion) {
         for await (const chunk of response.completion) {
@@ -47,8 +47,27 @@ export class BedrockAgentService {
             trace = chunk.trace;
           }
 
-          if (chunk.attribution?.citations) {
-            citations.push(...chunk.attribution.citations);
+          // Check for attribution with proper type guard
+          if (chunk && typeof chunk === "object" && "attribution" in chunk) {
+            if (
+              typeof chunk === "object" &&
+              chunk !== null &&
+              "attribution" in chunk &&
+              typeof (chunk as { attribution?: unknown }).attribution ===
+                "object" &&
+              (chunk as { attribution?: { citations?: unknown[] } })
+                .attribution !== null
+            ) {
+              const attribution = (
+                chunk as { attribution?: { citations?: unknown[] } }
+              ).attribution;
+              if (
+                attribution?.citations &&
+                Array.isArray(attribution.citations)
+              ) {
+                citations.push(...attribution.citations);
+              }
+            }
           }
         }
       }

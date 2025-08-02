@@ -26,21 +26,23 @@ export async function POST(request: NextRequest) {
         idToken: user.idToken,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Direct Cognito sign-in error:", error);
 
     let errorMessage = "Authentication failed";
     let statusCode = 401;
 
-    if (error.name === "NotAuthorizedException") {
-      errorMessage = "Invalid username or password";
-    } else if (error.name === "UserNotConfirmedException") {
-      errorMessage = "User account is not confirmed";
-    } else if (error.name === "UserNotFoundException") {
-      errorMessage = "User not found";
-    } else if (error.name === "TooManyRequestsException") {
-      errorMessage = "Too many requests. Please try again later";
-      statusCode = 429;
+    if (error instanceof Error) {
+      if (error.name === "NotAuthorizedException") {
+        errorMessage = "Invalid username or password";
+      } else if (error.name === "UserNotConfirmedException") {
+        errorMessage = "User account is not confirmed";
+      } else if (error.name === "UserNotFoundException") {
+        errorMessage = "User not found";
+      } else if (error.name === "TooManyRequestsException") {
+        errorMessage = "Too many requests. Please try again later";
+        statusCode = 429;
+      }
     }
 
     return NextResponse.json({ error: errorMessage }, { status: statusCode });

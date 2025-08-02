@@ -2,6 +2,22 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { GremlinClient } from "../../lib/neptune-client";
 
+interface NeptuneResponse {
+  _items: unknown[];
+}
+
+interface NeptuneApplicationNode {
+  id: string;
+  alias: string;
+  name: string;
+  description?: string;
+  category?: string;
+  version?: string;
+  author?: string;
+  status: string;
+  registeredAt: string;
+}
+
 interface ApplicationRegistration {
   alias: string;
   name: string;
@@ -61,7 +77,7 @@ export async function POST(request: NextRequest) {
         { alias: body.alias }
       );
 
-      if ((existingResponse as any)._items.length > 0) {
+      if ((existingResponse as NeptuneResponse)._items.length > 0) {
         return NextResponse.json(
           { error: "Application with this alias already exists" },
           { status: 409 }
@@ -115,7 +131,8 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      const newApp = (createResponse as any)._items[0];
+      const newApp = (createResponse as NeptuneResponse)
+        ._items[0] as NeptuneApplicationNode;
 
       return NextResponse.json(
         {
@@ -132,10 +149,12 @@ export async function POST(request: NextRequest) {
     } finally {
       client.close();
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("POST /api/apps/register error:", err);
+    const errorMessage =
+      err instanceof Error ? err.message : "Unknown error occurred";
     return NextResponse.json(
-      { error: "Failed to register application", details: err.message },
+      { error: "Failed to register application", details: errorMessage },
       { status: 500 }
     );
   }
@@ -166,8 +185,10 @@ export async function GET() {
             .by(coalesce(values('registeredAt'), constant('')))`
       );
 
-      const records: any[] = (response as any)._items || [];
-      const apps = records.map((r: any) => ({
+      const records: NeptuneApplicationNode[] =
+        ((response as NeptuneResponse)._items as NeptuneApplicationNode[]) ||
+        [];
+      const apps = records.map((r: NeptuneApplicationNode) => ({
         id: r.id,
         alias: r.alias || "",
         name: r.name || "",
@@ -183,7 +204,7 @@ export async function GET() {
     } finally {
       client.close();
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("GET /api/apps/register error:", err);
     // Return empty list on error to avoid breaking clients
     return NextResponse.json([]);

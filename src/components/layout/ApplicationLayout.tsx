@@ -29,8 +29,8 @@ export function ApplicationLayout({
   chatWidth = 400,
   onChatReady,
 }: ApplicationLayoutProps) {
-  const [showApplicationMenu, setShowApplicationMenu] = useState(false);
-  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [showApplicationMenu, setShowApplicationMenu] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -43,7 +43,7 @@ export function ApplicationLayout({
         onSearchFocus={() => setShowGlobalSearch(true)}
         onApplicationMenuClick={() => setShowApplicationMenu(true)}
       />
-      
+
       {/* Main Content with Sliding Chat */}
       <div className="flex-1 overflow-hidden">
         <SlidingChatLayout

@@ -157,7 +157,9 @@ sam deploy
 - CloudFormation Events: AWS Console > CloudFormation > Events
 - SAM CLI: Use `--debug` flag for verbose output
   aws configure
+
   # Enter your AWS Access Key ID, Secret Key, and Region
+
   ```
 
   ```

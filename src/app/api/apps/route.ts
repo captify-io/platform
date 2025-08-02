@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { demoApplications } from "@/apps/applications-loader";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Transform applications to legacy format for backward compatibility
     const legacyApps = demoApplications.map((app) => ({

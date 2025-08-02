@@ -1,5 +1,11 @@
 import ShellLayout from "@/components/layout/ShellLayout";
 
-export default function AppLayout({ children, params }: any) {
-  return <ShellLayout params={params}>{children}</ShellLayout>;
+interface AppLayoutProps {
+  children: React.ReactNode;
+  params: Promise<{ alias: string }>;
+}
+
+export default async function AppLayout({ children, params }: AppLayoutProps) {
+  const resolvedParams = await params;
+  return <ShellLayout params={resolvedParams}>{children}</ShellLayout>;
 }
