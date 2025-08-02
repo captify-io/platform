@@ -139,8 +139,7 @@ export class NeptuneClient {
       // Verify credentials work
       const stsClient = new STSClient({
         region: AWS_REGION,
-        credentials: this
-          .credentials as import("@aws-sdk/types").AwsCredentialIdentityProvider,
+        credentials: this.credentials as any,
       });
 
       const identity = await stsClient.send(new GetCallerIdentityCommand({}));
