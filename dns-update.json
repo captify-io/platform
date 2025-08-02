@@ -1,0 +1,29 @@
+{
+    "Comment": "Update anautics.ai to point to new Amplify app",
+    "Changes": [
+        {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+                "Name": "anautics.ai",
+                "Type": "A",
+                "AliasTarget": {
+                    "HostedZoneId": "Z2FDTNDATAQYW2",
+                    "DNSName": "d3vl8ax7akbu10.cloudfront.net",
+                    "EvaluateTargetHealth": false
+                }
+            }
+        },
+        {
+            "Action": "UPSERT", 
+            "ResourceRecordSet": {
+                "Name": "www.anautics.ai",
+                "Type": "A",
+                "AliasTarget": {
+                    "HostedZoneId": "Z2FDTNDATAQYW2",
+                    "DNSName": "d3vl8ax7akbu10.cloudfront.net",
+                    "EvaluateTargetHealth": false
+                }
+            }
+        }
+    ]
+}

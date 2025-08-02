@@ -1,0 +1,19 @@
+{
+  "NEXTAUTH_URL": "https://www.anautics.ai",
+  "NEXTAUTH_SECRET": "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
+  "BEDROCK_AGENT_ID": "H7MXL2MY4U",
+  "BEDROCK_AGENT_ALIAS_ID": "RFQULMWMAO",
+  "BEDROCK_SESSION_ID": "test-session-001",
+  "NEXT_PUBLIC_COGNITO_CLIENT_ID": "4og43nmsksolkkrk3v47tj7gv9",
+  "COGNITO_CLIENT_SECRET": "1a0u3rp9900klg5vugsibjn71hsitlh19pefo0u2lnn72npj5gsh",
+  "NEXT_PUBLIC_COGNITO_ISSUER": "https://login.anautics.ai",
+  "COGNITO_ISSUER": "https://login.anautics.ai",
+  "COGNITO_DOMAIN": "https://login.anautics.ai", 
+  "COGNITO_USER_POOL_ID": "us-east-1_k3Fp77c09",
+  "COGNITO_SERVICE_CATALOG_POOL_ID": "us-east-1:d70589a1-b2ff-4a47-9528-e8dc6b98ff95",
+  "NEXT_PUBLIC_COGNITO_DOMAIN": "https://login.anautics.ai",
+  "S3_BUCKET": "titan-dev-documents-211125459951",
+  "S3_REGION": "us-east-1",
+  "API_GATEWAY_URL": "https://nip321gg81.execute-api.us-east-1.amazonaws.com/dev",
+  "NODE_ENV": "production"
+}

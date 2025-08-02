@@ -6,7 +6,7 @@ import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 
 // Initialize AWS clients
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -14,7 +14,7 @@ const cognitoClient = new CognitoIdentityProviderClient({
 });
 
 const stsClient = new STSClient({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,

@@ -3,7 +3,7 @@ import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 
 // AWS Configuration
-const AWS_REGION = process.env.AWS_REGION || "us-east-1";
+const AWS_REGION = process.env.REGION || "us-east-1";
 const IDENTITY_POOL_ID = process.env.COGNITO_SERVICE_CATALOG_POOL_ID;
 const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 
