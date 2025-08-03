@@ -34,6 +34,24 @@ This reduces complexity, improves performance, and simplifies the authentication
 - `database-integration.md` - Neptune graph database design and operations
 - `context-management.md` - Document upload, processing, and context injection
 
+### **Authentication & Session Management**
+
+- **API Client**: `src/lib/api-client.ts` - Enhanced with email header support for all requests
+- **Session Management**: `src/hooks/useSavedEmail.ts` - NIST Rev 5 compliant email storage
+- **Signin Flow**: `src/app/auth/signin/page.tsx` - Email validation and session-based authentication
+- **Signout Flow**: `src/app/auth/signout/page.tsx` - Secure logout with session cleanup
+- **Profile Management**: `src/app/profile/page.tsx` - User profile view with session details
+- **Settings**: `src/app/settings/page.tsx` - User preferences and account settings
+- **Profile Dropdown**: `src/components/layout/TopNavigation.tsx` - Avatar-based user menu with Profile, Settings, and Sign Out options
+
+**Features**:
+
+- Avatar-based profile dropdown with user initials or profile image
+- Session-aware user information display (name and email)
+- Quick access to profile, settings, and secure sign-out
+- Responsive design matching AWS Console style
+- Integration with NextAuth.js session management
+
 ### **LLM Integration Architecture**
 
 The platform now supports multiple LLM providers through a unified interface:

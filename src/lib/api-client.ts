@@ -36,51 +36,77 @@ export class ApiClient {
   }
 
   /**
+   * Get saved email from session storage
+   */
+  private async getSavedEmail(): Promise<string | null> {
+    try {
+      const response = await fetch("/api/auth/save-email");
+      const data = await response.json();
+      return data.email || null;
+    } catch (error) {
+      console.debug("No saved email found:", error);
+      return null;
+    }
+  }
+
+  /**
    * Get authentication headers for API requests
    */
   private async getAuthHeaders(): Promise<Record<string, string>> {
     try {
       const session = await getSession();
-
-      if (!session) {
-        throw new Error("No active session found");
-      }
-
-      const extendedSession = session as ExtendedSession;
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
 
-      // Add session data to headers for server-side API routes
-      if (extendedSession.accessToken) {
-        headers["Authorization"] = `Bearer ${extendedSession.accessToken}`;
+      // Always try to include user email, either from session or saved email
+      let userEmail: string | null = null;
+
+      if (session) {
+        const extendedSession = session as ExtendedSession;
+
+        // Add session data to headers for server-side API routes
+        if (extendedSession.accessToken) {
+          headers["Authorization"] = `Bearer ${extendedSession.accessToken}`;
+        }
+
+        // CRITICAL: Add ID token for Cognito Identity Pool authentication
+        // Neptune/AWS services require ID tokens, not access tokens for Identity Pool
+        if (extendedSession.idToken) {
+          headers["X-ID-Token"] = extendedSession.idToken;
+        } else if (
+          typeof session === "object" &&
+          session !== null &&
+          "id_token" in session &&
+          typeof (session as { id_token?: string }).id_token === "string"
+        ) {
+          // Fallback for different session structures
+          headers["X-ID-Token"] = (session as { id_token: string }).id_token;
+        } else {
+          // No ID token found
+          console.warn(
+            "No ID token found in session - Neptune authentication may fail"
+          );
+        }
+
+        if (session.user?.email) {
+          userEmail = session.user.email;
+        }
       }
 
-      // CRITICAL: Add ID token for Cognito Identity Pool authentication
-      // Neptune/AWS services require ID tokens, not access tokens for Identity Pool
-      if (extendedSession.idToken) {
-        headers["X-ID-Token"] = extendedSession.idToken;
-      } else if (
-        typeof session === "object" &&
-        session !== null &&
-        "id_token" in session &&
-        typeof (session as { id_token?: string }).id_token === "string"
-      ) {
-        // Fallback for different session structures
-        headers["X-ID-Token"] = (session as { id_token: string }).id_token;
-      } else {
-        // No ID token found
-        console.warn(
-          "No ID token found in session - Neptune authentication may fail"
-        );
+      // If no email from session, try to get saved email
+      if (!userEmail) {
+        userEmail = await this.getSavedEmail();
       }
 
-      if (session.user?.email) {
-        headers["X-User-Email"] = session.user.email;
+      // Add email to headers if available
+      if (userEmail) {
+        headers["X-User-Email"] = userEmail;
       }
 
       // Use sub from JWT token if available
       if (
+        session &&
         typeof session === "object" &&
         session !== null &&
         "user" in session &&
@@ -94,25 +120,36 @@ export class ApiClient {
 
       // Debug logging for token availability
       console.debug("Auth headers prepared:", {
-        hasAccessToken: !!extendedSession.accessToken,
-        hasIdToken: !!(
-          extendedSession.idToken ||
-          (typeof session === "object" &&
-            session !== null &&
-            "id_token" in session &&
-            typeof (session as { id_token?: string }).id_token === "string" &&
-            (session as { id_token: string }).id_token)
-        ),
-        hasEmail: !!session.user?.email,
+        hasSession: !!session,
+        hasAccessToken: session
+          ? !!(session as ExtendedSession).accessToken
+          : false,
+        hasIdToken: session
+          ? !!(
+              (session as ExtendedSession).idToken ||
+              (typeof session === "object" &&
+                session !== null &&
+                "id_token" in session &&
+                typeof (session as { id_token?: string }).id_token ===
+                  "string" &&
+                (session as { id_token: string }).id_token)
+            )
+          : false,
+        hasEmail: !!userEmail,
         tokenTypes: {
-          accessToken: extendedSession.accessToken ? "present" : "missing",
+          accessToken:
+            session && (session as ExtendedSession).accessToken
+              ? "present"
+              : "missing",
           idToken:
-            extendedSession.idToken ||
-            (typeof session === "object" &&
-              session !== null &&
-              "id_token" in session &&
-              typeof (session as { id_token?: string }).id_token === "string" &&
-              (session as { id_token: string }).id_token)
+            session &&
+            ((session as ExtendedSession).idToken ||
+              (typeof session === "object" &&
+                session !== null &&
+                "id_token" in session &&
+                typeof (session as { id_token?: string }).id_token ===
+                  "string" &&
+                (session as { id_token: string }).id_token))
               ? "present"
               : "missing",
         },
@@ -121,6 +158,20 @@ export class ApiClient {
       return headers;
     } catch (error) {
       console.error("Failed to get auth headers:", error);
+
+      // For requests that don't require authentication, still try to include saved email
+      try {
+        const savedEmail = await this.getSavedEmail();
+        if (savedEmail) {
+          return {
+            "Content-Type": "application/json",
+            "X-User-Email": savedEmail,
+          };
+        }
+      } catch (savedEmailError) {
+        console.debug("No saved email available:", savedEmailError);
+      }
+
       throw new Error("Authentication required");
     }
   }

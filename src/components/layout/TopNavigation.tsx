@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -20,9 +20,21 @@ import {
   Target,
   DollarSign,
   Bot,
+  User,
+  LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -171,7 +183,6 @@ export function TopNavigation({
 }: TopNavigationProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [applicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -475,14 +486,109 @@ export function TopNavigation({
             </Button>
 
             <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="text-white hover:bg-gray-800 hover:text-white text-sm cursor-pointer"
-              >
-                {session?.user?.name || "User"}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2 text-white hover:bg-gray-800 hover:text-white px-3 py-2 h-auto"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={session?.user?.image || undefined}
+                        alt={session?.user?.name || "User"}
+                      />
+                      <AvatarFallback className="bg-blue-600 text-white text-sm">
+                        {session?.user?.name &&
+                        session?.user?.name !== session?.user?.email
+                          ? session.user.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2)
+                          : session?.user?.email
+                              ?.split("@")[0]
+                              ?.slice(0, 2)
+                              ?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm font-medium">
+                        {session?.user?.name ||
+                          session?.user?.email?.split("@")[0] ||
+                          "User"}
+                      </span>
+                      {session?.user?.email && (
+                        <span className="text-xs text-gray-300">
+                          {session.user.email}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-300" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={session?.user?.image || undefined}
+                          alt={session?.user?.name || "User"}
+                        />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {session?.user?.name &&
+                          session?.user?.name !== session?.user?.email
+                            ? session.user.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : session?.user?.email
+                                ?.split("@")[0]
+                                ?.slice(0, 2)
+                                ?.toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-900">
+                          {session?.user?.name ||
+                            session?.user?.email?.split("@")[0] ||
+                            "User"}
+                        </span>
+                        {session?.user?.email && (
+                          <span className="text-sm text-gray-500">
+                            {session.user.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => router.push("/profile")}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings")}
+                    className="flex items-center space-x-2 cursor-pointer"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => router.push("/auth/signout")}
+                    className="flex items-center space-x-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
