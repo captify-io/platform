@@ -185,9 +185,9 @@ const client = new ServiceCatalogClient({
 - `AWS_REGION` - AWS region (e.g., us-east-1)
 - `COGNITO_SERVICE_CATALOG_POOL_ID` - Identity Pool for AWS service access
 - `COGNITO_USER_POOL_ID` - User Pool for authentication
-- `COGNITO_CLIENT_ID` - OAuth client ID
+- `NEXT_PUBLIC_COGNITO_CLIENT_ID` - OAuth client ID (public)
 - `COGNITO_CLIENT_SECRET` - OAuth client secret
-- `COGNITO_DOMAIN` - Cognito domain for OAuth flows
+- `NEXT_PUBLIC_COGNITO_ISSUER` - Cognito custom domain for OAuth flows
 
 **Benefits:**
 
