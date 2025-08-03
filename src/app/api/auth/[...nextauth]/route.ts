@@ -33,6 +33,7 @@ const authOptions = {
           response_type: "code",
           client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
           // Let NextAuth automatically handle the redirect_uri based on NEXTAUTH_URL
+          // No identity_provider specified to show identity provider selection page
         },
       },
       token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
