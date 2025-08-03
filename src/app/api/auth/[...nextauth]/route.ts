@@ -12,6 +12,17 @@ console.log("Environment debug:", {
 
 const authOptions = {
   debug: true,
+  logger: {
+    error(code: string, metadata: any) {
+      console.error('NextAuth Error:', code, metadata);
+    },
+    warn(code: string) {
+      console.warn('NextAuth Warning:', code);
+    },
+    debug(code: string, metadata: any) {
+      console.log('NextAuth Debug:', code, metadata);
+    }
+  },
   secret: process.env.NEXTAUTH_SECRET || "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
   session: {
     strategy: "jwt" as const,
@@ -24,20 +35,19 @@ const authOptions = {
       name: "Cognito",
       clientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
-      issuer: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
-      wellKnown: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
+      issuer: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}`,
+      wellKnown: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
       authorization: {
         url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/login`,
         params: {
           scope: "openid profile email",
           response_type: "code",
           client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-          // Let NextAuth automatically handle the redirect_uri based on NEXTAUTH_URL
-          // No identity_provider specified to show identity provider selection page
+          // login_hint will be added dynamically via custom authorization URL
         },
       },
-      token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
-      userinfo: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/userInfo`,
+      token: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/token`,
+      userinfo: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/userInfo`,
       checks: ["pkce", "state", "nonce"],
       profile(profile: Record<string, unknown>) {
         console.log("Cognito Profile Callback:", profile);
@@ -59,10 +69,23 @@ const authOptions = {
       const typedToken = token as Record<string, unknown>;
       const typedAccount = account as Record<string, unknown> | null;
       
-      console.log("JWT callback:", {
-        token: typedToken?.sub,
-        account: typedAccount?.provider,
+      console.log("=== JWT Callback ===");
+      console.log("Token:", {
+        sub: typedToken?.sub,
+        email: typedToken?.email,
+        name: typedToken?.name
       });
+      console.log("Account:", {
+        provider: typedAccount?.provider,
+        type: typedAccount?.type,
+        access_token: typedAccount?.access_token ? "present" : "missing",
+        id_token: typedAccount?.id_token ? "present" : "missing",
+        refresh_token: typedAccount?.refresh_token ? "present" : "missing",
+        expires_at: typedAccount?.expires_at,
+        token_type: typedAccount?.token_type,
+        scope: typedAccount?.scope
+      });
+      console.log("Profile:", profile);
       
       if (typedAccount) {
         typedToken.accessToken = typedAccount.access_token;
@@ -70,12 +93,7 @@ const authOptions = {
         typedToken.refreshToken = typedAccount.refresh_token;
         typedToken.expiresAt = typedAccount.expires_at;
         typedToken.sub = typedAccount.providerAccountId;
-        console.log("Account data:", {
-          provider: typedAccount.provider,
-          type: typedAccount.type,
-          hasAccessToken: !!typedAccount.access_token,
-          hasIdToken: !!typedAccount.id_token,
-        });
+        console.log("Account data stored in token");
       }
 
       if (profile) {
@@ -83,8 +101,10 @@ const authOptions = {
         typedToken.name = typedProfile.name;
         typedToken.email = typedProfile.email;
         typedToken.picture = typedProfile.picture;
+        console.log("Profile data stored in token");
       }
 
+      console.log("=== End JWT Callback ===");
       return typedToken;
     },
     async session({ session, token }: {
@@ -120,8 +140,22 @@ const authOptions = {
       account: unknown;
       profile?: unknown;
     }) {
-      console.log("SignIn Callback Invoked", { account, profile });
-      if (!account || !profile) return false;
+      console.log("=== SignIn Callback ===");
+      console.log("Account:", account);
+      console.log("Profile:", profile);
+      
+      if (!account) {
+        console.error("SignIn failed: No account provided");
+        return false;
+      }
+      
+      if (!profile) {
+        console.error("SignIn failed: No profile provided");
+        return false;
+      }
+      
+      console.log("SignIn successful");
+      console.log("=== End SignIn Callback ===");
       return true;
     },
   },

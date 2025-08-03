@@ -24,6 +24,26 @@ export default function SignIn() {
     return emailRegex.test(email);
   };
 
+  const getIdentityProvider = (email: string): string | null => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    
+    // Map email domains to Cognito identity providers
+    if (domain?.endsWith('.mil') || domain?.endsWith('.gov')) {
+      return 'CAC'; // Common Access Card for military/government
+    }
+    
+    if (domain?.includes('microsoft') || domain?.includes('outlook') || domain?.includes('hotmail')) {
+      return 'Microsoft';
+    }
+    
+    // Add more domain mappings as needed
+    // if (domain?.includes('google') || domain?.includes('gmail')) {
+    //   return 'Google';
+    // }
+    
+    return null; // Let user choose on Cognito login page
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -58,17 +78,25 @@ export default function SignIn() {
         return;
       }
 
-      // Direct sign in with Cognito provider - this will redirect to https://login.anautics.ai
-      const result = await signIn("cognito", { 
+      // Determine identity provider based on email domain
+      const identityProvider = getIdentityProvider(email);
+      
+      // Use NextAuth signIn to get the authorization URL, then modify it
+      const result = await signIn("cognito", {
         callbackUrl: "/",
-        redirect: false  // Let NextAuth handle the redirect
+        redirect: false
       });
       
       if (result?.url) {
-        // NextAuth will redirect to Cognito IDP
-        window.location.href = result.url;
+        // Add login_hint to the authorization URL
+        const authUrl = new URL(result.url);
+        authUrl.searchParams.set("login_hint", email);
+        window.location.href = authUrl.toString();
       } else if (result?.error) {
         setError(result.error);
+        setIsLoading(false);
+      } else {
+        setError("Failed to initiate authentication");
         setIsLoading(false);
       }
     } catch (outerErr) {
