@@ -6,6 +6,7 @@ console.log("Environment debug:", {
   hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
   nextAuthSecretLength: process.env.NEXTAUTH_SECRET?.length,
   nodeEnv: process.env.NODE_ENV,
+  nextAuthUrl: process.env.NEXTAUTH_URL,
   allEnvKeys: Object.keys(process.env).filter(key => key.includes('NEXTAUTH')),
 });
 
@@ -26,12 +27,12 @@ const authOptions = {
       issuer: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
       wellKnown: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/openid-configuration`,
       authorization: {
-        url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/authorize`,
+        url: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/login`,
         params: {
           scope: "openid profile email",
           response_type: "code",
           client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID!,
-          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
+          // Let NextAuth automatically handle the redirect_uri based on NEXTAUTH_URL
         },
       },
       token: `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/oauth2/token`,
