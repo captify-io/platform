@@ -19,7 +19,6 @@ import {
   Palette,
   Globe,
   Monitor,
-  Smartphone,
   ExternalLink,
 } from "lucide-react";
 import { ApplicationLayout } from "@/components/layout/ApplicationLayout";

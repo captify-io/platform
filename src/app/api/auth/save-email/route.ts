@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     // Clear the saved email cookies
     const response = NextResponse.json({

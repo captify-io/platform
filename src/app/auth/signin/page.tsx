@@ -40,30 +40,6 @@ export default function SignIn() {
     return emailRegex.test(email);
   };
 
-  const getIdentityProvider = (email: string): string | null => {
-    const domain = email.split("@")[1]?.toLowerCase();
-
-    // Map email domains to Cognito identity providers
-    if (domain?.endsWith(".mil") || domain?.endsWith(".gov")) {
-      return "CAC"; // Common Access Card for military/government
-    }
-
-    if (
-      domain?.includes("microsoft") ||
-      domain?.includes("outlook") ||
-      domain?.includes("hotmail")
-    ) {
-      return "Microsoft";
-    }
-
-    // Add more domain mappings as needed
-    // if (domain?.includes('google') || domain?.includes('gmail')) {
-    //   return 'Google';
-    // }
-
-    return null; // Let user choose on Cognito login page
-  };
-
   const handleSaveEmail = async () => {
     if (!email) {
       setError("Please enter your email address.");

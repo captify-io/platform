@@ -16,13 +16,13 @@ console.log("Environment debug:", {
 const authOptions = {
   debug: true,
   logger: {
-    error(code: string, metadata: any) {
+    error(code: string, metadata: unknown) {
       console.error("NextAuth Error:", code, metadata);
     },
     warn(code: string) {
       console.warn("NextAuth Warning:", code);
     },
-    debug(code: string, metadata: any) {
+    debug(code: string, metadata: unknown) {
       console.log("NextAuth Debug:", code, metadata);
     },
   },
@@ -177,22 +177,20 @@ const authOptions = {
     async signIn({
       user,
       account,
-      isNewUser,
     }: {
       user: unknown;
       account: unknown;
       isNewUser?: boolean;
     }) {
       if (process.env.NODE_ENV === "development") {
-        const typedUser = user as Record<string, unknown>;
-        const typedAccount = account as Record<string, unknown> | null;
         // Log sign-in event for development debugging
+        console.log("Sign-in event:", { user, account });
       }
     },
   },
 };
 
-async function handler(req: NextRequest, context: any) {
+async function handler(req: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) {
   // Extract the saved email from cookie
   const savedEmail = req.cookies.get("auth_email")?.value || "";
 
