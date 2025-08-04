@@ -17,7 +17,7 @@ The `/api/search` endpoint now implements AWS Service Catalog search using prope
 
 ```bash
 # AWS Configuration
-AWS_REGION=us-east-1
+REGION=us-east-1
 COGNITO_SERVICE_CATALOG_POOL_ID=us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
 
@@ -49,12 +49,12 @@ async function searchServiceCatalog(
   const credentials = fromCognitoIdentityPool({
     identityPoolId: IDENTITY_POOL_ID,
     logins: {
-      [`cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}`]: idToken,
+      [`cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`]: idToken,
     },
   });
 
   const client = new ServiceCatalogClient({
-    region: AWS_REGION,
+    region: REGION,
     credentials,
   });
 

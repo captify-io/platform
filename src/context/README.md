@@ -193,14 +193,14 @@ const credentials = fromCognitoIdentityPool({
 });
 
 const client = new ServiceCatalogClient({
-  region: AWS_REGION,
+  region: REGION,
   credentials,
 });
 ```
 
 **Environment Variables Required:**
 
-- `AWS_REGION` - AWS region (e.g., us-east-1)
+- `REGION` - AWS region (e.g., us-east-1)
 - `COGNITO_SERVICE_CATALOG_POOL_ID` - Identity Pool for AWS service access
 - `COGNITO_USER_POOL_ID` - User Pool for authentication
 - `NEXT_PUBLIC_COGNITO_CLIENT_ID` - OAuth client ID (public)

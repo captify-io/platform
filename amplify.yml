@@ -12,6 +12,14 @@ frontend:
     build:
       commands:
         - echo "Setting environment variables from Amplify console"
+        - echo "Verifying environment variables..."
+        - echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
+        - echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET:0:10}..." # Only show first 10 chars
+        - echo "NEXT_PUBLIC_COGNITO_CLIENT_ID=${NEXT_PUBLIC_COGNITO_CLIENT_ID}"
+        - echo "NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}"
+        - echo "REGION=${REGION}"
+        - echo "NODE_ENV=${NODE_ENV}"
+        - echo "Environment variables loaded, starting build..."
         - pnpm run build
   artifacts:
     baseDirectory: .next

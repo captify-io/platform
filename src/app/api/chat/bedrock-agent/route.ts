@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     // Initialize Bedrock Agent Runtime client
     console.log("🔧 Initializing Bedrock Agent client...");
     const client = new BedrockAgentRuntimeClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.REGION || "us-east-1",
       credentials: fromEnv(),
     });
     console.log("✅ Bedrock Agent client initialized");

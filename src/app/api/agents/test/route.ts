@@ -11,7 +11,7 @@ import {
 } from "@/types/agents";
 
 const client = new BedrockAgentRuntimeClient({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
 });
 
 export async function POST(request: NextRequest) {

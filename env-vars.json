@@ -1,6 +1,7 @@
 {
   "NEXTAUTH_URL": "https://www.anautics.ai",
   "NEXTAUTH_SECRET": "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
+  "REGION": "us-east-1",
   "BEDROCK_AGENT_ID": "H7MXL2MY4U",
   "BEDROCK_AGENT_ALIAS_ID": "RFQULMWMAO",
   "BEDROCK_SESSION_ID": "test-session-001",

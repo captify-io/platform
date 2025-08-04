@@ -3,7 +3,7 @@ import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 
 // AWS Configuration
-const AWS_REGION = process.env.REGION || "us-east-1";
+const REGION = process.env.REGION || "us-east-1";
 const IDENTITY_POOL_ID = process.env.COGNITO_SERVICE_CATALOG_POOL_ID;
 const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 
@@ -131,14 +131,14 @@ export class NeptuneClient {
       this.credentials = fromCognitoIdentityPool({
         identityPoolId: IDENTITY_POOL_ID,
         logins: {
-          [`cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}`]:
+          [`cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`]:
             this.options.idToken,
         },
       });
 
       // Verify credentials work
       const stsClient = new STSClient({
-        region: AWS_REGION,
+        region: REGION,
         credentials: this.credentials,
       });
 

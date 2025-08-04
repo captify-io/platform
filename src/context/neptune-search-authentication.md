@@ -29,7 +29,7 @@ The `/api/search` endpoint now supports proper authentication using Cognito Iden
 NEPTUNE_ENDPOINT=your-neptune-cluster-endpoint
 COGNITO_SERVICE_CATALOG_POOL_ID=your-identity-pool-id
 COGNITO_USER_POOL_ID=your-user-pool-id
-AWS_REGION=us-east-1
+REGION=us-east-1
 ```
 
 ## API Usage
