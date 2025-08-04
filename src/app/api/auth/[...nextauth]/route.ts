@@ -2,16 +2,30 @@ import NextAuth from "next-auth/next";
 import CognitoProvider from "next-auth/providers/cognito";
 import { NextRequest } from "next/server";
 
-// Debug logging for NEXTAUTH_SECRET
+// Debug logging for environment variables
 console.log("Environment debug:", {
   hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
   nextAuthSecretLength: process.env.NEXTAUTH_SECRET?.length,
   nodeEnv: process.env.NODE_ENV,
   nextAuthUrl: process.env.NEXTAUTH_URL,
+  cognitoClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
+  cognitoIssuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER,
+  cognitoClientSecret: !!process.env.COGNITO_CLIENT_SECRET,
   allEnvKeys: Object.keys(process.env).filter((key) =>
-    key.includes("NEXTAUTH")
+    key.includes("NEXTAUTH") || key.includes("COGNITO")
   ),
 });
+
+// Validate critical environment variables
+if (!process.env.NEXT_PUBLIC_COGNITO_ISSUER) {
+  console.error("CRITICAL: NEXT_PUBLIC_COGNITO_ISSUER is not set!");
+}
+if (!process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID) {
+  console.error("CRITICAL: NEXT_PUBLIC_COGNITO_CLIENT_ID is not set!");
+}
+if (!process.env.COGNITO_CLIENT_SECRET) {
+  console.error("CRITICAL: COGNITO_CLIENT_SECRET is not set!");
+}
 
 const authOptions = {
   debug: true,

@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
     console.log("📝 Request payload:", {
       messageCount: messages?.length,
       sessionId,
-      agentId: agentId || process.env.AWS_BEDROCK_AGENT_ID,
-      agentAliasId: agentAliasId || process.env.AWS_BEDROCK_AGENT_ALIAS_ID,
+      agentId: agentId || process.env.BEDROCK_AGENT_ID,
+      agentAliasId: agentAliasId || process.env.BEDROCK_AGENT_ALIAS_ID,
       messages: messages?.map((m: ChatMessage) => ({
         role: m.role,
         contentLength: m.content?.length,
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
     console.log("✅ Bedrock Agent client initialized");
 
     const commandParams = {
-      agentId: agentId || process.env.AWS_BEDROCK_AGENT_ID,
-      agentAliasId: agentAliasId || process.env.AWS_BEDROCK_AGENT_ALIAS_ID,
+      agentId: agentId || process.env.BEDROCK_AGENT_ID,
+      agentAliasId: agentAliasId || process.env.BEDROCK_AGENT_ALIAS_ID,
       sessionId: sessionId || `session-${Date.now()}`,
       inputText,
       enableTrace: true, // Enable trace for reasoning visibility

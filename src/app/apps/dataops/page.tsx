@@ -108,7 +108,7 @@ export default function DataOpsPage() {
       showChat={true}
       chatWelcomeMessage="Welcome to DataOps! I can help you manage data pipelines, monitor data quality, and optimize your data operations."
       chatPlaceholder="Ask about data pipelines, quality metrics, or operational insights..."
-      agentId={process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ID}
+      agentId={process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID}
     >
       <div className="space-y-6">
         {/* Header */}

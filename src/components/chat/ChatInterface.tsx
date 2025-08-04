@@ -137,7 +137,7 @@ export function ChatInterface({
       ...(currentProvider?.type === "bedrock-agent"
         ? {
             sessionId,
-            agentId: process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ID,
+            agentId: process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID,
             agentAliasId: process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ALIAS_ID,
           }
         : {

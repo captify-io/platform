@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       anthropic: process.env.ANTHROPIC_API_KEY,
       "azure-openai": process.env.AZURE_OPENAI_API_KEY,
       grok: process.env.GROK_API_KEY,
-      bedrock: process.env.AWS_ACCESS_KEY_ID, // For Bedrock
+      bedrock: process.env.ACCESS_KEY_ID, // For Bedrock
     };
 
     const hasApiKey = !!apiKeyChecks[provider as keyof typeof apiKeyChecks];

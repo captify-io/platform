@@ -26,13 +26,13 @@ export class LLMConfigurationService {
       name: "AWS Bedrock Agent",
       type: "bedrock-agent",
       enabled: !!(
-        process.env.AWS_BEDROCK_AGENT_ID &&
+        process.env.BEDROCK_AGENT_ID &&
         process.env.AWS_BEDROCK_AGENT_ALIAS_ID
       ),
     };
 
     const bedrockAgentConfig: BedrockAgentConfig = {
-      agentId: process.env.AWS_BEDROCK_AGENT_ID || "",
+      agentId: process.env.BEDROCK_AGENT_ID || "",
       agentAliasId: process.env.AWS_BEDROCK_AGENT_ALIAS_ID || "",
       region: process.env.REGION || "us-east-1",
     };

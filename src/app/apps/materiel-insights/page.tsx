@@ -107,7 +107,7 @@ export default function MaterielInsightsPage() {
       showChat={true}
       chatWelcomeMessage="Welcome to Materiel Insights! I can help you analyze inventory data, forecast demand, and optimize your supply chain operations."
       chatPlaceholder="Ask about inventory levels, demand forecasting, or supply chain optimization..."
-      agentId={process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ID}
+      agentId={process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID}
     >
       <div className="space-y-6">
         {/* Header */}
