@@ -1,0 +1,32 @@
+{
+  "id": "agents-app-001",
+  "name": "Agents",
+  "database": {
+    "tables": {
+      "agents": "agents-agent-registry",
+      "configurations": "agents-configurations",
+      "chat_history": "agents-chat-history",
+      "templates": "agents-templates"
+    },
+    "requiresSharedTables": [
+      "notifications",
+      "audit_logs",
+      "applications",
+      "users"
+    ]
+  },
+  "menu": [
+    {
+      "id": "my-agents",
+      "label": "My Agents",
+      "href": "/agents",
+      "icon": "Bot"
+    },
+    {
+      "id": "create-agent",
+      "label": "Create Agent",
+      "href": "/agents/create",
+      "icon": "Plus"
+    }
+  ]
+}

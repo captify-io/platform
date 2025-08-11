@@ -12,6 +12,12 @@ interface ExtendedSession {
     name?: string;
     image?: string;
   };
+  // AWS Identity Pool credentials
+  awsAccessKeyId?: string;
+  awsSecretAccessKey?: string;
+  awsSessionToken?: string;
+  awsIdentityId?: string;
+  awsExpiresAt?: number;
 }
 
 interface AuthUser {
@@ -19,6 +25,7 @@ interface AuthUser {
   email: string;
   name: string;
   accessToken: string;
+  idToken: string;
 }
 
 interface AuthState {
@@ -38,33 +45,45 @@ export function useAuth() {
 
   // Update auth state based on NextAuth session
   useEffect(() => {
-    if (status === "loading") {
-      setAuthState({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-      });
-    } else if (status === "authenticated" && session) {
-      const extendedSession = session as ExtendedSession;
-      const user: AuthUser = {
-        id: session.user?.email || "unknown",
-        email: session.user?.email || "",
-        name: session.user?.name || "",
-        accessToken: extendedSession.accessToken || "",
-      };
+    const updateAuthState = async () => {
+      if (status === "loading") {
+        setAuthState({
+          user: null,
+          isLoading: true,
+          isAuthenticated: false,
+        });
+      } else if (status === "authenticated" && session) {
+        const extendedSession = session as ExtendedSession;
 
-      setAuthState({
-        user,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-    } else {
-      setAuthState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-      });
-    }
+        // Basic user data from session
+        const userData = {
+          id: session.user?.email || "unknown",
+          email: session.user?.email || "",
+          name: session.user?.name || "",
+          accessToken: extendedSession.accessToken || "",
+          idToken: extendedSession.idToken || "",
+        };
+
+        const user: AuthUser = {
+          ...userData,
+        };
+
+        setAuthState({
+          user,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      } else {
+        // User is not authenticated
+        setAuthState({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+      }
+    };
+
+    updateAuthState();
   }, [session, status]);
 
   const getToken = useCallback(async (): Promise<string> => {
@@ -76,28 +95,12 @@ export function useAuth() {
     return authState.user.accessToken;
   }, [authState.isAuthenticated, authState.user]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    // Use NextAuth signIn
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    if (result?.error) {
-      throw new Error(result.error);
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    // Use NextAuth signOut
-    await signOut({ redirect: false });
-  }, []);
-
   return {
-    ...authState,
+    user: authState.user,
+    isLoading: authState.isLoading,
+    isAuthenticated: authState.isAuthenticated,
     getToken,
-    login,
-    logout,
+    signIn: () => signIn("cognito"),
+    signOut,
   };
 }

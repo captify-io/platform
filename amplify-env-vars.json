@@ -2,6 +2,7 @@
   "NEXTAUTH_URL": "https://www.anautics.ai",
   "NEXTAUTH_SECRET": "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
   "REGION": "us-east-1",
+  "AWS_REGION": "us-east-1",
   "ACCESS_KEY_ID": "AKIATCKAO3PXX7TNQXXY",
   "SECRET_ACCESS_KEY": "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",
   "BEDROCK_AGENT_ID": "H7MXL2MY4U",
@@ -16,6 +17,9 @@
   "COGNITO_SERVICE_CATALOG_POOL_ID": "us-east-1:d70589a1-b2ff-4a47-9528-e8dc6b98ff95",
   "S3_BUCKET": "titan-dev-documents-211125459951",
   "S3_REGION": "us-east-1",
+  "DYNAMODB_APPLICATIONS_TABLE": "captify-applications",
+  "DYNAMODB_USER_APPLICATION_STATE_TABLE": "captify-user-application-state",
+  "DYNAMODB_ORGANIZATION_SETTINGS_TABLE": "captify-organization-settings",
   "API_GATEWAY_URL": "https://nip321gg81.execute-api.us-east-1.amazonaws.com/dev",
   "NODE_ENV": "production"
 }

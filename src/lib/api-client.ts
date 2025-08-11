@@ -1,4 +1,5 @@
 import { getSession } from "next-auth/react";
+import { CognitoCredentials } from "./services/cognito-identity";
 
 interface ExtendedSession {
   accessToken?: string;
@@ -9,6 +10,12 @@ interface ExtendedSession {
     name?: string;
     image?: string;
   };
+  // AWS Identity Pool credentials
+  awsAccessKeyId?: string;
+  awsSecretAccessKey?: string;
+  awsSessionToken?: string;
+  awsIdentityId?: string;
+  awsExpiresAt?: number;
 }
 
 export interface ApiClientConfig {
@@ -18,6 +25,8 @@ export interface ApiClientConfig {
 }
 
 export interface ApiResponse<T = unknown> {
+  credentials: CognitoCredentials | PromiseLike<CognitoCredentials>;
+  success: boolean;
   data?: T;
   error?: string;
   status: number;
@@ -55,6 +64,11 @@ export class ApiClient {
   private async getAuthHeaders(): Promise<Record<string, string>> {
     try {
       const session = await getSession();
+      console.log(
+        "🔍 API Client - Full session object:",
+        JSON.stringify(session, null, 2)
+      );
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -64,6 +78,11 @@ export class ApiClient {
 
       if (session) {
         const extendedSession = session as ExtendedSession;
+        console.log("🔍 API Client - AWS fields in session:", {
+          hasAwsSessionToken: !!extendedSession.awsSessionToken,
+          hasAwsExpiresAt: !!extendedSession.awsExpiresAt,
+          awsExpiresAt: extendedSession.awsExpiresAt,
+        });
 
         // Add session data to headers for server-side API routes
         if (extendedSession.accessToken) {
@@ -104,18 +123,43 @@ export class ApiClient {
         headers["X-User-Email"] = userEmail;
       }
 
-      // Use sub from JWT token if available
-      if (
-        session &&
-        typeof session === "object" &&
-        session !== null &&
-        "user" in session &&
-        typeof (session as { user?: { id?: string } }).user === "object" &&
-        (session as { user?: { id?: string } }).user?.id
-      ) {
-        headers["X-User-ID"] = (
-          session as unknown as { user: { id: string } }
-        ).user.id;
+      // Add AWS Session Token from session if available
+      if (session) {
+        const extendedSession = session as ExtendedSession;
+        if (extendedSession.awsSessionToken) {
+          // Check if AWS credentials are still valid
+          const now = Date.now();
+          const isExpired =
+            extendedSession.awsExpiresAt && extendedSession.awsExpiresAt <= now;
+
+          if (!isExpired) {
+            headers["X-AWS-Session-Token"] = extendedSession.awsSessionToken;
+            if (extendedSession.awsExpiresAt) {
+              headers["X-AWS-Expires-At"] =
+                extendedSession.awsExpiresAt.toString();
+            }
+            console.debug(
+              "✅ Added AWS session token from session to API headers"
+            );
+          } else {
+            console.warn(
+              "⚠️ AWS session token in session has expired - server will refresh"
+            );
+            // Don't add expired tokens to headers, let the server handle refresh
+            // The server-side session service will get fresh credentials using the ID token
+          }
+        } else {
+          console.debug("⚠️ No AWS session token found in session");
+        }
+      }
+
+      // Add user ID to headers if available (UUID from session.user.id)
+      const extendedSession = session as ExtendedSession;
+      if (extendedSession?.user?.id) {
+        headers["X-User-ID"] = extendedSession.user.id;
+        console.debug("Added X-User-ID header:", extendedSession.user.id);
+      } else {
+        console.warn("No user ID found in session for X-User-ID header");
       }
 
       // Debug logging for token availability
@@ -219,6 +263,8 @@ export class ApiClient {
         data,
         status: response.status,
         ok: response.ok,
+        credentials: {} as CognitoCredentials,
+        success: false,
       };
 
       if (!response.ok) {
@@ -246,6 +292,8 @@ export class ApiClient {
           error: "Request timeout",
           status: 408,
           ok: false,
+          credentials: {} as CognitoCredentials,
+          success: false,
         };
       }
 
@@ -257,6 +305,8 @@ export class ApiClient {
           error: errorMessage,
           status: 401,
           ok: false,
+          credentials: {} as CognitoCredentials,
+          success: false,
         };
       }
 
@@ -274,6 +324,8 @@ export class ApiClient {
         error: errorMessage || "Network error",
         status: 0,
         ok: false,
+        credentials: {} as CognitoCredentials,
+        success: false,
       };
     }
   }
@@ -317,9 +369,11 @@ export class ApiClient {
    */
   async delete<T>(
     url: string,
+    data?: unknown,
     options: Omit<RequestInit, "method" | "body"> = {}
   ): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(url, { ...options, method: "DELETE" });
+    const body = data ? JSON.stringify(data) : undefined;
+    return this.makeRequest<T>(url, { ...options, method: "DELETE", body });
   }
 
   /**
@@ -355,8 +409,11 @@ export const api = {
     options?: Omit<RequestInit, "method" | "body">
   ) => apiClient.put<T>(url, data, options),
 
-  delete: <T>(url: string, options?: Omit<RequestInit, "method" | "body">) =>
-    apiClient.delete<T>(url, options),
+  delete: <T>(
+    url: string,
+    data?: unknown,
+    options?: Omit<RequestInit, "method" | "body">
+  ) => apiClient.delete<T>(url, data, options),
 
   patch: <T>(
     url: string,

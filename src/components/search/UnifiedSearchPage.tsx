@@ -1,143 +1,120 @@
+/**
+ * Unified Search Page Component
+ *
+ * Provides a unified search interface across all applications.
+ */
+
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DynamicIcon } from "lucide-react/dynamic";
-import { UnifiedSearchInput } from "@/components/search/UnifiedSearchInput";
-import type { SearchResultItem } from "@/hooks/useUnifiedSearch";
+import { Search, Loader2 } from "lucide-react";
+
+interface SearchResult {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+}
 
 export function UnifiedSearchPage() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(
-    null
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // TODO: Implement actual search API call
+      // const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      // const data = await response.json();
+      // setResults(data.results || []);
+
+      // Mock search results for now
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setResults([
+        {
+          id: "1",
+          title: `Search result for "${query}"`,
+          description: "This is a mock search result",
+          type: "document",
+        },
+      ]);
+    } catch (error) {
+      console.error("Search error:", error);
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(searchQuery);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <DynamicIcon name="search" className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">
-              Unified Search Platform
-            </h1>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Unified Search
+        </h1>
+        <p className="text-gray-600">
+          Search across all applications and data sources
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for documents, data, applications..."
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          {isSearching && (
+            <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 animate-spin" />
+          )}
+        </div>
+      </form>
+
+      {results.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Search Results ({results.length})
+          </h2>
+          <div className="space-y-3">
+            {results.map((result) => (
+              <div
+                key={result.id}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <h3 className="text-lg font-medium text-blue-600 hover:text-blue-800">
+                  {result.title}
+                </h3>
+                <p className="text-gray-600 mt-1">{result.description}</p>
+                <span className="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded">
+                  {result.type}
+                </span>
+              </div>
+            ))}
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Search across AWS services and your applications with intelligent
-            context-aware results
+        </div>
+      )}
+
+      {searchQuery && !isSearching && results.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            No results found for &quot;{searchQuery}&quot;
           </p>
         </div>
-
-        {/* Search Interface */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DynamicIcon name="command" className="w-5 h-5" />
-              Search Command Center
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UnifiedSearchInput />
-          </CardContent>
-        </Card>
-
-        {/* Selected Result Details */}
-        {selectedResult && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DynamicIcon
-                  name={selectedResult.source === "aws" ? "cloud" : "database"}
-                  className="w-5 h-5"
-                />
-                Selected: {selectedResult.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-700">{selectedResult.description}</p>
-
-                {selectedResult.topServiceFeatures &&
-                  selectedResult.topServiceFeatures.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                        <DynamicIcon name="star" className="w-4 h-4" />
-                        Key Features
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedResult.topServiceFeatures.map(
-                          (feature: string, index: number) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                            >
-                              {feature}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <DynamicIcon
-                      name={
-                        selectedResult.source === "aws" ? "cloud" : "database"
-                      }
-                      className="w-4 h-4"
-                    />
-                    Source:{" "}
-                    {selectedResult.source === "aws"
-                      ? "AWS Services"
-                      : "Your Applications"}
-                  </div>
-
-                  {selectedResult.url && selectedResult.source === "aws" && (
-                    <button
-                      onClick={() =>
-                        window.open(
-                          selectedResult.url,
-                          "_blank",
-                          "noopener,noreferrer"
-                        )
-                      }
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <DynamicIcon name="external-link" className="w-4 h-4" />
-                      Open in AWS Console
-                    </button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Help and Info */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Alert>
-            <DynamicIcon name="info" className="w-4 h-4" />
-            <AlertDescription>
-              <strong>Search Tips:</strong> Use specific service names (e.g.,
-              &quot;S3&quot;, &quot;Lambda&quot;) or describe functionality
-              (e.g., &quot;serverless computing&quot;, &quot;object
-              storage&quot;) for better results.
-            </AlertDescription>
-          </Alert>
-
-          <Alert>
-            <DynamicIcon name="shield-check" className="w-4 h-4" />
-            <AlertDescription>
-              <strong>Security:</strong> All searches are authenticated and
-              encrypted. Your search history and preferences are securely stored
-              in your profile.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

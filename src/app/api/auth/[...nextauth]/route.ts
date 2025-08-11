@@ -1,6 +1,7 @@
 import NextAuth from "next-auth/next";
 import CognitoProvider from "next-auth/providers/cognito";
 import { NextRequest } from "next/server";
+import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 
 // Debug logging for environment variables
 console.log("Environment debug:", {
@@ -11,8 +12,8 @@ console.log("Environment debug:", {
   cognitoClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
   cognitoIssuer: process.env.NEXT_PUBLIC_COGNITO_ISSUER,
   cognitoClientSecret: !!process.env.COGNITO_CLIENT_SECRET,
-  allEnvKeys: Object.keys(process.env).filter((key) =>
-    key.includes("NEXTAUTH") || key.includes("COGNITO")
+  allEnvKeys: Object.keys(process.env).filter(
+    (key) => key.includes("NEXTAUTH") || key.includes("COGNITO")
   ),
 });
 
@@ -116,6 +117,33 @@ const authOptions = {
         typedToken.expiresAt = typedAccount.expires_at;
         typedToken.sub = typedAccount.providerAccountId;
         console.log("Account data stored in token");
+
+        // Fetch AWS credentials when we have the initial tokens
+        if (typedAccount.id_token) {
+          try {
+            console.log(
+              "🔧 Attempting to fetch AWS credentials in JWT callback"
+            );
+            const credentials = await fromCognitoIdentityPool({
+              clientConfig: { region: process.env.AWS_REGION },
+              identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID!,
+              logins: {
+                [`cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
+                  typedAccount.id_token as string,
+              },
+            })();
+
+            typedToken.awsSessionToken = credentials.sessionToken;
+            typedToken.awsExpiresAt = credentials.expiration?.getTime();
+
+            console.log("✅ Successfully set AWS credentials in token", {
+              hasSessionToken: !!typedToken.awsSessionToken,
+              expiresAt: typedToken.awsExpiresAt,
+            });
+          } catch (error) {
+            console.error("❌ Failed to fetch AWS credentials:", error);
+          }
+        }
       }
 
       if (profile) {
@@ -145,6 +173,10 @@ const authOptions = {
       typedSession.idToken = typedToken.idToken;
       typedSession.refreshToken = typedToken.refreshToken;
       typedSession.expiresAt = typedToken.expiresAt;
+
+      // Add AWS credentials to session
+      typedSession.awsSessionToken = typedToken.awsSessionToken;
+      typedSession.awsExpiresAt = typedToken.awsExpiresAt;
 
       // Update user data
       if (typedSession.user) {
@@ -204,7 +236,10 @@ const authOptions = {
   },
 };
 
-async function handler(req: NextRequest, context: { params: Promise<Record<string, string | string[]>> }) {
+async function handler(
+  req: NextRequest,
+  context: { params: Promise<Record<string, string | string[]>> }
+) {
   // Extract the saved email from cookie
   const savedEmail = req.cookies.get("auth_email")?.value || "";
 

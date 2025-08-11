@@ -21,7 +21,7 @@ import {
   Monitor,
   ExternalLink,
 } from "lucide-react";
-import { ApplicationLayout } from "@/components/layout/ApplicationLayout";
+import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -38,8 +38,8 @@ export default function SettingsPage() {
       <ApplicationLayout applicationName="Settings" showChat={false}>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
       </ApplicationLayout>
@@ -73,8 +73,8 @@ export default function SettingsPage() {
         <div className="space-y-6">
           {/* Settings Header */}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+            <p className="text-muted-foreground mt-2">
               Manage your account preferences and application settings
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <p>• Email notifications: Enabled</p>
                   <p>• Push notifications: Enabled</p>
                   <p>• System alerts: Enabled</p>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <p>• Multi-factor authentication: Required</p>
                   <p>• Session timeout: 24 hours</p>
                   <p>• Data retention: Standard</p>
@@ -156,7 +156,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <p>• Theme: System default</p>
                   <p>• Layout: Standard</p>
                   <p>• Font size: Medium</p>
@@ -176,7 +176,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-muted-foreground">
                   <p>• Language: English (US)</p>
                   <p>• Region: United States</p>
                   <p>• Timezone: Auto-detect</p>
@@ -197,9 +197,9 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
                     <div className="flex items-center space-x-2">
-                      <Monitor className="h-4 w-4 text-gray-500" />
+                      <Monitor className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Current Browser</span>
                     </div>
                     <span className="text-xs text-green-600">Active</span>

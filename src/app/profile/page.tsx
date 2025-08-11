@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, User, Mail, Calendar, Shield } from "lucide-react";
-import { ApplicationLayout } from "@/components/layout/ApplicationLayout";
+import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -30,8 +30,8 @@ export default function ProfilePage() {
       <ApplicationLayout applicationName="Profile" showChat={false}>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading profile...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </div>
       </ApplicationLayout>
@@ -107,20 +107,20 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Display Name
                   </label>
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     {session.user?.name || "Not provided"}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Email Address
                   </label>
                   <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <p className="text-gray-900">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-foreground">
                       {session.user?.email || "Not provided"}
                     </p>
                   </div>
@@ -138,25 +138,25 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     User ID
                   </label>
-                  <p className="text-gray-900 font-mono text-sm">
+                  <p className="text-foreground font-mono text-sm">
                     {(session as { user?: { id?: string } })?.user?.id ||
                       "Not available"}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Account Type
                   </label>
-                  <p className="text-gray-900">Standard User</p>
+                  <p className="text-foreground">Standard User</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Authentication Provider
                   </label>
-                  <p className="text-gray-900">AWS Cognito</p>
+                  <p className="text-foreground">AWS Cognito</p>
                 </div>
               </CardContent>
             </Card>
@@ -173,17 +173,17 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Session Expires
                   </label>
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     {session.expires
                       ? new Date(session.expires).toLocaleString()
                       : "Not available"}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-muted-foreground">
                     Access Token Status
                   </label>
                   <p className="text-green-600">Active</p>

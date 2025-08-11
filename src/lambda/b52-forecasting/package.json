@@ -1,0 +1,10 @@
+{
+  "name": "b52-forecasting-engine",
+  "version": "1.0.0",
+  "description": "Lambda function for B-52 advanced forecasting and predictive maintenance",
+  "main": "index.py",
+  "dependencies": {
+    "boto3": "^1.34.0",
+    "numpy": "^1.24.0"
+  }
+}

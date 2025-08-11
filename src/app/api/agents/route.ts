@@ -1,119 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  CreateAgentCommand,
-  ListAgentsCommand,
-  GetAgentCommand,
-} from "@aws-sdk/client-bedrock-agent";
-import { bedrockAgentClient, generateClientToken } from "@/lib/aws-bedrock";
-import { CreateAgentRequest, BedrockAgent } from "@/types/agents";
+import { AgentService } from "@/lib/services/agent-service";
+import { AgentType, UserRole } from "@/types/agents";
+import { getServerSession } from "next-auth/next";
 
-// GET /api/agents - List all agents
-export async function GET() {
+// GET /api/agents - List agents (DynamoDB-based)
+export async function GET(request: NextRequest) {
   try {
-    const command = new ListAgentsCommand({
-      maxResults: 50,
-    });
-
-    const response = await bedrockAgentClient.send(command);
-
-    // Get detailed information for each agent
-    const agents: BedrockAgent[] = [];
-
-    if (response.agentSummaries) {
-      for (const summary of response.agentSummaries) {
-        try {
-          const detailCommand = new GetAgentCommand({
-            agentId: summary.agentId,
-          });
-          const detailResponse = await bedrockAgentClient.send(detailCommand);
-
-          if (detailResponse.agent) {
-            agents.push({
-              agentId: detailResponse.agent.agentId || "",
-              agentName: detailResponse.agent.agentName || "",
-              agentArn: detailResponse.agent.agentArn,
-              description: detailResponse.agent.description,
-              foundationModel: detailResponse.agent.foundationModel || "",
-              instruction: detailResponse.agent.instruction,
-              agentStatus: detailResponse.agent.agentStatus as
-                | "CREATING"
-                | "PREPARING"
-                | "PREPARED"
-                | "NOT_PREPARED"
-                | "DELETING"
-                | "FAILED"
-                | "VERSIONING"
-                | "UPDATING",
-              agentResourceRoleArn: detailResponse.agent.agentResourceRoleArn,
-              createdAt: detailResponse.agent.createdAt?.toISOString() || "",
-              updatedAt: detailResponse.agent.updatedAt?.toISOString() || "",
-              agentVersion: detailResponse.agent.agentVersion,
-              idleSessionTTLInSeconds:
-                detailResponse.agent.idleSessionTTLInSeconds,
-              memoryConfiguration: detailResponse.agent.memoryConfiguration
-                ? {
-                    enabledMemoryTypes:
-                      detailResponse.agent.memoryConfiguration
-                        .enabledMemoryTypes || [],
-                    storageDays:
-                      detailResponse.agent.memoryConfiguration.storageDays,
-                    sessionSummaryConfiguration: detailResponse.agent
-                      .memoryConfiguration.sessionSummaryConfiguration
-                      ? {
-                          maxRecentSessions:
-                            detailResponse.agent.memoryConfiguration
-                              .sessionSummaryConfiguration.maxRecentSessions ||
-                            0,
-                        }
-                      : undefined,
-                  }
-                : undefined,
-              guardrailConfiguration: detailResponse.agent
-                .guardrailConfiguration
-                ? {
-                    guardrailIdentifier:
-                      detailResponse.agent.guardrailConfiguration
-                        .guardrailIdentifier || "",
-                    guardrailVersion:
-                      detailResponse.agent.guardrailConfiguration
-                        .guardrailVersion || "",
-                  }
-                : undefined,
-              failureReasons: detailResponse.agent.failureReasons,
-              recommendedActions: detailResponse.agent.recommendedActions,
-              clientToken: detailResponse.agent.clientToken,
-              customerEncryptionKeyArn:
-                detailResponse.agent.customerEncryptionKeyArn,
-            });
-          }
-        } catch (detailError) {
-          console.error(
-            `Error fetching details for agent ${summary.agentId}:`,
-            detailError
-          );
-          // Add basic info if detail fetch fails
-          agents.push({
-            agentId: summary.agentId || "",
-            agentName: summary.agentName || "",
-            description: summary.description,
-            foundationModel: "",
-            agentStatus: summary.agentStatus as
-              | "CREATING"
-              | "PREPARING"
-              | "PREPARED"
-              | "NOT_PREPARED"
-              | "DELETING"
-              | "FAILED"
-              | "VERSIONING"
-              | "UPDATING",
-            createdAt: summary.updatedAt?.toISOString() || "",
-            updatedAt: summary.updatedAt?.toISOString() || "",
-          });
-        }
-      }
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ agents });
+    const { searchParams } = new URL(request.url);
+    const userRole = searchParams.get("userRole") as UserRole;
+    const agentType = searchParams.get("type") as AgentType;
+    const userId = session.user.email; // Use email as userId
+
+    console.log("🔍 Listing agents for user:", { userId, userRole, agentType });
+
+    if (agentType) {
+      // Get agents by specific type
+      const agents = await AgentService.getAgentsByType(agentType, true);
+      return NextResponse.json({ agents });
+    } else {
+      // Get all accessible agents for user
+      const agents = await AgentService.getAccessibleAgents(userId, userRole);
+      return NextResponse.json({ agents });
+    }
   } catch (error) {
     console.error("Error listing agents:", error);
     return NextResponse.json(
@@ -126,80 +39,62 @@ export async function GET() {
   }
 }
 
-// POST /api/agents - Create a new agent
+// POST /api/agents - Create agent (for specialized/application agents)
 export async function POST(request: NextRequest) {
   try {
-    const body: CreateAgentRequest = await request.json();
-
-    const command = new CreateAgentCommand({
-      agentName: body.agentName,
-      description: body.description,
-      foundationModel: body.foundationModel,
-      instruction: body.instruction,
-      agentResourceRoleArn: body.agentResourceRoleArn,
-      idleSessionTTLInSeconds: body.idleSessionTTLInSeconds || 3600, // 1 hour default
-      memoryConfiguration: body.memoryConfiguration,
-      guardrailConfiguration: body.guardrailConfiguration,
-      tags: body.tags,
-      clientToken: generateClientToken(),
-      customerEncryptionKeyArn: body.customerEncryptionKeyArn,
-    });
-
-    const response = await bedrockAgentClient.send(command);
-
-    if (!response.agent) {
-      throw new Error("Agent creation failed - no agent returned");
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const agent: BedrockAgent = {
-      agentId: response.agent.agentId || "",
-      agentName: response.agent.agentName || "",
-      agentArn: response.agent.agentArn,
-      description: response.agent.description,
-      foundationModel: response.agent.foundationModel || "",
-      instruction: response.agent.instruction,
-      agentStatus: response.agent.agentStatus as
-        | "CREATING"
-        | "PREPARING"
-        | "PREPARED"
-        | "NOT_PREPARED"
-        | "DELETING"
-        | "FAILED"
-        | "VERSIONING"
-        | "UPDATING",
-      agentResourceRoleArn: response.agent.agentResourceRoleArn,
-      createdAt: response.agent.createdAt?.toISOString() || "",
-      updatedAt: response.agent.updatedAt?.toISOString() || "",
-      agentVersion: response.agent.agentVersion,
-      idleSessionTTLInSeconds: response.agent.idleSessionTTLInSeconds,
-      memoryConfiguration: response.agent.memoryConfiguration
-        ? {
-            enabledMemoryTypes:
-              response.agent.memoryConfiguration.enabledMemoryTypes || [],
-            storageDays: response.agent.memoryConfiguration.storageDays,
-            sessionSummaryConfiguration: response.agent.memoryConfiguration
-              .sessionSummaryConfiguration
-              ? {
-                  maxRecentSessions:
-                    response.agent.memoryConfiguration
-                      .sessionSummaryConfiguration.maxRecentSessions || 0,
-                }
-              : undefined,
-          }
-        : undefined,
-      guardrailConfiguration: response.agent.guardrailConfiguration
-        ? {
-            guardrailIdentifier:
-              response.agent.guardrailConfiguration.guardrailIdentifier || "",
-            guardrailVersion:
-              response.agent.guardrailConfiguration.guardrailVersion || "",
-          }
-        : undefined,
-      failureReasons: response.agent.failureReasons,
-      recommendedActions: response.agent.recommendedActions,
-      clientToken: response.agent.clientToken,
-      customerEncryptionKeyArn: response.agent.customerEncryptionKeyArn,
-    };
+    const body = await request.json();
+    const {
+      name,
+      type,
+      instructions,
+      bedrockAgentId,
+      bedrockAliasId,
+      s3FolderPath,
+      allowedUserRoles,
+      isPublic = false,
+      memoryEnabled = true,
+      isActive = true,
+    } = body;
+
+    // Validate required fields
+    if (
+      !name ||
+      !type ||
+      !instructions ||
+      !bedrockAgentId ||
+      !bedrockAliasId ||
+      !s3FolderPath
+    ) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const agentId = `${type}-${Date.now()}`;
+    const now = new Date().toISOString();
+
+    const agent = await AgentService.createAgent({
+      id: agentId,
+      name,
+      type,
+      instructions,
+      bedrockAgentId,
+      bedrockAliasId,
+      s3FolderPath,
+      allowedUserRoles,
+      isPublic,
+      memoryEnabled,
+      isActive,
+      createdAt: now,
+      updatedAt: now,
+      maintainerId: session.user.email,
+    });
 
     return NextResponse.json({ agent }, { status: 201 });
   } catch (error) {

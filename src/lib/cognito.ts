@@ -1,164 +1,58 @@
+/**
+ * Cognito Authentication Utilities
+ *
+ * Provides authentication methods for AWS Cognito integration.
+ */
+
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
-  GetUserCommand,
+  AuthFlowType,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+  },
 });
 
-export interface CognitoUser {
-  username: string;
-  email: string;
-  accessToken: string;
-  refreshToken: string;
-  idToken: string;
-}
-
-export class CognitoAuth {
-  private clientId: string;
-  private clientSecret: string;
-
-  constructor() {
-    this.clientId = process.env.COGNITO_CLIENT_ID!;
-    this.clientSecret = process.env.COGNITO_CLIENT_SECRET!;
-  }
-
-  private async calculateSecretHash(username: string): Promise<string> {
-    const crypto = await import("crypto");
-    const hmac = crypto.createHmac("sha256", this.clientSecret);
-    hmac.update(username + this.clientId);
-    return hmac.digest("base64");
-  }
-
-  async signIn(username: string, password: string): Promise<CognitoUser> {
+export const cognitoAuth = {
+  async signIn(email: string, password: string) {
     try {
-      const secretHash = await this.calculateSecretHash(username);
-
       const command = new InitiateAuthCommand({
-        AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: this.clientId,
+        AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+        ClientId: process.env.COGNITO_CLIENT_ID!,
         AuthParameters: {
-          USERNAME: username,
+          USERNAME: email,
           PASSWORD: password,
-          SECRET_HASH: secretHash,
         },
       });
 
       const response = await cognitoClient.send(command);
 
-      if (response.ChallengeName) {
-        throw new Error(`Challenge required: ${response.ChallengeName}`);
-      }
-
-      if (!response.AuthenticationResult) {
-        throw new Error("Authentication failed");
-      }
-
-      const { AccessToken, RefreshToken, IdToken } =
-        response.AuthenticationResult;
-
-      if (!AccessToken || !RefreshToken || !IdToken) {
-        throw new Error("Missing tokens in response");
-      }
-
-      // Get user details
-      const userCommand = new GetUserCommand({
-        AccessToken,
-      });
-
-      const userResponse = await cognitoClient.send(userCommand);
-      const email =
-        userResponse.UserAttributes?.find((attr) => attr.Name === "email")
-          ?.Value || "";
-
       return {
-        username: userResponse.Username!,
-        email,
-        accessToken: AccessToken,
-        refreshToken: RefreshToken,
-        idToken: IdToken,
+        username: email,
+        accessToken: response.AuthenticationResult?.AccessToken,
+        idToken: response.AuthenticationResult?.IdToken,
+        refreshToken: response.AuthenticationResult?.RefreshToken,
       };
     } catch (error) {
-      console.error("Cognito sign-in error:", error);
+      console.error("Cognito sign in error:", error);
       throw error;
     }
-  }
+  },
 
-  async refreshTokens(
-    refreshToken: string,
-    username: string
-  ): Promise<CognitoUser> {
-    try {
-      const secretHash = await this.calculateSecretHash(username);
+  async signUp() {
+    // TODO: Implement sign up functionality
+    throw new Error("Sign up not yet implemented");
+  },
 
-      const command = new InitiateAuthCommand({
-        AuthFlow: "REFRESH_TOKEN_AUTH",
-        ClientId: this.clientId,
-        AuthParameters: {
-          REFRESH_TOKEN: refreshToken,
-          SECRET_HASH: secretHash,
-        },
-      });
+  async signOut() {
+    // TODO: Implement sign out functionality
+    throw new Error("Sign out not yet implemented");
+  },
+};
 
-      const response = await cognitoClient.send(command);
-
-      if (!response.AuthenticationResult) {
-        throw new Error("Token refresh failed");
-      }
-
-      const { AccessToken, IdToken } = response.AuthenticationResult;
-
-      if (!AccessToken || !IdToken) {
-        throw new Error("Missing tokens in refresh response");
-      }
-
-      // Get user details
-      const userCommand = new GetUserCommand({
-        AccessToken,
-      });
-
-      const userResponse = await cognitoClient.send(userCommand);
-      const email =
-        userResponse.UserAttributes?.find((attr) => attr.Name === "email")
-          ?.Value || "";
-
-      return {
-        username: userResponse.Username!,
-        email,
-        accessToken: AccessToken,
-        refreshToken, // Keep the same refresh token
-        idToken: IdToken,
-      };
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      throw error;
-    }
-  }
-
-  async getUser(accessToken: string): Promise<{
-    Username: string;
-    UserAttributes: Array<{ Name: string; Value: string }>;
-  }> {
-    try {
-      const command = new GetUserCommand({
-        AccessToken: accessToken,
-      });
-
-      const response = await cognitoClient.send(command);
-      return {
-        Username: response.Username || "",
-        UserAttributes: (response.UserAttributes || []).map((attr) => ({
-          Name: attr.Name || "",
-          Value: attr.Value || "",
-        })),
-      };
-    } catch (error) {
-      console.error("Get user error:", error);
-      throw error;
-    }
-  }
-}
-
-export const cognitoAuth = new CognitoAuth();
+export { cognitoClient };

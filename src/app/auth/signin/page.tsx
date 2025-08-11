@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { X, Save, Check } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useSavedEmail } from "@/hooks/useSavedEmail";
 
 export default function SignIn() {
@@ -21,12 +23,20 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const { setTheme, theme } = useTheme();
   const {
     savedEmail,
     isLoading: emailLoading,
     saveEmail,
     clearEmail,
   } = useSavedEmail();
+
+  // Set default theme to dark on first load
+  useEffect(() => {
+    if (!theme) {
+      setTheme("dark");
+    }
+  }, [theme, setTheme]);
 
   // Set email from saved session when available
   useEffect(() => {
@@ -143,10 +153,18 @@ export default function SignIn() {
 
   if (emailLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        {/* Theme Toggle in top-right corner */}
+        <div className="fixed top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
+
         <Card className="w-full max-w-md">
           <CardContent className="p-6">
-            <div className="text-center">Loading...</div>
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading your session...</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -154,7 +172,12 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      {/* Theme Toggle in top-right corner */}
+      <div className="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome to TITAN</CardTitle>
@@ -177,15 +200,17 @@ export default function SignIn() {
               {savedEmail && !isEditing ? (
                 // Display saved email with X to forget it
                 <div className="flex items-center space-x-2">
-                  <div className="flex-1 p-2 bg-green-50 border border-green-200 rounded-md flex items-center justify-between">
-                    <span className="text-sm text-green-800">{savedEmail}</span>
+                  <div className="flex-1 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md flex items-center justify-between">
+                    <span className="text-sm text-green-800 dark:text-green-200">
+                      {savedEmail}
+                    </span>
                     <div className="flex items-center space-x-1">
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleForgetEmail}
-                        className="h-6 w-6 p-0 text-green-600 hover:text-red-600"
+                        className="h-6 w-6 p-0 text-green-600 dark:text-green-400 hover:text-red-600 dark:hover:text-red-400"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -227,26 +252,15 @@ export default function SignIn() {
                 {isLoading ? "Validating..." : "Continue"}
               </Button>
             )}
-
-            {/* Edit button for saved email */}
-            {savedEmail && !isEditing && (
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(true)}
-                className="w-full"
-              >
-                Use Different Email
-              </Button>
-            )}
           </div>
 
-          <div className="text-center text-sm text-gray-600 space-y-2">
+          <div className="text-center text-sm text-muted-foreground space-y-2">
             <p>
               We&apos;ll redirect you to our secure login page to complete
               authentication.
             </p>
             {savedEmail && (
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 ✓ Your email will be remembered on this device for convenience.
               </p>
             )}

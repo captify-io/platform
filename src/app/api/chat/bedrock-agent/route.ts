@@ -3,8 +3,7 @@ import {
   BedrockAgentRuntimeClient,
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
-import { fromEnv } from "@aws-sdk/credential-providers";
-import { TraceEvent } from "@/types/agents";
+import { getUserSession } from "@/lib/services/session";
 
 interface ChatMessage {
   role: string;
@@ -12,15 +11,25 @@ interface ChatMessage {
 }
 
 export async function POST(req: NextRequest) {
-  console.log("🤖 Bedrock Agent API - Request received");
-
   try {
-    const { messages, sessionId, agentId, agentAliasId } = await req.json();
+    // Get user session for authentication
+    const session = await getUserSession(req);
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const { messages, sessionId, agentId, agentAliasId, workspaceId } =
+      await req.json();
     console.log("📝 Request payload:", {
       messageCount: messages?.length,
       sessionId,
       agentId: agentId || process.env.BEDROCK_AGENT_ID,
       agentAliasId: agentAliasId || process.env.BEDROCK_AGENT_ALIAS_ID,
+      userId: session.user_id,
+      workspaceId,
       messages: messages?.map((m: ChatMessage) => ({
         role: m.role,
         contentLength: m.content?.length,
@@ -36,20 +45,47 @@ export async function POST(req: NextRequest) {
         inputText.substring(0, 100) + (inputText.length > 100 ? "..." : ""),
     });
 
-    // Initialize Bedrock Agent Runtime client
-    console.log("🔧 Initializing Bedrock Agent client...");
+    const {
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+      AWS_SESSION_TOKEN,
+      AWS_REGION,
+    } = process.env;
+
+    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION) {
+      return new Response(
+        JSON.stringify({
+          error: "Configuration Error",
+          details:
+            "Missing AWS credentials or region. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION on the server.",
+          type: "ConfigError",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const client = new BedrockAgentRuntimeClient({
-      region: process.env.REGION || "us-east-1",
-      credentials: fromEnv(),
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+        ...(AWS_SESSION_TOKEN ? { sessionToken: AWS_SESSION_TOKEN } : {}),
+      },
     });
+
+    // Generate user-specific session ID
+    const userSessionId =
+      sessionId ||
+      `session-${session.user_id}-${workspaceId || "default"}-${Date.now()}`;
+    console.log("👤 User session ID:", userSessionId);
     console.log("✅ Bedrock Agent client initialized");
 
     const commandParams = {
       agentId: agentId || process.env.BEDROCK_AGENT_ID,
       agentAliasId: agentAliasId || process.env.BEDROCK_AGENT_ALIAS_ID,
-      sessionId: sessionId || `session-${Date.now()}`,
+      sessionId: userSessionId,
       inputText,
-      enableTrace: true, // Enable trace for reasoning visibility
+      enableTrace: false, // Disabled to reduce API payload size
     };
     console.log("📋 Command parameters:", commandParams);
 
@@ -86,40 +122,46 @@ export async function POST(req: NextRequest) {
 
               // Handle trace events for reasoning
               if (chunk.trace) {
-                // Process reasoning traces here if needed
-                const trace = chunk.trace as TraceEvent["trace"];
-                console.log("🧠 Trace received:", {
-                  hasOrchestrationTrace: !!trace.orchestrationTrace,
-                  hasRationale: !!trace.orchestrationTrace?.rationale,
-                  hasInvocationInput:
-                    !!trace.orchestrationTrace?.invocationInput,
-                  hasObservation: !!trace.orchestrationTrace?.observation,
-                });
+                try {
+                  const traceJson = JSON.stringify(chunk.trace);
+                  const marker = `<!--TRACEJSON:${Buffer.from(
+                    traceJson
+                  ).toString("base64")}-->`;
+                  const escaped = marker.replace(/"/g, '\\"');
+                  controller.enqueue(encoder.encode(`0:"${escaped}"\n`));
+                } catch {}
+              }
 
-                if (
-                  trace.orchestrationTrace?.rationale &&
-                  typeof trace.orchestrationTrace.rationale === "object" &&
-                  "text" in trace.orchestrationTrace.rationale
-                ) {
-                  const reasoning = (
-                    trace.orchestrationTrace.rationale as { text: string }
-                  ).text;
-                  console.log("💭 Agent reasoning:", reasoning);
-                }
+              const t: unknown = chunk.trace;
+              const rationaleText =
+                (
+                  t as {
+                    orchestrationTrace?: { rationale?: { text?: string } };
+                    postProcessingTrace?: { rationale?: { text?: string } };
+                    preProcessingTrace?: { rationale?: { text?: string } };
+                  }
+                )?.orchestrationTrace?.rationale?.text ??
+                (
+                  t as {
+                    orchestrationTrace?: { rationale?: { text?: string } };
+                    postProcessingTrace?: { rationale?: { text?: string } };
+                    preProcessingTrace?: { rationale?: { text?: string } };
+                  }
+                )?.postProcessingTrace?.rationale?.text ??
+                (
+                  t as {
+                    orchestrationTrace?: { rationale?: { text?: string } };
+                    postProcessingTrace?: { rationale?: { text?: string } };
+                    preProcessingTrace?: { rationale?: { text?: string } };
+                  }
+                )?.preProcessingTrace?.rationale?.text;
 
-                if (trace.orchestrationTrace?.invocationInput) {
-                  console.log(
-                    "⚡ Tool invocation:",
-                    trace.orchestrationTrace.invocationInput
-                  );
-                }
-
-                if (trace.orchestrationTrace?.observation) {
-                  console.log(
-                    "👀 Tool observation:",
-                    trace.orchestrationTrace.observation
-                  );
-                }
+              if (rationaleText) {
+                const marker = `<!--TRACE:${Buffer.from(rationaleText).toString(
+                  "base64"
+                )}-->`;
+                const escaped = marker.replace(/"/g, '\\"');
+                controller.enqueue(encoder.encode(`0:"${escaped}"\n`));
               }
 
               // Handle actual response content
@@ -133,7 +175,12 @@ export async function POST(req: NextRequest) {
                 fullResponse += text;
 
                 // Stream the text chunk
-                const streamChunk = `0:"${text.replace(/"/g, '\\"')}"\n`;
+                const escapedText = text
+                  .replace(/\\/g, "\\\\")
+                  .replace(/"/g, '\\"')
+                  .replace(/\n/g, "\\n")
+                  .replace(/\r/g, "\\r");
+                const streamChunk = `0:"${escapedText}"\n`;
                 controller.enqueue(encoder.encode(streamChunk));
                 console.log("📤 Chunk sent to client");
               }

@@ -1,46 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
-import { demoApplications } from "@/apps/applications-loader";
+import { applicationDb } from "@/lib/services/application-database";
+import { organizationService } from "@/lib/services/organization";
+import { requireUserSession } from "@/lib/services/session";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Transform applications to legacy format for backward compatibility
-    const legacyApps = demoApplications.map((app) => ({
-      alias: app.metadata.alias,
-      name: app.metadata.name,
-      agentId: app.aiAgent.agentId,
-      description: app.metadata.description,
-      category: app.metadata.category,
-      status: app.metadata.status,
-      tags: app.metadata.tags,
-      usage: app.usage,
-    }));
+    console.log("📱 GET /api/apps - fetching applications");
 
-    return NextResponse.json(legacyApps);
+    // Get user session for authentication
+    const session = await requireUserSession(request);
+    if (!session?.email) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+
+    // Get organization ID from the default organization
+    const defaultOrg = await organizationService.getDefaultOrganization();
+    const org_id = defaultOrg?.org_id || "default-org"; // Fallback for safety
+
+    const categoryParam = searchParams.get("category");
+    const statusParam = searchParams.get("status");
+    const search = searchParams.get("search") || undefined;
+    const template_only = searchParams.get("template_only") === "true";
+    const user_id = searchParams.get("user_id") || undefined;
+    const limit = searchParams.get("limit")
+      ? parseInt(searchParams.get("limit")!)
+      : 50;
+    const last_key = searchParams.get("last_key") || undefined;
+
+    // Validate and convert types
+    const category = categoryParam || undefined;
+    const status =
+      statusParam && ["active", "draft", "archived"].includes(statusParam)
+        ? (statusParam as "active" | "draft" | "archived")
+        : undefined;
+
+    console.log("🔍 Query parameters:", {
+      org_id,
+      category,
+      status,
+      search,
+      template_only,
+      user_id,
+      limit,
+      last_key,
+      user: session.email,
+    });
+
+    // Build query for DynamoDB
+    const query = {
+      org_id,
+      category,
+      status,
+      search,
+      template_only,
+      user_id,
+      limit,
+      last_key,
+    };
+
+    // Fetch applications from DynamoDB
+    const result = await applicationDb.listApplications(query);
+
+    const response = {
+      applications: result.applications,
+      last_key: result.last_key,
+      total_count: result.total_count || 0,
+    };
+
+    console.log("✅ Returning applications response:", {
+      applicationCount: response.applications.length,
+      hasLastKey: !!response.last_key,
+      total: response.total_count,
+    });
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Error fetching applications:", error);
+    console.error("💥 Error in GET /api/apps:", error);
     return NextResponse.json(
       { error: "Failed to fetch applications" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    // In a real implementation, this would create a new application
-    // For demo purposes, we'll just return a success response
-    console.log("Creating application:", body);
-
-    return NextResponse.json(
-      { message: "Application created successfully", id: "new-app-id" },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Error creating application:", error);
-    return NextResponse.json(
-      { error: "Failed to create application" },
       { status: 500 }
     );
   }

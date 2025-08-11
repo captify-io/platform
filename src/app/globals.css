@@ -151,3 +151,140 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* 
+ * =============================================================================
+ * CURSOR STYLES - Ensure all clickable elements show appropriate cursors
+ * =============================================================================
+ * These rules automatically apply pointer cursors to all interactive elements
+ * and provide utility classes for special cases. This improves UX by making
+ * it immediately clear what elements are clickable.
+ */
+
+/* Ensure all clickable elements show pointer cursor */
+button,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+a,
+[href],
+select,
+option,
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+label[for],
+details summary,
+[tabindex]:not([tabindex="-1"]),
+[onclick],
+[onmousedown],
+[onmouseup],
+[onkeydown],
+[onkeyup],
+.cursor-pointer,
+.clickable {
+  cursor: pointer !important;
+}
+
+/* Ensure disabled elements show not-allowed cursor */
+button:disabled,
+[role="button"]:disabled,
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[type="reset"]:disabled,
+select:disabled,
+input:disabled,
+textarea:disabled,
+[disabled],
+[aria-disabled="true"],
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* Text inputs and contenteditable should show text cursor */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+[contenteditable="true"],
+.cursor-text {
+  cursor: text !important;
+}
+
+/* Loading/waiting states */
+.cursor-wait,
+[aria-busy="true"] {
+  cursor: wait !important;
+}
+
+/* Draggable elements */
+[draggable="true"],
+.cursor-grab {
+  cursor: grab !important;
+}
+
+[draggable="true"]:active,
+.cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+/* Resize cursors for resizable elements */
+.resize-handle,
+.cursor-resize {
+  cursor: nw-resize !important;
+}
+
+.cursor-col-resize {
+  cursor: col-resize !important;
+}
+
+.cursor-row-resize {
+  cursor: row-resize !important;
+}
+
+/* Utility classes for common cursor patterns */
+.icon-button {
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.icon-button:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+/* Ensure SVG icons inside clickable elements are not blocking pointer events */
+button svg,
+[role="button"] svg,
+a svg,
+.clickable svg,
+.icon-button svg {
+  pointer-events: none;
+}
+
+/* Improve hover states for clickable elements */
+button:hover,
+[role="button"]:hover,
+a:hover,
+.clickable:hover {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Ensure focus states are visible for accessibility */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+.clickable:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

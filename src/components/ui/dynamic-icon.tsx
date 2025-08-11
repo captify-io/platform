@@ -13,6 +13,7 @@ import {
   Lock,
   Puzzle,
   TrendingUp,
+  TrendingDown,
   Grid3x3,
   GitBranch,
   Calculator,
@@ -24,6 +25,12 @@ import {
   MessageSquare,
   Settings,
   LucideIcon,
+  AlertTriangle,
+  Plane,
+  Wrench,
+  LayoutDashboard,
+  Bot,
+  Plus,
 } from "lucide-react";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -41,6 +48,7 @@ const iconMap: Record<string, LucideIcon> = {
   Lock,
   Puzzle,
   TrendingUp,
+  TrendingDown,
   Grid3x3,
   GitBranch,
   Calculator,
@@ -51,6 +59,12 @@ const iconMap: Record<string, LucideIcon> = {
   Clock,
   MessageSquare,
   Settings,
+  AlertTriangle,
+  Plane,
+  Wrench,
+  LayoutDashboard,
+  Bot,
+  Plus,
 };
 
 interface DynamicIconProps {

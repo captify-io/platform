@@ -57,16 +57,11 @@ async function searchNeptuneViaLambda(
   }
 
   try {
-    console.log("Calling Lambda function for Neptune search:", query);
-
     const url = `${apiUrl}/graph/search`;
     const requestBody = {
       query: query,
       limit: limit,
     };
-
-    console.log("Lambda request URL:", url);
-    console.log("Lambda request body:", requestBody);
 
     const response = await fetch(url, {
       method: "POST",
@@ -86,7 +81,6 @@ async function searchNeptuneViaLambda(
     }
 
     const data: LambdaSearchResponse = await response.json();
-    console.log(`Lambda returned ${data.results?.length || 0} results`);
 
     return data.results || [];
   } catch (error) {
@@ -152,8 +146,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("GET /api/search - Searching for:", query.trim());
-
     // Search Neptune via Lambda function (runs inside VPC)
     const neptuneResults = await searchNeptuneViaLambda(query.trim(), limit);
     const executionTime = (Date.now() - startTime) / 1000;
@@ -191,8 +183,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    console.log("POST /api/search - Searching for:", query.trim());
 
     // Search Neptune via Lambda function (runs inside VPC)
     const neptuneResults = await searchNeptuneViaLambda(query.trim(), limit);

@@ -1,0 +1,166 @@
+{
+  "id": "console-app-001",
+  "slug": "console",
+  "name": "Console",
+  "title": "System Console",
+  "description": "Central management console for system administration and monitoring",
+  "version": "1.0.0",
+  "category": "administration",
+  "agentId": "F5W4F6L7O0",
+  "agentAliasId": "9EOAGEYMBM",
+  "database": {
+    "tables": {
+      "settings": {
+        "tableName": "console-user-settings",
+        "schema": {
+          "partitionKey": "user_id",
+          "sortKey": "setting_key",
+          "attributes": {
+            "user_id": { "type": "S", "description": "User identifier" },
+            "setting_key": { "type": "S", "description": "Setting name/key" },
+            "setting_value": { "type": "S", "description": "Setting value" },
+            "setting_type": {
+              "type": "S",
+              "description": "Data type of setting"
+            },
+            "created_at": { "type": "S", "description": "Creation timestamp" },
+            "updated_at": {
+              "type": "S",
+              "description": "Last update timestamp"
+            }
+          },
+          "globalSecondaryIndexes": [
+            {
+              "name": "SettingKeyIndex",
+              "partitionKey": "setting_key",
+              "sortKey": "user_id"
+            }
+          ]
+        }
+      },
+      "cache": {
+        "tableName": "console-cache-data",
+        "schema": {
+          "partitionKey": "cache_key",
+          "sortKey": "partition",
+          "attributes": {
+            "cache_key": { "type": "S", "description": "Cache key identifier" },
+            "partition": { "type": "S", "description": "Cache partition" },
+            "cache_value": { "type": "S", "description": "Cached data" },
+            "expires_at": {
+              "type": "S",
+              "description": "Expiration timestamp"
+            },
+            "created_at": { "type": "S", "description": "Creation timestamp" }
+          },
+          "globalSecondaryIndexes": [
+            {
+              "name": "ExpirationIndex",
+              "partitionKey": "expires_at",
+              "sortKey": "cache_key"
+            }
+          ]
+        }
+      },
+      "dashboard_widgets": {
+        "tableName": "console-dashboard-widgets",
+        "schema": {
+          "partitionKey": "user_id",
+          "sortKey": "widget_id",
+          "attributes": {
+            "user_id": { "type": "S", "description": "User identifier" },
+            "widget_id": { "type": "S", "description": "Widget identifier" },
+            "widget_type": { "type": "S", "description": "Type of widget" },
+            "widget_config": {
+              "type": "M",
+              "description": "Widget configuration"
+            },
+            "position": {
+              "type": "M",
+              "description": "Widget position on dashboard"
+            },
+            "size": { "type": "M", "description": "Widget size" },
+            "enabled": {
+              "type": "BOOL",
+              "description": "Widget enabled status"
+            },
+            "created_at": { "type": "S", "description": "Creation timestamp" },
+            "updated_at": {
+              "type": "S",
+              "description": "Last update timestamp"
+            }
+          },
+          "globalSecondaryIndexes": [
+            {
+              "name": "WidgetTypeIndex",
+              "partitionKey": "widget_type",
+              "sortKey": "created_at"
+            }
+          ]
+        }
+      },
+      "analytics_data": {
+        "tableName": "console-analytics-data",
+        "schema": {
+          "partitionKey": "metric_type",
+          "sortKey": "timestamp",
+          "attributes": {
+            "metric_type": { "type": "S", "description": "Type of metric" },
+            "timestamp": { "type": "S", "description": "Metric timestamp" },
+            "metric_value": { "type": "N", "description": "Metric value" },
+            "metric_unit": {
+              "type": "S",
+              "description": "Unit of measurement"
+            },
+            "source": { "type": "S", "description": "Data source" },
+            "tags": { "type": "M", "description": "Additional tags" },
+            "created_at": { "type": "S", "description": "Creation timestamp" }
+          },
+          "globalSecondaryIndexes": [
+            {
+              "name": "SourceIndex",
+              "partitionKey": "source",
+              "sortKey": "timestamp"
+            },
+            {
+              "name": "ValueIndex",
+              "partitionKey": "metric_type",
+              "sortKey": "metric_value"
+            }
+          ]
+        }
+      }
+    },
+    "requiresSharedTables": ["notifications", "audit_logs", "applications"]
+  },
+  "menu": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "LayoutDashboard",
+      "href": "/console/dashboard",
+      "order": 1
+    },
+    {
+      "id": "analytics",
+      "label": "Analytics",
+      "icon": "BarChart3",
+      "href": "/console/analytics",
+      "order": 2
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "Settings",
+      "href": "/console/settings",
+      "order": 3
+    }
+  ],
+  "capabilities": [
+    "dashboard",
+    "analytics",
+    "user-management",
+    "system-monitoring"
+  ],
+  "permissions": ["console.read", "console.write", "console.admin"]
+}
