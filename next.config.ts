@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   compress: true,
 
   // Static optimization for better performance
-  output: "standalone",
+  // output: "standalone", // Temporarily disabled due to Windows symlink issues
 
   // Server external packages (moved from experimental)
   serverExternalPackages: ["@aws-sdk"],

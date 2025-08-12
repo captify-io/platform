@@ -19,7 +19,7 @@ Get-Content ".env" | ForEach-Object {
         $parts = $line.Split("=", 2)
         if ($parts.Length -eq 2) {
             $key = $parts[0].Trim()
-            $value = $parts[1].Trim().Trim('"')
+            $value = $parts[1].Trim().Trim('"').Trim("'")
             $envVars[$key] = $value
         }
     }
