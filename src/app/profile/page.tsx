@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, User, Mail, Calendar, Shield } from "lucide-react";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -27,14 +27,14 @@ export default function ProfilePage() {
 
   if (status === "loading") {
     return (
-      <ApplicationLayout applicationName="Profile" showChat={false}>
+      <AppLayout applicationName="Profile" showChat={false}>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
@@ -47,7 +47,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <ApplicationLayout applicationName="Profile" showChat={false}>
+    <AppLayout applicationName="Profile" showChat={false}>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
@@ -220,6 +220,6 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

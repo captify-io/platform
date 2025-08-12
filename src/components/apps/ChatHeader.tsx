@@ -24,6 +24,7 @@ interface ChatHeaderProps {
   onToggleSettings: () => void;
   onOpenHistory: () => void;
   onMinimize: () => void;
+  showSessionControls?: boolean; // Control whether to show session-related buttons
 }
 
 export function ChatHeader({
@@ -36,6 +37,7 @@ export function ChatHeader({
   onToggleSettings,
   onOpenHistory,
   onMinimize,
+  showSessionControls = true,
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between p-4 border-b border-border bg-background">
@@ -61,15 +63,29 @@ export function ChatHeader({
         )}
 
         <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNewSession}
-            className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
-            title="Start New Session"
-          >
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          {showSessionControls && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onNewSession}
+                className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
+                title="Start New Session"
+              >
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onOpenHistory}
+                className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
+                title="Conversations"
+              >
+                <History className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </>
+          )}
 
           <Button
             variant="ghost"
@@ -78,16 +94,6 @@ export function ChatHeader({
             className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
           >
             <Settings className="h-4 w-4 text-muted-foreground" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenHistory}
-            className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
-            title="Conversations"
-          >
-            <History className="h-4 w-4 text-muted-foreground" />
           </Button>
 
           {isSliding && onToggle && (

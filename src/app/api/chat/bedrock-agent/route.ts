@@ -3,11 +3,121 @@ import {
   BedrockAgentRuntimeClient,
   InvokeAgentCommand,
 } from "@aws-sdk/client-bedrock-agent-runtime";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  UpdateItemCommand,
+} from "@aws-sdk/client-dynamodb";
+import { marshall } from "@aws-sdk/util-dynamodb";
 import { getUserSession } from "@/lib/services/session";
 
 interface ChatMessage {
   role: string;
   content: string;
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    // Try to get user session for authentication, but don't fail if not available
+    // TODO: Make this required once authentication is properly integrated
+    try {
+      await getUserSession(req);
+    } catch (_error) {
+      console.warn("No session available for GET /api/chat/bedrock-agent");
+    }
+
+    // For now, return a static list of agents based on environment variables
+    // In the future, this could query AWS Bedrock to get available agents
+    const agents = [
+      {
+        id: process.env.BEDROCK_AGENT_ID || "console-agent",
+        name: "Captify Console Agent",
+        description: "AI assistant for general chat and console operations",
+        icon: "Bot",
+        default: true,
+      },
+    ];
+
+    const defaultAgentId = process.env.BEDROCK_AGENT_ID || "console-agent";
+
+    return new Response(
+      JSON.stringify({
+        agents,
+        defaultAgentId,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Error fetching agents:", error);
+    return new Response(JSON.stringify({ error: "Failed to fetch agents" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+// Helper function to get DynamoDB client
+function getDynamoDBClient() {
+  return new DynamoDBClient({
+    region: process.env.AWS_REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+}
+
+// Helper function to save a message to DynamoDB
+async function saveMessageToDynamoDB(
+  client: DynamoDBClient,
+  threadId: string,
+  messageId: string,
+  role: string,
+  content: string,
+  userId: string
+) {
+  const timestamp = new Date().toISOString();
+  const timestampWithMicros = `${timestamp.slice(0, -1)}${String(
+    Date.now()
+  ).slice(-3)}Z`;
+
+  await client.send(
+    new PutItemCommand({
+      TableName: "captify-chat-messages",
+      Item: marshall({
+        thread_id: threadId,
+        timestamp: timestampWithMicros,
+        message_id: messageId,
+        role: role,
+        content: content,
+        created_at: timestamp,
+        tool_runs: [],
+        citations: [],
+        meta: {},
+      }),
+    })
+  );
+
+  // Update thread's updated_at and message_count
+  await client.send(
+    new UpdateItemCommand({
+      TableName: "captify-chat-threads",
+      Key: marshall({
+        app_id: "console",
+        thread_id: threadId,
+      }),
+      UpdateExpression: "SET updated_at = :updated_at ADD message_count :inc",
+      ExpressionAttributeValues: marshall({
+        ":updated_at": timestamp,
+        ":inc": 1,
+        ":userId": userId,
+      }),
+      ConditionExpression: "user_id = :userId",
+    })
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -198,6 +308,45 @@ export async function POST(req: NextRequest) {
             const finishChunk = `d:{"finishReason":"stop","usage":{"promptTokens":${inputText.length},"completionTokens":${fullResponse.length}}}\n`;
             controller.enqueue(encoder.encode(finishChunk));
             console.log("✅ Completion signal sent");
+
+            // Save messages to database if threadId is provided (looks like a UUID)
+            if (sessionId && sessionId.includes("-") && sessionId.length > 20) {
+              try {
+                console.log(
+                  "💾 Saving messages to database for thread:",
+                  sessionId
+                );
+                const dynamoClient = getDynamoDBClient();
+
+                // Save user message
+                await saveMessageToDynamoDB(
+                  dynamoClient,
+                  sessionId, // threadId
+                  `msg-${Date.now()}-user`,
+                  "user",
+                  inputText,
+                  session.user_id
+                );
+
+                // Save assistant response
+                await saveMessageToDynamoDB(
+                  dynamoClient,
+                  sessionId, // threadId
+                  `msg-${Date.now()}-assistant`,
+                  "assistant",
+                  fullResponse,
+                  session.user_id
+                );
+
+                console.log("✅ Messages saved to database");
+              } catch (dbError) {
+                console.error(
+                  "❌ Failed to save messages to database:",
+                  dbError
+                );
+                // Don't fail the request if database save fails
+              }
+            }
           } else {
             console.log("❌ No completion stream in response");
           }

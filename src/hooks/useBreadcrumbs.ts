@@ -34,6 +34,7 @@ export function useContextualBreadcrumb(item: BreadcrumbItem) {
 /**
  * Hook that automatically sets up breadcrumbs based on current application and path
  * This should be called at the root level to set up automatic breadcrumbs
+ * Uses smart patterns to avoid showing cryptic IDs and technical path segments
  */
 export function useAutomaticBreadcrumbs(enabled: boolean = true) {
   const pathname = usePathname();
@@ -53,23 +54,127 @@ export function useAutomaticBreadcrumbs(enabled: boolean = true) {
       });
     }
 
-    // Add additional breadcrumb levels based on the current path
+    // Parse path intelligently to avoid showing technical segments
     const pathParts = pathname.split("/").filter(Boolean);
-    if (pathParts.length > 1) {
-      // Skip the first part (already added as application breadcrumb)
-      for (let i = 1; i < pathParts.length; i++) {
-        const pathSegment = pathParts[i];
-        const breadcrumbPath = "/" + pathParts.slice(0, i + 1).join("/");
 
-        breadcrumbs.push({
-          label: pathSegment.charAt(0).toUpperCase() + pathSegment.slice(1),
-          href: breadcrumbPath,
-        });
+    // Skip the first two parts if it's /app/[slug] pattern
+    const startIndex = pathParts[0] === "app" ? 2 : 1;
+
+    for (let i = startIndex; i < pathParts.length; i++) {
+      const pathSegment = pathParts[i];
+      const breadcrumbPath = "/" + pathParts.slice(0, i + 1).join("/");
+
+      // Skip technical path segments that aren't user-friendly
+      if (shouldSkipPathSegment(pathSegment, pathParts, i)) {
+        continue;
       }
+
+      // Get a human-readable label for the segment
+      const label = getSmartSegmentLabel(pathSegment, pathParts, i);
+
+      breadcrumbs.push({
+        label,
+        href: breadcrumbPath,
+      });
     }
 
     setBreadcrumbs(breadcrumbs);
   }, [enabled, applicationData, pathname, slug, loading, setBreadcrumbs]);
 
   return { applicationData, loading, slug };
+}
+
+/**
+ * Determines if a path segment should be skipped in breadcrumbs
+ * Skips technical segments like UUIDs, single letters, etc.
+ */
+function shouldSkipPathSegment(
+  segment: string,
+  pathParts: string[],
+  index: number
+): boolean {
+  // Skip UUID-like strings
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      segment
+    )
+  ) {
+    return true;
+  }
+
+  // Skip very short technical segments like "t", "id", etc.
+  if (segment.length <= 2 && !isCommonShortWord(segment)) {
+    return true;
+  }
+
+  // Skip numeric IDs
+  if (/^\d+$/.test(segment)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get a human-readable label for a path segment
+ */
+function getSmartSegmentLabel(
+  segment: string,
+  pathParts: string[],
+  index: number
+): string {
+  // Common mappings
+  const labelMap: Record<string, string> = {
+    settings: "Settings",
+    history: "History",
+    admin: "Admin",
+    profile: "Profile",
+    edit: "Edit",
+    new: "New",
+    create: "Create",
+    view: "View",
+    manage: "Manage",
+    config: "Configuration",
+    api: "API",
+    docs: "Documentation",
+    help: "Help",
+    about: "About",
+  };
+
+  if (labelMap[segment.toLowerCase()]) {
+    return labelMap[segment.toLowerCase()];
+  }
+
+  // Convert kebab-case and snake_case to Title Case
+  const formatted = segment
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
+  return formatted;
+}
+
+/**
+ * Check if a short segment is a common word that should be included
+ */
+function isCommonShortWord(segment: string): boolean {
+  const commonWords = [
+    "me",
+    "my",
+    "go",
+    "do",
+    "be",
+    "is",
+    "it",
+    "an",
+    "as",
+    "at",
+    "by",
+    "of",
+    "on",
+    "to",
+    "up",
+  ];
+  return commonWords.includes(segment.toLowerCase());
 }

@@ -44,8 +44,9 @@ export async function GET(
         // Search by slug if it's not a UUID
         console.log(`🔍 Searching by slug: ${appId}`);
         const applications = await applicationDb.listApplications({
-          org_id: "default-org",
+          // Don't filter by org_id to allow finding apps without org set
           limit: 100,
+          org_id: "",
         });
         application = applications.applications.find(
           (app) => app.slug === appId

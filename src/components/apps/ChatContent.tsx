@@ -2,11 +2,16 @@
 
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Loader2 } from "lucide-react";
+import { Bot, User, Loader2, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneLight, oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { useTheme } from "next-themes";
 import { type Message as AiMessage } from "ai/react";
+import { Button } from "@/components/ui/button";
 
 export type ChatMessage = AiMessage & { createdAt?: string };
 
@@ -30,6 +35,83 @@ const stripAgentXml = (s: string) => String(s || "").replace(AGENT_TAG_RE, "");
 // Full sanitize pass for rendering in markdown
 const sanitizeForDisplay = (s: string) =>
   stripAgentXml(stripTraceMarkers(s)).trim();
+
+// Custom Code Component with copy functionality
+interface CodeProps {
+  node?: unknown;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+const CodeComponent: React.FC<CodeProps> = ({ inline, className, children, ...props }) => {
+  const { theme } = useTheme();
+  const [copied, setCopied] = React.useState(false);
+  
+  const match = /language-(\w+)/.exec(className || "");
+  const language = match ? match[1] : "";
+  
+  const codeString = String(children).replace(/\n$/, "");
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(codeString);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy code:", err);
+    }
+  };
+
+  if (inline) {
+    return (
+      <code 
+        className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <div className="relative group">
+      <div className="flex items-center justify-between py-2 px-4 bg-muted border-b">
+        <span className="text-xs font-medium text-muted-foreground">
+          {language || "code"}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <Check className="h-3 w-3 text-green-600" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )}
+        </Button>
+      </div>
+      <SyntaxHighlighter
+        style={theme === "dark" ? oneDark : oneLight}
+        language={language}
+        PreTag="div"
+        className="!m-0 !bg-transparent"
+        customStyle={{
+          margin: 0,
+          padding: "1rem",
+          background: "transparent",
+          fontSize: "0.875rem",
+          lineHeight: "1.25rem"
+        }}
+        {...props}
+      >
+        {codeString}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
 
 interface ModelInvocationInput {
   text?: string;
@@ -186,9 +268,45 @@ export function ChatContent({
   reasoning,
   traceEvents = [],
 }: ChatContentProps) {
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change or when loading
+  React.useEffect(() => {
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: "smooth",
+          block: "end"
+        });
+      }
+    };
+
+    // Small delay to ensure DOM is updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [messages, isLoading]);
+
+  // Also scroll to bottom on initial load
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ 
+            behavior: "auto", // Instant scroll on initial load
+            block: "end"
+          });
+        }
+      };
+      
+      // Immediate scroll for initial load
+      scrollToBottom();
+    }
+  }, []); // Only run once on mount
   return (
-    <div className="flex-1 overflow-hidden">
-      <ScrollArea className="h-full">
+    <div className="flex-1 overflow-hidden min-h-0">
+      <ScrollArea ref={scrollAreaRef} className="h-full">
         <div className="p-4 space-y-4">
           {messages.length === 0 && (
             <div className="text-center text-sm text-muted-foreground py-12">
@@ -250,8 +368,77 @@ export function ChatContent({
                     {isUser ? (
                       m.content
                     ) : (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>
+                      <div className="prose prose-sm dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]} 
+                          rehypePlugins={[rehypeHighlight]}
+                          skipHtml
+                          components={{
+                            code: CodeComponent,
+                            // Enhanced list styling
+                            ul: ({ children }) => (
+                              <ul className="list-disc list-inside space-y-1 my-2">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="list-decimal list-inside space-y-1 my-2">
+                                {children}
+                              </ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="text-sm leading-relaxed">
+                                {children}
+                              </li>
+                            ),
+                            // Enhanced blockquote styling
+                            blockquote: ({ children }) => (
+                              <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-3 bg-muted/50 rounded-r">
+                                {children}
+                              </blockquote>
+                            ),
+                            // Enhanced table styling
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto my-4">
+                                <table className="min-w-full border border-border rounded-lg">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            th: ({ children }) => (
+                              <th className="border-b border-border bg-muted px-4 py-2 text-left font-semibold">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="border-b border-border px-4 py-2">
+                                {children}
+                              </td>
+                            ),
+                            // Enhanced heading styling
+                            h1: ({ children }) => (
+                              <h1 className="text-lg font-bold mt-4 mb-2 first:mt-0">
+                                {children}
+                              </h1>
+                            ),
+                            h2: ({ children }) => (
+                              <h2 className="text-base font-semibold mt-3 mb-2 first:mt-0">
+                                {children}
+                              </h2>
+                            ),
+                            h3: ({ children }) => (
+                              <h3 className="text-sm font-semibold mt-2 mb-1 first:mt-0">
+                                {children}
+                              </h3>
+                            ),
+                            // Enhanced paragraph spacing
+                            p: ({ children }) => (
+                              <p className="mb-2 last:mb-0 leading-relaxed">
+                                {children}
+                              </p>
+                            )
+                          }}
+                        >
                           {sanitizeForDisplay((m.content as string) || "")}
                         </ReactMarkdown>
 
@@ -319,6 +506,9 @@ export function ChatContent({
               </div>
             </div>
           )}
+          
+          {/* Invisible div for auto-scroll target */}
+          <div ref={messagesEndRef} className="h-0" />
         </div>
       </ScrollArea>
     </div>

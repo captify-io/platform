@@ -20,7 +20,7 @@ import {
   ArrowUpDown,
   Eye,
   ExternalLink,
-  Plus,
+  Wrench,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
@@ -35,6 +35,7 @@ interface Top10RiskPanelProps {
   horizon: "Now" | "12mo" | "5yr";
   weaponSystem: string;
   onRefresh: () => void;
+  onChatMessage?: (message: string) => void;
 }
 
 export function Top10RiskPanel({
@@ -42,6 +43,7 @@ export function Top10RiskPanel({
   horizon,
   weaponSystem,
   onRefresh,
+  onChatMessage,
 }: Top10RiskPanelProps) {
   const [sortField, setSortField] = useState<string>("risk_score");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -120,21 +122,51 @@ export function Top10RiskPanel({
   });
 
   const handleExplain = (prediction: PredictionRow) => {
-    console.log("Opening explainability drawer for:", prediction.id);
-    // TODO: Implement explainability drawer
+    const context = `Analyze this B-52 part risk prediction in **markdown**:
+
+**${prediction.part.nomenclature}** (${prediction.part.nsn})
+- Risk: ${prediction.risk_score}/100 (${Math.round(prediction.confidence * 100)}% confidence)
+- Window: ${prediction.predicted_window}
+- Action: ${prediction.recommendation}
+
+**Key Indicators:** ${prediction.leading_indicators.slice(0, 2).join(', ')}
+
+**Impact:**
+- MICAP: ${prediction.projected_impact.micap_days} days
+- Sorties: ${prediction.projected_impact.sorties_at_risk}
+- Cost: $${(prediction.projected_impact.cost_impact / 1000000).toFixed(1)}M
+
+**Stock:** ${prediction.stock_posture.on_hand} on hand, ${prediction.stock_posture.due_in} due in, ${prediction.stock_posture.lead_time_days}d lead time
+
+**Supplier:** ${prediction.supplier_signal.otd_percent}% OTD, ${(prediction.supplier_signal.pqdr_rate * 100).toFixed(1)}% PQDR
+
+Provide analysis with:
+1. **Risk drivers** - What's causing this score?
+2. **Actions** - What should be done?
+3. **Timeline** - When to act?`;
+
+    // Ensure message is under 1000 characters
+    console.log(`Chat message length: ${context.length} characters`);
+    
+    if (context.length > 1000) {
+      console.warn(`Message truncated from ${context.length} to 1000 characters`);
+      const finalMessage = context.substring(0, 997) + '...';
+      onChatMessage?.(finalMessage);
+    } else {
+      onChatMessage?.(context);
+    }
   };
 
   const handleBOM360 = (prediction: PredictionRow) => {
-    // Navigate to BOM explorer with part context
-    window.open(
-      `/mi/bom-explorer?nodeId=${prediction.part.nsn}&context=${prediction.tail_context}`,
-      "_blank"
-    );
+    // Navigate to BOM explorer with part context using hash routing
+    const url = `/mi#bom-explorer?nodeId=${prediction.part.nsn}&context=${prediction.tail_context}&weaponSystem=${weaponSystem}&horizon=${horizon}`;
+    window.open(url, "_blank");
   };
 
   const handleAddToWorkbench = (prediction: PredictionRow) => {
-    console.log("Adding to workbench:", prediction.id);
-    // TODO: Implement workbench case creation
+    // Navigate to workbench with node ID using hash routing
+    const url = `/mi#workbench?nodeId=${prediction.part.nsn}&context=${prediction.tail_context}&weaponSystem=${weaponSystem}&horizon=${horizon}`;
+    window.open(url, "_blank");
   };
 
   if (predictions.length === 0) {
@@ -341,33 +373,36 @@ export function Top10RiskPanel({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex flex-col gap-1">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleExplain(prediction)}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-full text-xs"
                         title="Explain"
                       >
-                        <Eye className="h-3 w-3" />
+                        <Eye className="h-3 w-3 mr-1" />
+                        Explain
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleBOM360(prediction)}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-full text-xs"
                         title="BOM360"
                       >
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        BOM360
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleAddToWorkbench(prediction)}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-full text-xs"
                         title="Add to Workbench"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Wrench className="h-3 w-3 mr-1" />
+                        Workbench
                       </Button>
                     </div>
                   </TableCell>

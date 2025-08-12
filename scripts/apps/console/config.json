@@ -1,0 +1,185 @@
+{
+  "id": "console",
+  "slug": "console",
+  "name": "Captify Console",
+  "title": "AI Chat Console",
+  "description": "Full-featured AI chat interface with thread management, tool execution, and multi-agent support",
+  "version": "1.0.0",
+  "status": "active",
+  "category": "ai-tools",
+  "agentId": "F5W4F6L7O0",
+  "agentAliasId": "9EOAGEYMBM",
+  "database": {
+    "tables": {
+      "chat-threads": {
+        "tableName": "captify-chat-threads",
+        "schema": {
+          "partitionKey": "app_id",
+          "sortKey": "thread_id",
+          "attributes": {
+            "app_id": {
+              "type": "S",
+              "description": "Application ID (e.g., 'console', 'mi', etc.)"
+            },
+            "thread_id": {
+              "type": "S",
+              "description": "Unique thread identifier"
+            },
+            "user_id": {
+              "type": "S",
+              "description": "User who owns this thread"
+            },
+            "agent_id": {
+              "type": "S",
+              "description": "Agent ID used for this thread"
+            },
+            "title": {
+              "type": "S",
+              "description": "Thread title"
+            },
+            "created_at": {
+              "type": "S",
+              "description": "ISO timestamp of thread creation"
+            },
+            "updated_at": {
+              "type": "S",
+              "description": "ISO timestamp of last update"
+            },
+            "message_count": {
+              "type": "N",
+              "description": "Number of messages in thread"
+            },
+            "pinned": {
+              "type": "BOOL",
+              "description": "Whether thread is pinned"
+            },
+            "datasources": {
+              "type": "L",
+              "description": "List of datasource references"
+            }
+          },
+          "globalSecondaryIndexes": [
+            {
+              "name": "UserThreadIndex",
+              "partitionKey": "user_id",
+              "sortKey": "updated_at"
+            }
+          ]
+        }
+      },
+      "chat-messages": {
+        "tableName": "captify-chat-messages",
+        "schema": {
+          "partitionKey": "thread_id",
+          "sortKey": "timestamp",
+          "attributes": {
+            "thread_id": {
+              "type": "S",
+              "description": "Thread this message belongs to"
+            },
+            "timestamp": {
+              "type": "S",
+              "description": "ISO timestamp with microseconds for sorting"
+            },
+            "message_id": {
+              "type": "S",
+              "description": "Unique message identifier"
+            },
+            "role": {
+              "type": "S",
+              "description": "Message role: user, assistant, system"
+            },
+            "content": {
+              "type": "S",
+              "description": "Message content in markdown"
+            },
+            "created_at": {
+              "type": "S",
+              "description": "ISO timestamp of message creation"
+            },
+            "tool_runs": {
+              "type": "L",
+              "description": "List of tool executions for this message"
+            },
+            "citations": {
+              "type": "L",
+              "description": "List of citations/references"
+            },
+            "meta": {
+              "type": "M",
+              "description": "Additional metadata"
+            }
+          }
+        }
+      },
+      "token-grants": {
+        "tableName": "captify-token-grants",
+        "schema": {
+          "partitionKey": "user_id",
+          "sortKey": "window_period",
+          "attributes": {
+            "user_id": {
+              "type": "S",
+              "description": "User identifier"
+            },
+            "window_period": {
+              "type": "S",
+              "description": "Token window: daily or monthly"
+            },
+            "available": {
+              "type": "N",
+              "description": "Available tokens remaining"
+            },
+            "reset_at": {
+              "type": "S",
+              "description": "ISO timestamp when tokens reset"
+            },
+            "policy": {
+              "type": "M",
+              "description": "Optional policy with per-model/agent caps"
+            }
+          }
+        }
+      }
+    },
+    "requiresSharedTables": ["captify-applications", "application-menu-items"]
+  },
+  "menu": [
+    {
+      "id": "console-chat",
+      "label": "Chat Console",
+      "icon": "MessageSquare",
+      "href": "/app/console",
+      "order": 1
+    },
+    {
+      "id": "console-threads",
+      "label": "Thread History",
+      "icon": "History",
+      "href": "/app/console/history",
+      "order": 2
+    },
+    {
+      "id": "console-settings",
+      "label": "Chat Settings",
+      "icon": "Settings",
+      "href": "/app/console/settings",
+      "order": 3
+    }
+  ],
+  "permissions": [
+    "chat:read",
+    "chat:write",
+    "threads:manage",
+    "tools:execute",
+    "datasources:manage"
+  ],
+  "capabilities": [
+    "multi-agent-chat",
+    "thread-management",
+    "tool-execution",
+    "datasource-integration",
+    "token-tracking",
+    "sse-streaming"
+  ]
+}

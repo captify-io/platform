@@ -1,0 +1,64 @@
+{
+  "id": "mi",
+  "slug": "mi",
+  "name": "Material Insights",
+  "title": "Material Insights Platform",
+  "description": "Advanced fleet readiness and risk analysis platform for military aviation with AI-powered decision support",
+  "version": "1.0.0",
+  "status": "active",
+  "category": "analytics",
+  "agentId": "AGENT_MI_001",
+  "agentAliasId": "ALIAS_MI_001",
+  "menu": [
+    {
+      "id": "forecast",
+      "label": "Advanced Forecast",
+      "icon": "TrendingUp",
+      "href": "#forecast",
+      "order": 1
+    },
+    {
+      "id": "bom-explorer",
+      "label": "BOM Explorer",
+      "icon": "Network",
+      "href": "#bom-explorer",
+      "order": 2
+    },
+    {
+      "id": "workbench",
+      "label": "Workbench",
+      "icon": "Wrench",
+      "href": "#workbench",
+      "order": 3
+    },
+    {
+      "id": "supply-chain",
+      "label": "Supply Chain",
+      "icon": "Truck",
+      "href": "#supply-chain",
+      "order": 4
+    },
+    {
+      "id": "analytics",
+      "label": "Analytics",
+      "icon": "BarChart3",
+      "href": "#analytics",
+      "order": 5
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "icon": "Settings",
+      "href": "#settings",
+      "order": 6
+    }
+  ],
+  "capabilities": [
+    "predictive-analytics",
+    "bom-navigation",
+    "risk-assessment",
+    "supply-chain-analysis",
+    "workbench-collaboration",
+    "ai-recommendations"
+  ]
+}

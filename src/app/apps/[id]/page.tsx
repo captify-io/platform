@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { useNavigation } from "@/context/NavigationContext";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 
 interface PageProps {
   params: Promise<{
@@ -86,7 +86,7 @@ export default function ApplicationPage({ params }: PageProps) {
   }
 
   return (
-    <ApplicationLayout applicationId={id} applicationName={appMetadata.title}>
+    <AppLayout applicationId={id} applicationName={appMetadata.title}>
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">{appMetadata.title}</h1>
         <p className="text-gray-600 mb-6">{appMetadata.description}</p>
@@ -96,6 +96,6 @@ export default function ApplicationPage({ params }: PageProps) {
           </p>
         </div>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

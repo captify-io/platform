@@ -16,7 +16,7 @@ export interface GraphNodeSchemas {
 
     // Node Properties
     name: string; // Internal/slug-friendly name
-    title: string; // Human-readable display name (required by ApplicationLayout)
+    title: string; // Human-readable display name (required by AppLayout)
     description: string;
     version: string;
     status: "active" | "inactive" | "deprecated";

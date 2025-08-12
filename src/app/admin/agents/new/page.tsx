@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 import { agentService } from "@/lib/agents";
 import { CreateAgentRequest } from "@/types/agents";
 import { FOUNDATION_MODEL_DISPLAY_NAMES } from "@/lib/aws-bedrock";
@@ -113,7 +113,7 @@ export default function NewAgentPage() {
   };
 
   return (
-    <ApplicationLayout applicationName="Create Agent" showChat={false}>
+    <AppLayout applicationName="Create Agent" showChat={false}>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
@@ -483,6 +483,6 @@ export default function NewAgentPage() {
           </div>
         </form>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

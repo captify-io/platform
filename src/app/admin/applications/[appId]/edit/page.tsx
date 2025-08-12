@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useApps } from "@/context/AppsContext";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 import { ApplicationEntity } from "@/types/database";
 import { ApplicationSettingsTab } from "@/components/admin/application-editor/ApplicationSettingsTab";
 import { ApplicationAgentTab } from "@/components/admin/application-editor/ApplicationAgentTab";
@@ -101,7 +101,7 @@ export default function ApplicationEditPage() {
   }
 
   return (
-    <ApplicationLayout
+    <AppLayout
       applicationId={`editor-${application.id}`}
       applicationName={`Edit: ${
         application.metadata?.name || application.app_id
@@ -139,6 +139,6 @@ export default function ApplicationEditPage() {
           </div>
         </div>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

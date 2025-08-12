@@ -38,11 +38,28 @@ export function AppMenu({
 }: AppMenuProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [hasMenu, setHasMenu] = useState(false);
+  const [currentHash, setCurrentHash] = useState("");
   const router = useRouter();
   const pathname = usePathname();
 
   // Get application data from context instead of fetching config file
   const { applicationData, loading } = useApplication();
+
+  // Track hash changes for hash-based navigation
+  useEffect(() => {
+    const updateHash = () => {
+      if (typeof window !== "undefined") {
+        setCurrentHash(window.location.hash);
+      }
+    };
+
+    // Set initial hash
+    updateHash();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, []);
 
   useEffect(() => {
     if (!loading && applicationData) {
@@ -70,20 +87,25 @@ export function AppMenu({
   }, [applicationData, loading, onMenuLoad, onApplicationLoad]);
 
   const handleMenuClick = (item: MenuItem) => {
-    // If the item has an href, use it for navigation
-    if (item.href) {
-      router.push(item.href);
-    } else {
-      // Fallback: construct route based on applicationId and item id
-      const route = `/${applicationId}/${item.id}`;
-      router.push(route);
+    // Use hash-based navigation for all applications
+    if (typeof window !== "undefined") {
+      // Set hash to just the menu item id (e.g., #advanced-forecast, #workbench)
+      window.location.hash = item.id;
     }
   };
 
   const renderMenuItem = (item: MenuItem) => {
-    // Determine if this menu item is active based on current pathname
-    const itemPath = item.href || `/${applicationId}/${item.id}`;
-    const isActive = pathname === itemPath;
+    // Determine if this menu item is active based on current hash
+    let isActive = false;
+
+    // Check if current hash matches this menu item's id
+    const expectedHash = `#${item.id}`;
+    isActive = currentHash === expectedHash;
+
+    // If no hash is set, default to the first menu item (advanced-forecast for MI)
+    if (currentHash === "" && item.id === "advanced-forecast") {
+      isActive = true;
+    }
 
     return (
       <div key={item.id}>

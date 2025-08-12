@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 
 interface SetupStatus {
   needsSetup: boolean;
@@ -88,7 +88,7 @@ export default function AgentsPage() {
 
   if (loading) {
     return (
-      <ApplicationLayout
+      <AppLayout
         applicationId="agents"
         applicationName="Digital Twin Agents"
         showChat={false}
@@ -96,12 +96,12 @@ export default function AgentsPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <ApplicationLayout
+    <AppLayout
       applicationId="agents"
       applicationName="Digital Twin Agents"
       showChat={false}
@@ -213,7 +213,7 @@ export default function AgentsPage() {
           </div>
         )}
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }
 

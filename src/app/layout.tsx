@@ -15,6 +15,7 @@ import { MenuToggle } from "@/components/apps/MenuToggle";
 import { usePathname } from "next/navigation";
 import { useAutomaticBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { useSession } from "next-auth/react";
+import { useApplication } from "@/context/ApplicationContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ const geistMono = Geist_Mono({
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { applicationData } = useApplication();
 
   // Check if we're on an authentication page or other pages that shouldn't show navigation
   const isAuthPage = pathname?.startsWith("/auth/");
@@ -41,8 +43,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   // Set up automatic breadcrumbs based on current path and application (only when authenticated)
   useAutomaticBreadcrumbs(!!shouldShowNavigation);
 
-  // Extract app ID from pathname for current application context
+  // Extract app ID from pathname for current application context (fallback)
   const appId = pathname?.split("/")[2] || "";
+
+  // Use application data for current application, with fallback to extracted appId
+  const currentApplication = applicationData
+    ? {
+        id: applicationData.id,
+        name: applicationData.name,
+      }
+    : {
+        id: appId,
+        name: "Application",
+      };
 
   // Show a minimal loading state while checking authentication (but not on auth pages)
   if (status === "loading" && !isAuthPage && !isPublicPage) {
@@ -64,10 +77,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <TopNavigation
             onSearchFocus={() => {}}
             onApplicationMenuClick={() => {}}
-            currentApplication={{
-              id: appId,
-              name: "Application",
-            }}
+            currentApplication={currentApplication}
           />
 
           {/* Breadcrumb Navigation */}

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 import {
   agentService,
   getAgentStatusColor,
@@ -100,7 +100,7 @@ export default function AgentDetailPage() {
 
   if (loading) {
     return (
-      <ApplicationLayout applicationName="Agent Details" showChat={false}>
+      <AppLayout applicationName="Agent Details" showChat={false}>
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -109,13 +109,13 @@ export default function AgentDetailPage() {
             </div>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   if (error || !agent) {
     return (
-      <ApplicationLayout applicationName="Agent Details" showChat={false}>
+      <AppLayout applicationName="Agent Details" showChat={false}>
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -129,15 +129,12 @@ export default function AgentDetailPage() {
             </div>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <ApplicationLayout
-      applicationName={`Agent: ${agent.agentName}`}
-      showChat={false}
-    >
+    <AppLayout applicationName={`Agent: ${agent.agentName}`} showChat={false}>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
@@ -374,6 +371,6 @@ export default function AgentDetailPage() {
           </Card>
         </div>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

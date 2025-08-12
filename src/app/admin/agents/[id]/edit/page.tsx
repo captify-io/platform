@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 import { agentService } from "@/lib/agents";
 import { BedrockAgent, UpdateAgentRequest } from "@/types/agents";
 import { FOUNDATION_MODEL_DISPLAY_NAMES } from "@/lib/aws-bedrock";
@@ -135,7 +135,7 @@ export default function EditAgentPage() {
 
   if (loading) {
     return (
-      <ApplicationLayout applicationName="Edit Agent" showChat={false}>
+      <AppLayout applicationName="Edit Agent" showChat={false}>
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -146,13 +146,13 @@ export default function EditAgentPage() {
             </div>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   if (error && !agent) {
     return (
-      <ApplicationLayout applicationName="Edit Agent" showChat={false}>
+      <AppLayout applicationName="Edit Agent" showChat={false}>
         <div className="container mx-auto p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -164,12 +164,12 @@ export default function EditAgentPage() {
             </div>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <ApplicationLayout
+    <AppLayout
       applicationName={`Edit: ${agent?.agentName || "Agent"}`}
       showChat={false}
     >
@@ -395,6 +395,6 @@ export default function EditAgentPage() {
           </div>
         </form>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

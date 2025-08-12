@@ -10,9 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle } from "lucide-react";
 
 import { MIApiClient } from "../services/api-client";
+import { useChatIntegration } from "@/hooks/useChatIntegration";
 import type { HeroKPI, PredictionRow } from "../types";
 
 // Components
@@ -29,6 +31,9 @@ export default function AdvancedForecastPage() {
   const [predictions, setPredictions] = useState<PredictionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Chat integration
+  const { sendMessage } = useChatIntegration();
 
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
@@ -112,26 +117,22 @@ export default function AdvancedForecastPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Advanced Forecast Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Fleet readiness and tri-horizon risk analysis for {weaponSystem}
-        </p>
+    <div className="h-full flex flex-col">
+      {/* Header - Global Filters as Header */}
+      <div className="flex-shrink-0 border-b bg-background">
+        <GlobalFilters
+          weaponSystem={weaponSystem}
+          setWeaponSystem={setWeaponSystem}
+          horizon={horizon}
+          setHorizon={setHorizon}
+          scenario={scenario}
+          setScenario={setScenario}
+        />
       </div>
 
-      {/* Global Filters */}
-      <GlobalFilters
-        weaponSystem={weaponSystem}
-        setWeaponSystem={setWeaponSystem}
-        horizon={horizon}
-        setHorizon={setHorizon}
-        scenario={scenario}
-        setScenario={setScenario}
-      />
+      {/* Main Content */}
+      <ScrollArea className="flex-1">
+        <div className="container mx-auto p-6 space-y-6">
 
       {/* Hero KPIs */}
       <HeroKPICards kpis={kpiData} horizon={horizon} />
@@ -140,10 +141,10 @@ export default function AdvancedForecastPage() {
       <Tabs defaultValue="risk-panel" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="risk-panel">Top-10 Problem Parts</TabsTrigger>
-          <TabsTrigger value="forecast-charts" disabled>
+          <TabsTrigger value="forecast-charts">
             Forecast Charts
           </TabsTrigger>
-          <TabsTrigger value="fleet-tempo" disabled>
+          <TabsTrigger value="fleet-tempo">
             Fleet Tempo
           </TabsTrigger>
         </TabsList>
@@ -154,6 +155,7 @@ export default function AdvancedForecastPage() {
             horizon={horizon}
             weaponSystem={weaponSystem}
             onRefresh={fetchDashboardData}
+            onChatMessage={sendMessage}
           />
         </TabsContent>
 
@@ -166,29 +168,124 @@ export default function AdvancedForecastPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Coming in Dashboard-Forecast+Scenario phase
+              <div className="space-y-6">
+                {/* Chart placeholder */}
+                <div className="h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                  <div className="text-center space-y-2">
+                    <div className="text-lg font-medium text-muted-foreground">MICAP Forecast Chart</div>
+                    <div className="text-sm text-muted-foreground">Interactive timeline showing predicted capability gaps</div>
+                  </div>
+                </div>
+                
+                {/* Summary metrics */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">12</div>
+                    <div className="text-sm text-muted-foreground">Critical Parts (Next 30d)</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">28</div>
+                    <div className="text-sm text-muted-foreground">High Risk Parts (Next 90d)</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">156</div>
+                    <div className="text-sm text-muted-foreground">Sorties at Risk</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">85%</div>
+                    <div className="text-sm text-muted-foreground">Mission Capability</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="fleet-tempo" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fleet Tempo & Environment</CardTitle>
-              <CardDescription>
-                Sortie rates and environmental factors by base
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Coming in Dashboard-Tempo+Env phase
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Fleet Tempo & Environment</CardTitle>
+                <CardDescription>
+                  Sortie rates and environmental factors by base
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Sortie Rate Chart */}
+                  <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <div className="text-lg font-medium text-muted-foreground">Sortie Rate Trends</div>
+                      <div className="text-sm text-muted-foreground">Monthly sortie rates by base</div>
+                    </div>
+                  </div>
+                  
+                  {/* Base Summary */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Base Operations Summary</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Minot AFB:</span>
+                        <span className="font-medium">24 sorties/month</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Barksdale AFB:</span>
+                        <span className="font-medium">28 sorties/month</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Whiteman AFB:</span>
+                        <span className="font-medium">22 sorties/month</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Environmental Factors</CardTitle>
+                <CardDescription>
+                  Weather and operational conditions impact
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Environmental Impact Chart */}
+                  <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <div className="text-lg font-medium text-muted-foreground">Environmental Impact</div>
+                      <div className="text-sm text-muted-foreground">Corrosion, temperature, humidity effects</div>
+                    </div>
+                  </div>
+                  
+                  {/* Environmental Metrics */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 border rounded-lg">
+                      <div className="text-lg font-bold text-orange-600">High</div>
+                      <div className="text-xs text-muted-foreground">Corrosion Risk</div>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <div className="text-lg font-bold text-yellow-600">Moderate</div>
+                      <div className="text-xs text-muted-foreground">Temp Stress</div>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <div className="text-lg font-bold text-blue-600">75%</div>
+                      <div className="text-xs text-muted-foreground">Humidity Avg</div>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <div className="text-lg font-bold text-green-600">Good</div>
+                      <div className="text-xs text-muted-foreground">Air Quality</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

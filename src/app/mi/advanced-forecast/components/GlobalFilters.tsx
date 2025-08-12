@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,9 +19,8 @@ export function GlobalFilters({
   setScenario,
 }: GlobalFiltersProps) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-wrap gap-4 items-center">
+    <div className="p-6">
+      <div className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium">Weapon System:</label>
             <Select value={weaponSystem} onValueChange={setWeaponSystem}>
@@ -75,7 +73,6 @@ export function GlobalFilters({
             </Badge>
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

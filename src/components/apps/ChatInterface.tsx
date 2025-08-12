@@ -31,6 +31,10 @@ export interface ChatInterfaceProps {
   onToggle?: () => void;
   onChatReady?: (submitMessage: (message: string) => void) => void;
   providers?: Provider[];
+  showSessionControls?: boolean; // Control whether to show "New Session" and "Conversations" buttons
+  agentId?: string; // Override agent ID
+  agentAliasId?: string; // Override agent alias ID
+  threadId?: string; // Thread ID for the current conversation
 }
 
 export type ChatMessage = AiMessage & { createdAt?: string };
@@ -46,13 +50,23 @@ export function ChatInterface({
   onToggle,
   onChatReady,
   providers = defaultProviders,
+  showSessionControls = true,
+  agentId,
+  agentAliasId,
+  threadId,
 }: ChatInterfaceProps) {
   const { applicationInfo } = useApplication();
 
-  // Get agent config from application context
+  // Get agent config from props first, then application context, then environment fallback
   const agentConfig = {
-    agentId: applicationInfo?.agentId,
-    agentAliasId: applicationInfo?.agentAliasId,
+    agentId:
+      agentId ||
+      applicationInfo?.agentId ||
+      process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID,
+    agentAliasId:
+      agentAliasId ||
+      applicationInfo?.agentAliasId ||
+      process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ALIAS_ID,
   };
 
   const [isMinimized, setIsMinimized] = React.useState<boolean>(() => {
@@ -76,9 +90,24 @@ export function ChatInterface({
   });
 
   const [showSettings, setShowSettings] = React.useState(false);
-  const [sessionId, setSessionId] = React.useState(
-    () => `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-  );
+  const [sessionId, setSessionId] = React.useState(() => {
+    // Use threadId as sessionId if available, otherwise generate a new one
+    return (
+      threadId ||
+      `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    );
+  });
+
+  // Update sessionId when threadId changes
+  React.useEffect(() => {
+    if (threadId) {
+      setSessionId(threadId);
+    } else {
+      setSessionId(
+        `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+      );
+    }
+  }, [threadId]);
 
   const [showHistory, setShowHistory] = React.useState(false);
   const [history, setHistory] = React.useState<ConversationSummary[]>([]);
@@ -120,7 +149,7 @@ export function ChatInterface({
   } = useChat({
     api: apiEndpoint,
     body: {
-      sessionId,
+      sessionId: threadId || sessionId, // Use threadId if available, fallback to sessionId
       ...(currentProvider?.type === "bedrock-agent"
         ? {
             agentId:
@@ -144,13 +173,14 @@ export function ChatInterface({
       // Handle message finish
       try {
         const firstUser = messages.find((m) => m.role === "user");
-        if (firstUser) {
+        if (firstUser && threadId) {
           await fetch("/api/chat/title", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              sessionId,
+              threadId,
               firstMessage: firstUser.content,
+              applicationId: "console",
             }),
           });
         }
@@ -268,10 +298,7 @@ export function ChatInterface({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (
-      (e.key === "Enter" && !e.shiftKey) ||
-      (e.key === "Enter" && e.ctrlKey)
-    ) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleCustomSubmit();
     }
@@ -332,6 +359,34 @@ export function ChatInterface({
     onChatReady(submitMessage);
   }, [onChatReady]);
 
+  // Load messages when threadId changes
+  React.useEffect(() => {
+    if (!threadId) {
+      setMessages([]);
+      return;
+    }
+
+    const loadThreadMessages = async () => {
+      try {
+        const response = await fetch(`/api/chat/thread/${threadId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.messages) {
+            setMessages(data.messages);
+          }
+        } else {
+          console.warn("Failed to load thread messages:", response.statusText);
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error("Error loading thread messages:", error);
+        setMessages([]);
+      }
+    };
+
+    loadThreadMessages();
+  }, [threadId, setMessages]);
+
   if (isMinimized && !isSliding) {
     return (
       <div
@@ -368,6 +423,7 @@ export function ChatInterface({
           onToggleSettings={() => setShowSettings(!showSettings)}
           onOpenHistory={openHistory}
           onMinimize={() => setIsMinimized(!isMinimized)}
+          showSessionControls={showSessionControls}
         />
 
         {showSettings && (

@@ -21,7 +21,7 @@ import {
   Monitor,
   ExternalLink,
 } from "lucide-react";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 
 export default function SettingsPage() {
   const { data: session, status } = useSession();
@@ -35,14 +35,14 @@ export default function SettingsPage() {
 
   if (status === "loading") {
     return (
-      <ApplicationLayout applicationName="Settings" showChat={false}>
+      <AppLayout applicationName="Settings" showChat={false}>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
@@ -55,7 +55,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <ApplicationLayout applicationName="Settings" showChat={false}>
+    <AppLayout applicationName="Settings" showChat={false}>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
@@ -236,6 +236,6 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

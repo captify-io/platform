@@ -3,17 +3,47 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
+// Import the individual page components
+import AdvancedForecastPage from "./advanced-forecast/page";
+import BOMExplorerPage from "./bom-explorer/page";
+import WorkbenchPage from "./workbench/page";
+import SupplyChainPage from "./supply-chain/page";
+
 export default function MIPage() {
-  const { user, isLoading, isAuthenticated } = useAuth();
-  const [welcomeMessage, setWelcomeMessage] = useState<string>("");
+  const { isLoading, isAuthenticated } = useAuth();
+  const [activeSection, setActiveSection] = useState("advanced-forecast");
 
   useEffect(() => {
-    if (user) {
-      setWelcomeMessage(
-        `Welcome to Material Insights! I'm here to help you with fleet readiness analysis and risk assessment.`
-      );
+    // Function to extract hash from URL
+    const getHashSection = () => {
+      if (typeof window !== "undefined") {
+        const hash = window.location.hash.replace("#", "");
+        return hash || "advanced-forecast"; // Default to advanced-forecast if no hash
+      }
+      return "advanced-forecast";
+    };
+
+    // Set initial section from hash
+    const initialSection = getHashSection();
+    setActiveSection(initialSection);
+
+    // If no hash is present, set default hash to advanced-forecast
+    if (
+      typeof window !== "undefined" &&
+      !window.location.hash &&
+      isAuthenticated
+    ) {
+      window.location.hash = "advanced-forecast";
     }
-  }, [user]);
+
+    // Listen for hash changes
+    const handleHashChange = () => {
+      setActiveSection(getHashSection());
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [isAuthenticated]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -41,20 +71,39 @@ export default function MIPage() {
     );
   }
 
-  return (
-    <div className="h-full bg-background flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Material Insights</h1>
-        <p className="text-muted-foreground">
-          Advanced fleet readiness and risk analysis platform. Navigate using
-          the menu or start a conversation using the chat panel.
-        </p>
-        {welcomeMessage && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-800">{welcomeMessage}</p>
+  // Render content based on active section
+  const renderContent = () => {
+    switch (activeSection) {
+      case "advanced-forecast":
+        return <AdvancedForecastPage />;
+      case "forecast":
+        return <AdvancedForecastPage />; // Fallback for legacy
+      case "bom-explorer":
+        return <BOMExplorerPage />;
+      case "workbench":
+        return <WorkbenchPage />;
+      case "supply-chain":
+        return <SupplyChainPage />;
+      case "analytics":
+        return (
+          <div className="container mx-auto p-6">
+            <h1 className="text-3xl font-bold mb-4">Analytics & Reports</h1>
+            <p className="text-muted-foreground">Coming soon...</p>
           </div>
-        )}
-      </div>
-    </div>
-  );
+        );
+      case "settings":
+        return (
+          <div className="container mx-auto p-6">
+            <h1 className="text-3xl font-bold mb-4">Settings</h1>
+            <p className="text-muted-foreground">
+              Configuration options coming soon...
+            </p>
+          </div>
+        );
+      default:
+        return <AdvancedForecastPage />;
+    }
+  };
+
+  return <div className="h-full w-full">{renderContent()}</div>;
 }

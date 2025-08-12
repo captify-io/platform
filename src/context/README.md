@@ -4,6 +4,34 @@
 
 This documentation covers frontend React components, API client usage, and authentication patterns for the captify platform.
 
+## 🎯 Console Application - AI Chat Interface
+
+### ✅ Completed Features (Phase 1 & 2)
+
+- **Chat Layout**: 3-pane resizable interface (threads | chat | tools)
+- **Thread Management**: Full CRUD operations with ThreadList component
+- **Database Integration**: DynamoDB tables with proper UUID generation
+- **Authentication**: Three-tier AWS credential system with centralized API client
+- **Smart Breadcrumbs**: Context-aware navigation showing thread titles
+- **Error Handling**: Graceful error states and loading indicators
+
+### 🔄 In Progress (Phase 3)
+
+- **Chat Interface**: Message input box and chat display
+- **SSE Streaming**: Real-time AI responses with proper authentication
+- **Tool Integration**: Tool execution and display
+- **Agent Selection**: Multi-agent support with proper agent switching
+
+### Console Architecture
+
+- **Location**: `/app/console` - Main chat interface
+- **Components**:
+  - `ConsoleLayout` - Main 3-pane layout wrapper
+  - `ThreadList` - Virtualized thread list with search/CRUD
+  - `ChatInterface` - Message display and input (Phase 3)
+- **API Client**: `ConsoleApiClient` extending centralized authentication
+- **Database**: `captify-chat-threads`, `captify-chat-messages`, `captify-token-grants`
+
 ## 📊 Material Insights (MI) Application Pages
 
 ### Completed Pages

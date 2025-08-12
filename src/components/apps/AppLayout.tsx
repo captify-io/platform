@@ -7,6 +7,7 @@ import { AppMenu } from "./AppMenu";
 import { ResizableChatPanel } from "./ResizableChatPanel";
 import { useLayout } from "@/context/LayoutContext";
 import { useApplication } from "@/context/ApplicationContext";
+import { ChatIntegrationProvider, useChatIntegrationInternal } from "@/hooks/useChatIntegration";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -25,10 +26,32 @@ export function AppLayout({
   showChat = true,
   applicationId,
 }: AppLayoutProps) {
+  return (
+    <ChatIntegrationProvider>
+      <AppLayoutInner
+        menuContent={menuContent}
+        showMenu={showMenu}
+        showChat={showChat}
+        applicationId={applicationId}
+      >
+        {children}
+      </AppLayoutInner>
+    </ChatIntegrationProvider>
+  );
+}
+
+function AppLayoutInner({
+  children,
+  menuContent,
+  showMenu = true,
+  showChat = true,
+  applicationId,
+}: AppLayoutProps) {
   const { isMenuVisible, isChatVisible, toggleChat, setHasMenu, setHasChat } =
     useLayout();
 
   const { applicationInfo, applicationData } = useApplication();
+  const { setChatReady } = useChatIntegrationInternal();
 
   // Use applicationData from context if available, fallback to legacy applicationInfo
   const currentApp = applicationData || applicationInfo;
@@ -114,6 +137,7 @@ export function AppLayout({
           isSliding={true}
           isOpen={isChatVisible}
           onToggle={toggleChat}
+          onChatReady={setChatReady}
         />
       )}
     </div>

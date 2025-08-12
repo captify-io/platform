@@ -264,7 +264,7 @@ export class ApiClient {
         status: response.status,
         ok: response.ok,
         credentials: {} as CognitoCredentials,
-        success: false,
+        success: response.ok,
       };
 
       if (!response.ok) {

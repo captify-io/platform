@@ -60,7 +60,13 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
 
     if (pathParts.length === 0) return "";
 
-    // For paths like /console, slug = "console"
+    // For paths like /app/console, slug = "console"
+    // For paths like /app/mi, slug = "mi"
+    if (pathParts[0] === "app" && pathParts.length > 1) {
+      return pathParts[1];
+    }
+
+    // For legacy paths like /console, slug = "console"
     // For paths like /apps/mi, slug = "apps/mi"
     if (pathParts[0] === "apps" && pathParts.length > 1) {
       return `apps/${pathParts[1]}`;

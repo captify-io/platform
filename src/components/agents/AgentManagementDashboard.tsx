@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 import AgentCard from "@/components/agents/AgentCard";
 import ProfileInterview from "@/components/agents/ProfileInterview";
 import { Button } from "@/components/ui/button";
@@ -155,16 +155,16 @@ export default function AgentManagementDashboard() {
 
   if (loading) {
     return (
-      <ApplicationLayout applicationName="Agent Management">
+      <AppLayout applicationName="Agent Management">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin" />
         </div>
-      </ApplicationLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <ApplicationLayout applicationName="Agent Management">
+    <AppLayout applicationName="Agent Management">
       <div className="space-y-6">
         {/* Setup Status Alert */}
         {setupStatus?.needsSetup && (
@@ -315,6 +315,6 @@ export default function AgentManagementDashboard() {
           </div>
         )}
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

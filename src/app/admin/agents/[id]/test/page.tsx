@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicationLayout } from "@/components/apps/ApplicationLayout";
+import { AppLayout } from "@/components/apps/AppLayout";
 
 export default function AgentTestPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function AgentTestPage() {
   };
 
   return (
-    <ApplicationLayout applicationName="Test Agent" showChat={false}>
+    <AppLayout applicationName="Test Agent" showChat={false}>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
@@ -211,6 +211,6 @@ export default function AgentTestPage() {
           </CardContent>
         </Card>
       </div>
-    </ApplicationLayout>
+    </AppLayout>
   );
 }

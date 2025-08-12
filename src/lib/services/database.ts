@@ -322,7 +322,7 @@ export class ApplicationsService extends DatabaseService {
     const app = await this.getItem({ id: appId });
     if (!app) return null;
 
-    // Return in the format expected by ApplicationLayout
+    // Return in the format expected by AppLayout
     return {
       id: app.id,
       title: app.title || app.name, // Fallback to name if title not present

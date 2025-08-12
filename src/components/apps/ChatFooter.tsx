@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2 } from "lucide-react";
 
 interface ChatFooterProps {
@@ -27,7 +27,7 @@ export function ChatFooter({
   onKeyDown,
 }: ChatFooterProps) {
   return (
-    <div className="border-t border-border p-4 bg-background space-y-2">
+    <div className="border-t border-border p-4 pb-6 bg-background space-y-2">
       <div className="text-xs text-muted-foreground">
         ~{totalTokens.toLocaleString()} tokens (est.)
       </div>
@@ -37,22 +37,25 @@ export function ChatFooter({
           e.preventDefault();
           onSubmit(e);
         }}
-        className="flex space-x-2"
+        className="flex space-x-2 items-end"
       >
-        <Input
+        <Textarea
           value={input}
-          onChange={(e) => onInputChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            onInputChange(e.target.value)
+          }
           placeholder={placeholder}
           disabled={isLoading}
-          className="flex-1 text-sm border-border focus:border-primary focus:ring-1 focus:ring-primary"
+          className="flex-1 text-sm border-border focus:border-primary focus:ring-1 focus:ring-primary min-h-[44px] max-h-32 resize-none"
           onKeyDown={onKeyDown}
+          rows={2}
         />
 
         <Button
           type="submit"
           disabled={isLoading || !input.trim()}
           size="sm"
-          className="px-3"
+          className="px-3 h-11"
           variant="outline"
         >
           {isLoading ? (
@@ -68,7 +71,7 @@ export function ChatFooter({
             variant="outline"
             size="sm"
             onClick={onStop}
-            className="px-3"
+            className="px-3 h-11"
           >
             Stop
           </Button>

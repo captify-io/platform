@@ -288,3 +288,88 @@ a:focus-visible,
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* Enhanced Code Block Styling for Chat */
+.prose pre {
+  @apply bg-muted border border-border rounded-lg overflow-hidden;
+}
+
+.prose code {
+  @apply text-sm font-mono;
+}
+
+.prose :not(pre) > code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm font-medium before:content-none after:content-none;
+}
+
+/* Syntax Highlighting Theme Integration */
+.hljs {
+  background: transparent !important;
+}
+
+/* Custom scrollbar for code blocks */
+pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Better list styling in chat */
+.prose ul, .prose ol {
+  @apply my-2;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+/* Enhanced table styling */
+.prose table {
+  @apply border-collapse border border-border rounded-lg overflow-hidden;
+}
+
+.prose th {
+  @apply bg-muted font-semibold;
+}
+
+.prose td, .prose th {
+  @apply border-r border-border px-3 py-2 last:border-r-0;
+}
+
+/* Blockquote styling */
+.prose blockquote {
+  @apply border-l-4 border-blue-500 bg-muted/30 pl-4 py-2 my-3 rounded-r not-italic;
+}
+
+/* Better paragraph spacing */
+.prose p {
+  @apply mb-3 last:mb-0;
+}
+
+/* Headings in chat messages */
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  @apply font-semibold;
+}
+
+.prose h1 {
+  @apply text-lg mb-2 mt-4 first:mt-0;
+}
+
+.prose h2 {
+  @apply text-base mb-2 mt-3 first:mt-0;
+}
+
+.prose h3 {
+  @apply text-sm mb-1 mt-2 first:mt-0;
+}
