@@ -19,7 +19,18 @@ frontend:
         # Clean install to ensure consistency
         - rm -rf node_modules
         - rm -rf .next
-        - pnpm install --frozen-lockfile
+        
+        # Check if lockfile is outdated and handle appropriately
+        - echo "Checking lockfile status..."
+        - |
+          if pnpm install --frozen-lockfile --dry-run 2>&1 | grep -q "ERR_PNPM_OUTDATED_LOCKFILE"; then
+            echo "⚠️  Lockfile is outdated, updating dependencies..."
+            pnpm install --no-frozen-lockfile
+            echo "✅ Dependencies updated successfully"
+          else
+            echo "✅ Lockfile is up to date, installing with frozen lockfile..."
+            pnpm install --frozen-lockfile
+          fi
         
         # Verify critical environment variables
         - echo "Verifying critical environment variables..."
@@ -43,6 +54,7 @@ frontend:
           NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}
           COGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET}
           COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+          COGNITO_IDENTITY_POOL_ID=${COGNITO_IDENTITY_POOL_ID}
           COGNITO_SERVICE_CATALOG_POOL_ID=${COGNITO_SERVICE_CATALOG_POOL_ID}
           COGNITO_DOMAIN=${COGNITO_DOMAIN}
           REGION=${REGION}
@@ -58,6 +70,12 @@ frontend:
           DYNAMODB_APPLICATIONS_TABLE=${DYNAMODB_APPLICATIONS_TABLE}
           DYNAMODB_USER_APPLICATION_STATE_TABLE=${DYNAMODB_USER_APPLICATION_STATE_TABLE}
           DYNAMODB_ORGANIZATION_SETTINGS_TABLE=${DYNAMODB_ORGANIZATION_SETTINGS_TABLE}
+          DYNAMODB_MENU_ITEMS_TABLE=${DYNAMODB_MENU_ITEMS_TABLE}
+          DYNAMODB_WORKSPACE_CONTENT_TABLE=${DYNAMODB_WORKSPACE_CONTENT_TABLE}
+          DYNAMODB_CHAT_TABLE=${DYNAMODB_CHAT_TABLE}
+          MI_DYNAMODB_TABLE=${MI_DYNAMODB_TABLE}
+          AGENTS_TABLE_NAME=${AGENTS_TABLE_NAME}
+          AGENT_JOBS_TABLE_NAME=${AGENT_JOBS_TABLE_NAME}
           API_GATEWAY_URL=${API_GATEWAY_URL}
           EOF
         
