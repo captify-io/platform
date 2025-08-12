@@ -8,6 +8,7 @@ import {
   UserApplicationState,
   ListApplicationsQuery,
 } from "@/types/database";
+import { ApiClient } from "@/lib/api-client";
 
 export interface ApplicationsWithUserStatesResponse {
   applications: ApplicationEntity[];
@@ -18,6 +19,11 @@ export interface ApplicationsWithUserStatesResponse {
 
 export class ApplicationApiService {
   private static instance: ApplicationApiService;
+  private apiClient: ApiClient;
+
+  constructor() {
+    this.apiClient = new ApiClient();
+  }
 
   static getInstance(): ApplicationApiService {
     if (!ApplicationApiService.instance) {
@@ -43,25 +49,20 @@ export class ApplicationApiService {
     if (query.limit) searchParams.append("limit", query.limit.toString());
     if (query.last_key) searchParams.append("last_key", query.last_key);
 
-    const response = await fetch(
-      `/api/apps/with-user-states?${searchParams.toString()}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Use API client which automatically handles X-User-ID header and authentication
+    const response =
+      await this.apiClient.get<ApplicationsWithUserStatesResponse>(
+        `/api/apps/with-user-states?${searchParams.toString()}`
+      );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.error ||
+        response.error ||
           `HTTP ${response.status}: Failed to fetch applications`
       );
     }
 
-    return await response.json();
+    return response.data!;
   }
 
   /**
@@ -109,7 +110,7 @@ export class ApplicationApiService {
     appId: string,
     updates: Partial<UserApplicationState>
   ): Promise<UserApplicationState> {
-    const response = await fetch(`/api/apps/${appId}/user-state`, {
+    const response = await fetch(`/api/${appId}/user-state`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

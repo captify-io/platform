@@ -259,10 +259,13 @@ export function TopNavigation({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 console.log("⭐ Star clicked:", {
-                                  appId: app.id, // Log UUID
+                                  appId: app.id, // Log the actual ID
+                                  appSlug: app.slug,
+                                  appName: app.name,
+                                  fullApp: app, // Log the entire app object
                                   isFavorite,
                                 });
-                                toggleFavorite(app.id); // Use UUID for toggle
+                                toggleFavorite(app.id); // Use the actual ID for toggle
                               }}
                               className={`absolute top-2 right-2 p-1 rounded-full transition-colors cursor-pointer hover:bg-muted ${
                                 isFavorite

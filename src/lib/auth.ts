@@ -175,13 +175,33 @@ const authOptions = {
           : "unknown",
       });
 
+      console.log("=== JWT Callback Debug ===");
+      console.log("Token object:", {
+        sub: token?.sub,
+        email: token?.email,
+        name: token?.name,
+        hasAccessToken: !!token?.accessToken,
+        hasRefreshToken: !!token?.refreshToken,
+      });
+      console.log("Account:", {
+        provider: account?.provider,
+        type: account?.type,
+        access_token: account?.access_token ? "present" : "missing",
+        id_token: account?.id_token ? "present" : "missing",
+        refresh_token: account?.refresh_token ? "present" : "missing",
+        expires_at: account?.expires_at,
+        providerAccountId: account?.providerAccountId,
+      });
+      console.log("Profile:", profile);
+      console.log("=== End JWT Callback ===");
+
       // Initial sign in - store tokens from account
       if (account) {
         token.accessToken = account.access_token;
         token.idToken = account.id_token;
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
-        token.sub = account.providerAccountId;
+        token.sub = account.providerAccountId; // Store the Cognito UUID
         console.log("✅ Initial login - storing fresh tokens");
         console.log("Account data:", {
           provider: account.provider,
@@ -191,6 +211,7 @@ const authOptions = {
           expiresAt: account.expires_at
             ? new Date(account.expires_at * 1000).toISOString()
             : "unknown",
+          sub: account.providerAccountId, // Log the UUID being stored
         });
 
         // Get AWS Identity Pool credentials on initial sign-in
@@ -326,6 +347,8 @@ const authOptions = {
         user: session?.user?.email,
         hasToken: !!token,
         hasError: !!token.error,
+        tokenSub: token?.sub,
+        sessionUserId: session?.user?.id,
       });
 
       // If token refresh failed, force re-authentication
@@ -353,6 +376,12 @@ const authOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture;
+
+        console.log("✅ Updated session.user:", {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+        });
       }
 
       return session;

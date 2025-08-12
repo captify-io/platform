@@ -37,7 +37,7 @@ Build a stunning proof-of-concept that demonstrates advanced forecasting, 360-de
 
 #### 1.1 Application Configuration ✅
 
-- ✅ `scripts/apps/mi/config.json` - Complete app metadata
+- ✅ Application metadata stored in DynamoDB `captify-applications` table
 - ✅ Database schema with DynamoDB single-table design + 4 GSIs
 - ✅ Navigation menu with 7 main sections
 - ✅ Agent integration for AI recommendations

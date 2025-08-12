@@ -6,6 +6,7 @@ import authOptions from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
+    // Fetch applications with user states using X-User-ID header
     console.log(
       "📱 GET /api/apps/with-user-states - fetching applications with user states"
     );
@@ -18,6 +19,17 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Get user ID from header (required for proper user state lookup)
+    const userId = request.headers.get("X-User-ID");
+    if (!userId) {
+      return NextResponse.json(
+        { error: "X-User-ID header is required" },
+        { status: 400 }
+      );
+    }
+
+    console.log("🔍 Using userId from header for user states:", userId);
 
     const searchParams = request.nextUrl.searchParams;
 
@@ -40,6 +52,12 @@ export async function GET(request: NextRequest) {
       statusParam && ["active", "draft", "archived"].includes(statusParam)
         ? (statusParam as "active" | "draft" | "archived")
         : undefined;
+
+    console.log("🔍 Session debug:", {
+      userEmail: session.user.email,
+      userObject: session.user,
+      userId: userId,
+    });
 
     console.log("🔍 Query parameters:", {
       org_id,
@@ -68,15 +86,22 @@ export async function GET(request: NextRequest) {
 
     // Fetch user states for these applications
     const userStates = [];
+
     for (const app of applicationsResult.applications) {
       try {
+        console.log(
+          `🔍 Fetching user state for userId: ${userId}, appId: ${app.id}, orgId: ${org_id}`
+        );
         const userState = await applicationDb.getUserApplicationState(
-          session.user.email!,
-          app.id, // Use UUID instead of slug
+          userId, // Use the correct user identifier
+          app.id, // Use application ID
           org_id // Pass org_id for new key structure
         );
         if (userState) {
+          console.log(`✅ Found user state for app ${app.id}:`, userState);
           userStates.push(userState);
+        } else {
+          console.log(`❌ No user state found for app ${app.id}`);
         }
       } catch (error) {
         console.warn(`Failed to get user state for app ${app.id}:`, error);

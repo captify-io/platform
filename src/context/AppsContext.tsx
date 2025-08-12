@@ -11,6 +11,7 @@ import React, {
 import { ApplicationEntity, UserApplicationState } from "@/types/database";
 import { applicationApiService } from "@/lib/services/application-api";
 import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 
 export interface AppDefinition {
   alias: string;
@@ -33,7 +34,7 @@ interface AppsContextValue {
 const AppsContext = createContext<AppsContextValue | undefined>(undefined);
 
 export function AppsProvider({ children }: { children: ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session } = useSession() as { data: Session | null };
   const [applications, setApplications] = useState<ApplicationEntity[]>([]);
   const [userStates, setUserStates] = useState<
     Record<string, UserApplicationState>
@@ -43,7 +44,7 @@ export function AppsProvider({ children }: { children: ReactNode }) {
 
   const loadApplications = useCallback(async () => {
     // Check for user session with proper user ID (UUID) or fallback to email
-    const userId = session?.user?.email;
+    const userId = session?.user?.id || session?.user?.email;
     if (!userId) {
       setLoading(false);
       return;
@@ -103,8 +104,8 @@ export function AppsProvider({ children }: { children: ReactNode }) {
     .map(([appId]) => appId);
 
   const toggleFavorite = async (appId: string) => {
-    // Check for user session with proper user ID (UUID) or fallback to email
-    const userId = session?.user?.email;
+    // Check for user session with proper user ID (UUID)
+    const userId = session?.user?.id || session?.user?.email;
     if (!userId) {
       console.warn("❌ No user session found for toggleFavorite");
       return;
@@ -170,8 +171,8 @@ export function AppsProvider({ children }: { children: ReactNode }) {
 
   const markAsRecent = useCallback(
     async (appId: string) => {
-      // Check for user session with proper user ID (UUID) or fallback to email
-      const userId = session?.user?.email;
+      // Check for user session with proper user ID (UUID)
+      const userId = session?.user?.id || session?.user?.email;
       if (!userId) return;
 
       try {

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback to session for direct server calls
     const session = await getServerSession(authOptions);
-    const userId = headerUserId || session?.user?.id;
+    const userId = headerUserId || session?.user?.id; // Use UUID consistently
 
     if (!userId) {
       return NextResponse.json(
@@ -81,10 +81,15 @@ export async function POST(request: NextRequest) {
     console.log("🔍 Adding favorite:", { userId, app_id });
 
     // Update user state to mark as favorite
-    await applicationDb.updateUserApplicationState(userId, app_id, {
-      favorite: true,
-      last_accessed: new Date().toISOString(),
-    });
+    await applicationDb.updateUserApplicationState(
+      userId,
+      app_id,
+      {
+        favorite: true,
+        last_accessed: new Date().toISOString(),
+      },
+      "default-org"
+    ); // Pass org_id explicitly
 
     console.log("✅ Added to favorites:", { userId, app_id });
 
@@ -127,10 +132,15 @@ export async function DELETE(request: NextRequest) {
     console.log("🔍 Removing favorite:", { userId, app_id });
 
     // Update user state to mark as not favorite
-    await applicationDb.updateUserApplicationState(userId, app_id, {
-      favorite: false,
-      last_accessed: new Date().toISOString(),
-    });
+    await applicationDb.updateUserApplicationState(
+      userId,
+      app_id,
+      {
+        favorite: false,
+        last_accessed: new Date().toISOString(),
+      },
+      "default-org"
+    ); // Pass org_id explicitly
 
     console.log("✅ Removed from favorites:", { userId, app_id });
 
