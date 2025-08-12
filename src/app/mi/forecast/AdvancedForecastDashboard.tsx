@@ -105,7 +105,8 @@ export default function AdvancedForecastDashboard() {
               Advanced Forecast Dashboard
             </h1>
             <p className="text-muted-foreground">
-              Fleet readiness and tri-horizon risk analysis with predictive insights
+              Fleet readiness and tri-horizon risk analysis with predictive
+              insights
             </p>
           </div>
           <div className="flex items-center justify-center h-64">

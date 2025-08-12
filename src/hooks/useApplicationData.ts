@@ -45,7 +45,7 @@ export function useApplicationData(slug: string): UseApplicationDataReturn {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/applications/${slug}`);
+        const response = await fetch(`/api/apps/${slug}`);
 
         if (!response.ok) {
           if (response.status === 404) {

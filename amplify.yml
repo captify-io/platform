@@ -9,17 +9,17 @@ frontend:
         - nvm use 22.15.1
         - node --version
         - npm --version
-        
+
         # Install pnpm and dependencies
         - echo "Installing pnpm and dependencies..."
         - npm install -g pnpm@latest
         - pnpm --version
         - pnpm store prune
-        
+
         # Clean install to ensure consistency
         - rm -rf node_modules
         - rm -rf .next
-        
+
         # Check if lockfile is outdated and handle appropriately
         - echo "Checking lockfile status..."
         - |
@@ -31,18 +31,18 @@ frontend:
             echo "✅ Lockfile is up to date, installing with frozen lockfile..."
             pnpm install --frozen-lockfile
           fi
-        
+
         # Verify critical environment variables
         - echo "Verifying critical environment variables..."
         - test -n "${NEXTAUTH_URL}" || (echo "❌ NEXTAUTH_URL is required" && exit 1)
         - test -n "${NEXTAUTH_SECRET}" || (echo "❌ NEXTAUTH_SECRET is required" && exit 1)
         - test -n "${NEXT_PUBLIC_COGNITO_CLIENT_ID}" || (echo "❌ NEXT_PUBLIC_COGNITO_CLIENT_ID is required" && exit 1)
         - echo "✅ Critical environment variables verified"
-        
+
     build:
       commands:
         - echo "🚀 Starting production build..."
-        
+
         # Create production environment file
         - echo "Creating .env.production..."
         - |
@@ -78,31 +78,31 @@ frontend:
           AGENT_JOBS_TABLE_NAME=${AGENT_JOBS_TABLE_NAME}
           API_GATEWAY_URL=${API_GATEWAY_URL}
           EOF
-        
+
         # Export public environment variables for build
         - export NEXT_PUBLIC_COGNITO_CLIENT_ID=${NEXT_PUBLIC_COGNITO_CLIENT_ID}
         - export NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}
         - export NEXT_PUBLIC_BEDROCK_AGENT_ID=${NEXT_PUBLIC_BEDROCK_AGENT_ID}
-        
+
         # Run type checking before build
         - echo "Running type check..."
         - pnpm run type-check
-        
+
         # Run linting
         - echo "Running linting..."
         - pnpm run lint
-        
+
         # Build the application
         - echo "Building Next.js application..."
         - pnpm run build
-        
+
         # Copy environment file to build output
         - cp .env.production .next/
-        
+
         # Verify build output
         - echo "✅ Build completed successfully"
         - ls -la .next/
-        
+
   artifacts:
     baseDirectory: .next
     files:
@@ -112,7 +112,7 @@ frontend:
       - .git/**/*
       - "*.log"
       - coverage/**/*
-      
+
   cache:
     paths:
       - .next/cache/**/*
