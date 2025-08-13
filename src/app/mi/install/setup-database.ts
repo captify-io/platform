@@ -16,7 +16,7 @@ class MIDatabaseSetup {
 
   constructor() {
     this.dynamodb = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.REGION || "us-east-1",
       ...(process.env.NODE_ENV === "development" && {
         endpoint: "http://localhost:8000", // For DynamoDB Local
         credentials: {

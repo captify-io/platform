@@ -125,20 +125,26 @@ export function Top10RiskPanel({
     const context = `Analyze this B-52 part risk prediction in **markdown**:
 
 **${prediction.part.nomenclature}** (${prediction.part.nsn})
-- Risk: ${prediction.risk_score}/100 (${Math.round(prediction.confidence * 100)}% confidence)
+- Risk: ${prediction.risk_score}/100 (${Math.round(
+      prediction.confidence * 100
+    )}% confidence)
 - Window: ${prediction.predicted_window}
 - Action: ${prediction.recommendation}
 
-**Key Indicators:** ${prediction.leading_indicators.slice(0, 2).join(', ')}
+**Key Indicators:** ${prediction.leading_indicators.slice(0, 2).join(", ")}
 
 **Impact:**
 - MICAP: ${prediction.projected_impact.micap_days} days
 - Sorties: ${prediction.projected_impact.sorties_at_risk}
 - Cost: $${(prediction.projected_impact.cost_impact / 1000000).toFixed(1)}M
 
-**Stock:** ${prediction.stock_posture.on_hand} on hand, ${prediction.stock_posture.due_in} due in, ${prediction.stock_posture.lead_time_days}d lead time
+**Stock:** ${prediction.stock_posture.on_hand} on hand, ${
+      prediction.stock_posture.due_in
+    } due in, ${prediction.stock_posture.lead_time_days}d lead time
 
-**Supplier:** ${prediction.supplier_signal.otd_percent}% OTD, ${(prediction.supplier_signal.pqdr_rate * 100).toFixed(1)}% PQDR
+**Supplier:** ${prediction.supplier_signal.otd_percent}% OTD, ${(
+      prediction.supplier_signal.pqdr_rate * 100
+    ).toFixed(1)}% PQDR
 
 Provide analysis with:
 1. **Risk drivers** - What's causing this score?
@@ -147,10 +153,12 @@ Provide analysis with:
 
     // Ensure message is under 1000 characters
     console.log(`Chat message length: ${context.length} characters`);
-    
+
     if (context.length > 1000) {
-      console.warn(`Message truncated from ${context.length} to 1000 characters`);
-      const finalMessage = context.substring(0, 997) + '...';
+      console.warn(
+        `Message truncated from ${context.length} to 1000 characters`
+      );
+      const finalMessage = context.substring(0, 997) + "...";
       onChatMessage?.(finalMessage);
     } else {
       onChatMessage?.(context);

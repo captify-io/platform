@@ -125,10 +125,10 @@ const authOptions = {
               "🔧 Attempting to fetch AWS credentials in JWT callback"
             );
             const credentials = await fromCognitoIdentityPool({
-              clientConfig: { region: process.env.AWS_REGION },
+              clientConfig: { region: process.env.REGION },
               identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID!,
               logins: {
-                [`cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
+                [`cognito-idp.${process.env.REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
                   typedAccount.id_token as string,
               },
             })();

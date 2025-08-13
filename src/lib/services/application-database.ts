@@ -26,7 +26,7 @@ import { ApplicationCategory } from "@/types/application";
 import { organizationService } from "./organization";
 
 // Environment variables
-const REGION = process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.REGION || "us-east-1";
 const APPLICATIONS_TABLE =
   process.env.DYNAMODB_APPLICATIONS_TABLE || "captify-applications";
 const USER_STATE_TABLE =
@@ -36,23 +36,21 @@ const USER_STATE_TABLE =
 const dynamoClientConfig = {
   region: REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
+    accessKeyId: process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
     secretAccessKey:
-      process.env.AWS_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
+      process.env.SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
   },
 };
 
 console.log("DynamoDB Config:", {
   region: REGION,
-  hasAccessKey: !!(process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID),
+  hasAccessKey: !!(process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID),
   hasSecretKey: !!(
-    process.env.AWS_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY
+    process.env.SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY
   ),
   accessKeyPrefix:
-    (process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID)?.substring(
-      0,
-      8
-    ) + "...",
+    (process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID)?.substring(0, 8) +
+    "...",
   nodeEnv: process.env.NODE_ENV,
 });
 

@@ -122,7 +122,7 @@ class ApplicationInstaller {
   private scriptsDir: string;
 
   constructor() {
-    this.region = process.env.AWS_REGION || "us-east-1";
+    this.region = process.env.REGION || "us-east-1";
     this.dynamoClient = new DynamoDBClient({ region: this.region });
     this.scriptsDir = join(process.cwd(), "scripts", "apps"); // Look in scripts/apps directory
   }
@@ -681,7 +681,7 @@ async function main() {
       );
       console.log("");
       console.log("Environment variables:");
-      console.log("  AWS_REGION   - AWS region (default: us-east-1)");
+      console.log("  REGION   - AWS region (default: us-east-1)");
       process.exit(1);
     }
   } catch (error) {

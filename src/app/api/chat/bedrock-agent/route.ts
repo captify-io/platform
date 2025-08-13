@@ -62,10 +62,10 @@ export async function GET(req: NextRequest) {
 // Helper function to get DynamoDB client
 function getDynamoDBClient() {
   return new DynamoDBClient({
-    region: process.env.AWS_REGION || "us-east-1",
+    region: process.env.REGION || "us-east-1",
     credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      accessKeyId: process.env.ACCESS_KEY_ID!,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
     },
   });
 }
@@ -155,19 +155,15 @@ export async function POST(req: NextRequest) {
         inputText.substring(0, 100) + (inputText.length > 100 ? "..." : ""),
     });
 
-    const {
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
-      AWS_SESSION_TOKEN,
-      AWS_REGION,
-    } = process.env;
+    const { ACCESS_KEY_ID, SECRET_ACCESS_KEY, SESSION_TOKEN, REGION } =
+      process.env;
 
-    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION) {
+    if (!ACCESS_KEY_ID || !SECRET_ACCESS_KEY || !REGION) {
       return new Response(
         JSON.stringify({
           error: "Configuration Error",
           details:
-            "Missing AWS credentials or region. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION on the server.",
+            "Missing AWS credentials or region. Set ACCESS_KEY_ID, SECRET_ACCESS_KEY, and REGION on the server.",
           type: "ConfigError",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -175,11 +171,11 @@ export async function POST(req: NextRequest) {
     }
 
     const client = new BedrockAgentRuntimeClient({
-      region: AWS_REGION,
+      region: REGION,
       credentials: {
-        accessKeyId: AWS_ACCESS_KEY_ID,
-        secretAccessKey: AWS_SECRET_ACCESS_KEY,
-        ...(AWS_SESSION_TOKEN ? { sessionToken: AWS_SESSION_TOKEN } : {}),
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: SECRET_ACCESS_KEY,
+        ...(SESSION_TOKEN ? { sessionToken: SESSION_TOKEN } : {}),
       },
     });
 

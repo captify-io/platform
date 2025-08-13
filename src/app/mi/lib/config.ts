@@ -88,7 +88,7 @@ export const MI_CONFIG = {
  */
 export const MI_ENV = {
   tableName: process.env.MI_DYNAMODB_TABLE || "mi-bom-graph",
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
   isDevelopment: process.env.NODE_ENV === "development",
   isProduction: process.env.NODE_ENV === "production",
 } as const;

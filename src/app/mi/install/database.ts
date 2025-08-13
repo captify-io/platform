@@ -16,7 +16,7 @@ import {
 } from "@/types/mi";
 
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || "us-east-1",
+  region: process.env.REGION || "us-east-1",
 });
 
 const docClient = DynamoDBDocumentClient.from(client);

@@ -13,7 +13,7 @@ import {
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.REGION || "us-east-1",
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    accessKeyId: process.env.ACCESS_KEY_ID!,
     secretAccessKey: process.env.SECRET_ACCESS_KEY!,
   },
 });

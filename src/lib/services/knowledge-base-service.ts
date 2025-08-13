@@ -38,10 +38,10 @@ export class KnowledgeBaseService {
 
   constructor() {
     this.bedrockAgent = new BedrockAgentClient({
-      region: process.env.AWS_REGION || "us-gov-west-1",
+      region: process.env.REGION || "us-gov-west-1",
     });
     this.opensearch = new OpenSearchServerlessClient({
-      region: process.env.AWS_REGION || "us-gov-west-1",
+      region: process.env.REGION || "us-gov-west-1",
     });
   }
 

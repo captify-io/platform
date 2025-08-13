@@ -24,7 +24,7 @@ export interface ActionGroup {
 }
 
 // Available Foundation Models in AWS GovCloud
-export const AWS_GOV_FOUNDATION_MODELS = {
+export const GOV_FOUNDATION_MODELS = {
   // Amazon Nova Models
   "amazon.nova-pro-v1:0": "Nova Pro 1.0",
   "amazon.nova-lite-v1:0": "Nova Lite 1.0",
@@ -36,7 +36,7 @@ export const AWS_GOV_FOUNDATION_MODELS = {
   "anthropic.claude-3-7-sonnet-20241022-v1:0": "Claude 3.7 Sonnet v7",
 } as const;
 
-export type AwsGovFoundationModel = keyof typeof AWS_GOV_FOUNDATION_MODELS;
+export type AwsGovFoundationModel = keyof typeof GOV_FOUNDATION_MODELS;
 
 // Default Service Role for AWS Gov
 export const DEFAULT_SERVICE_ROLE =

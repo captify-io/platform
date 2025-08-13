@@ -2,7 +2,6 @@
   "NEXTAUTH_URL": "https://www.anautics.ai",
   "NEXTAUTH_SECRET": "gDFt30aZNJQ21PRS2g47/3HJzcXSqyTJHgbRLGIiDzc=",
   "REGION": "us-east-1",
-  "AWS_REGION": "us-east-1",
   "ACCESS_KEY_ID": "[your-aws-access-key]",
   "SECRET_ACCESS_KEY": "[your-aws-secret-key]",
   "BEDROCK_AGENT_ID": "H7MXL2MY4U",

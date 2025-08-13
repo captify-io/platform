@@ -66,7 +66,7 @@ export function ChatInterface({
     agentAliasId:
       agentAliasId ||
       applicationInfo?.agentAliasId ||
-      process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ALIAS_ID,
+      process.env.NEXT_PUBLIC_BEDROCK_AGENT_ALIAS_ID,
   };
 
   const [isMinimized, setIsMinimized] = React.useState<boolean>(() => {
@@ -156,7 +156,7 @@ export function ChatInterface({
               agentConfig.agentId || process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID,
             agentAliasId:
               agentConfig.agentAliasId ||
-              process.env.NEXT_PUBLIC_AWS_BEDROCK_AGENT_ALIAS_ID,
+              process.env.NEXT_PUBLIC_BEDROCK_AGENT_ALIAS_ID,
           }
         : { provider: selectedProvider }),
     },

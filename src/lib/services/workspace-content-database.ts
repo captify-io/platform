@@ -21,7 +21,7 @@ import {
 } from "@/types/database";
 
 // Environment variables
-const REGION = process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.REGION || "us-east-1";
 const WORKSPACE_CONTENT_TABLE =
   process.env.DYNAMODB_WORKSPACE_CONTENT_TABLE ||
   "captify-application-workspace-content";
@@ -30,9 +30,9 @@ const WORKSPACE_CONTENT_TABLE =
 const dynamoClientConfig = {
   region: REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
+    accessKeyId: process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
     secretAccessKey:
-      process.env.AWS_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
+      process.env.SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
   },
 };
 

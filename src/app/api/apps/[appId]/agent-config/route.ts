@@ -37,9 +37,9 @@ export async function GET(
     });
 
     log("🔧 Environment check:", {
-      awsRegion: process.env.AWS_REGION,
+      awsRegion: process.env.REGION,
       hasAwsKeys: !!(
-        process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+        process.env.ACCESS_KEY_ID && process.env.SECRET_ACCESS_KEY
       ),
       bedrockAgentId: process.env.BEDROCK_AGENT_ID,
       bedrockAliasId: process.env.BEDROCK_AGENT_ALIAS_ID,
@@ -55,10 +55,10 @@ export async function GET(
 
     // Initialize DynamoDB client
     const dynamoClient = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.EGION || "us-east-1",
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.ACCESS_KEY_ID!,
+        secretAccessKey: process.env.SECRET_ACCESS_KEY!,
       },
     });
     const docClient = DynamoDBDocumentClient.from(dynamoClient);

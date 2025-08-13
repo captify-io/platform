@@ -8,7 +8,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight, oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import {
+  oneLight,
+  oneDark,
+} from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useTheme } from "next-themes";
 import { type Message as AiMessage } from "ai/react";
 import { Button } from "@/components/ui/button";
@@ -44,13 +47,18 @@ interface CodeProps {
   children?: React.ReactNode;
 }
 
-const CodeComponent: React.FC<CodeProps> = ({ inline, className, children, ...props }) => {
+const CodeComponent: React.FC<CodeProps> = ({
+  inline,
+  className,
+  children,
+  ...props
+}) => {
   const { theme } = useTheme();
   const [copied, setCopied] = React.useState(false);
-  
+
   const match = /language-(\w+)/.exec(className || "");
   const language = match ? match[1] : "";
-  
+
   const codeString = String(children).replace(/\n$/, "");
 
   const handleCopy = async () => {
@@ -65,7 +73,7 @@ const CodeComponent: React.FC<CodeProps> = ({ inline, className, children, ...pr
 
   if (inline) {
     return (
-      <code 
+      <code
         className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
         {...props}
       >
@@ -103,7 +111,7 @@ const CodeComponent: React.FC<CodeProps> = ({ inline, className, children, ...pr
           padding: "1rem",
           background: "transparent",
           fontSize: "0.875rem",
-          lineHeight: "1.25rem"
+          lineHeight: "1.25rem",
         }}
         {...props}
       >
@@ -275,16 +283,16 @@ export function ChatContent({
   React.useEffect(() => {
     const scrollToBottom = () => {
       if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ 
+        messagesEndRef.current.scrollIntoView({
           behavior: "smooth",
-          block: "end"
+          block: "end",
         });
       }
     };
 
     // Small delay to ensure DOM is updated
     const timeoutId = setTimeout(scrollToBottom, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [messages, isLoading]);
 
@@ -293,17 +301,17 @@ export function ChatContent({
     if (messages.length > 0) {
       const scrollToBottom = () => {
         if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ 
+          messagesEndRef.current.scrollIntoView({
             behavior: "auto", // Instant scroll on initial load
-            block: "end"
+            block: "end",
           });
         }
       };
-      
+
       // Immediate scroll for initial load
       scrollToBottom();
     }
-  }, []); // Only run once on mount
+  }, [messages.length]); // Include messages.length dependency
   return (
     <div className="flex-1 overflow-hidden min-h-0">
       <ScrollArea ref={scrollAreaRef} className="h-full">
@@ -369,8 +377,8 @@ export function ChatContent({
                       m.content
                     ) : (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none">
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]} 
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           rehypePlugins={[rehypeHighlight]}
                           skipHtml
                           components={{
@@ -436,7 +444,7 @@ export function ChatContent({
                               <p className="mb-2 last:mb-0 leading-relaxed">
                                 {children}
                               </p>
-                            )
+                            ),
                           }}
                         >
                           {sanitizeForDisplay((m.content as string) || "")}
@@ -506,7 +514,7 @@ export function ChatContent({
               </div>
             </div>
           )}
-          
+
           {/* Invisible div for auto-scroll target */}
           <div ref={messagesEndRef} className="h-0" />
         </div>

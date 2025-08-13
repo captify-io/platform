@@ -8,7 +8,7 @@ export async function GET(
   const { id } = await params;
   const table = process.env.DDB_CHAT_TABLE as string;
   const client = new DynamoDBClient({
-    region: process.env.AWS_REGION || "us-east-1",
+    region: process.env.REGION || "us-east-1",
   });
   const res = await client.send(
     new GetItemCommand({ TableName: table, Key: { id: { S: id } } })

@@ -7,7 +7,10 @@ import { AppMenu } from "./AppMenu";
 import { ResizableChatPanel } from "./ResizableChatPanel";
 import { useLayout } from "@/context/LayoutContext";
 import { useApplication } from "@/context/ApplicationContext";
-import { ChatIntegrationProvider, useChatIntegrationInternal } from "@/hooks/useChatIntegration";
+import {
+  ChatIntegrationProvider,
+  useChatIntegrationInternal,
+} from "@/hooks/useChatIntegration";
 
 interface AppLayoutProps {
   children: ReactNode;

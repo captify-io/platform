@@ -47,7 +47,6 @@ $requiredVars = @(
     "COGNITO_SERVICE_CATALOG_POOL_ID",
     "COGNITO_DOMAIN",
     "REGION",
-    "AWS_REGION",
     "ACCESS_KEY_ID",
     "SECRET_ACCESS_KEY",
     "BEDROCK_AGENT_ID",

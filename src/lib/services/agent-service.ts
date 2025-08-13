@@ -20,7 +20,7 @@ import {
 } from "@/types/agents";
 
 // Environment variables
-const REGION = process.env.AWS_REGION || "us-east-1";
+const REGION = process.env.REGION || "us-east-1";
 const AGENTS_TABLE = process.env.AGENTS_TABLE_NAME || "captify-agents";
 const JOBS_TABLE = process.env.AGENT_JOBS_TABLE_NAME || "captify-agent-jobs";
 
@@ -28,23 +28,21 @@ const JOBS_TABLE = process.env.AGENT_JOBS_TABLE_NAME || "captify-agent-jobs";
 const dynamoClientConfig = {
   region: REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
+    accessKeyId: process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID!,
     secretAccessKey:
-      process.env.AWS_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
+      process.env.SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY!,
   },
 };
 
 console.log("Agent Service DynamoDB Config:", {
   region: REGION,
-  hasAccessKey: !!(process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID),
+  hasAccessKey: !!(process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID),
   hasSecretKey: !!(
-    process.env.AWS_SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY
+    process.env.SECRET_ACCESS_KEY || process.env.SECRET_ACCESS_KEY
   ),
   accessKeyPrefix:
-    (process.env.AWS_ACCESS_KEY_ID || process.env.ACCESS_KEY_ID)?.substring(
-      0,
-      8
-    ) + "...",
+    (process.env.ACCESS_KEY_ID || process.env.ACCESS_KEY_ID)?.substring(0, 8) +
+    "...",
   nodeEnv: process.env.NODE_ENV,
 });
 

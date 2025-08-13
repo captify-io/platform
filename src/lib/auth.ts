@@ -221,7 +221,7 @@ const authOptions = {
               "🔧 Getting AWS Identity Pool credentials for initial session..."
             );
 
-            const REGION = process.env.AWS_REGION || "us-east-1";
+            const REGION = process.env.REGION || "us-east-1";
             const IDENTITY_POOL_ID = process.env.COGNITO_IDENTITY_POOL_ID!;
             const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID!;
 

@@ -326,7 +326,8 @@ pre::-webkit-scrollbar-thumb:hover {
 }
 
 /* Better list styling in chat */
-.prose ul, .prose ol {
+.prose ul,
+.prose ol {
   @apply my-2;
 }
 
@@ -343,7 +344,8 @@ pre::-webkit-scrollbar-thumb:hover {
   @apply bg-muted font-semibold;
 }
 
-.prose td, .prose th {
+.prose td,
+.prose th {
   @apply border-r border-border px-3 py-2 last:border-r-0;
 }
 
@@ -358,7 +360,12 @@ pre::-webkit-scrollbar-thumb:hover {
 }
 
 /* Headings in chat messages */
-.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   @apply font-semibold;
 }
 

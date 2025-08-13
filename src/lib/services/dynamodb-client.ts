@@ -31,16 +31,16 @@ export async function createSessionTokenDynamoDBClient(
     }
 
     const credentials = await fromCognitoIdentityPool({
-      clientConfig: { region: process.env.AWS_REGION },
+      clientConfig: { region: process.env.REGION },
       identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID!,
       logins: {
-        [`cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
+        [`cognito-idp.${process.env.REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
           userSession.idToken,
       },
     })();
 
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.REGION || "us-east-1",
       credentials: {
         accessKeyId: credentials.accessKeyId!,
         secretAccessKey: credentials.secretAccessKey!,
@@ -75,16 +75,16 @@ export async function createUserDynamoDBClient(
 
     // Use Cognito Identity Pool directly with the user's ID token
     const credentials = await fromCognitoIdentityPool({
-      clientConfig: { region: process.env.AWS_REGION },
+      clientConfig: { region: process.env.REGION },
       identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID!,
       logins: {
-        [`cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
+        [`cognito-idp.${process.env.REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`]:
           userSession.idToken,
       },
     })();
 
     const client = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.REGION || "us-east-1",
       credentials: {
         accessKeyId: credentials.accessKeyId!,
         secretAccessKey: credentials.secretAccessKey!,

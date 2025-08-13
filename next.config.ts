@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
   // Environment variables for AWS services
   env: {
     REGION: process.env.REGION || "us-east-1",
-    AWS_REGION: process.env.AWS_REGION || process.env.REGION || "us-east-1",
   },
 
   // Headers for security and performance

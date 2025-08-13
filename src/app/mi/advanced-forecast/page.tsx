@@ -133,157 +133,202 @@ export default function AdvancedForecastPage() {
       {/* Main Content */}
       <ScrollArea className="flex-1">
         <div className="container mx-auto p-6 space-y-6">
+          {/* Hero KPIs */}
+          <HeroKPICards kpis={kpiData} horizon={horizon} />
 
-      {/* Hero KPIs */}
-      <HeroKPICards kpis={kpiData} horizon={horizon} />
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="risk-panel" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="risk-panel">Top-10 Problem Parts</TabsTrigger>
+              <TabsTrigger value="forecast-charts">Forecast Charts</TabsTrigger>
+              <TabsTrigger value="fleet-tempo">Fleet Tempo</TabsTrigger>
+            </TabsList>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="risk-panel" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="risk-panel">Top-10 Problem Parts</TabsTrigger>
-          <TabsTrigger value="forecast-charts">
-            Forecast Charts
-          </TabsTrigger>
-          <TabsTrigger value="fleet-tempo">
-            Fleet Tempo
-          </TabsTrigger>
-        </TabsList>
+            <TabsContent value="risk-panel" className="space-y-4">
+              <Top10RiskPanel
+                predictions={predictions}
+                horizon={horizon}
+                weaponSystem={weaponSystem}
+                onRefresh={fetchDashboardData}
+                onChatMessage={sendMessage}
+              />
+            </TabsContent>
 
-        <TabsContent value="risk-panel" className="space-y-4">
-          <Top10RiskPanel
-            predictions={predictions}
-            horizon={horizon}
-            weaponSystem={weaponSystem}
-            onRefresh={fetchDashboardData}
-            onChatMessage={sendMessage}
-          />
-        </TabsContent>
+            <TabsContent value="forecast-charts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>MICAP Forecast</CardTitle>
+                  <CardDescription>
+                    Predicted mission capability degradation over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Chart placeholder */}
+                    <div className="h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                      <div className="text-center space-y-2">
+                        <div className="text-lg font-medium text-muted-foreground">
+                          MICAP Forecast Chart
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Interactive timeline showing predicted capability gaps
+                        </div>
+                      </div>
+                    </div>
 
-        <TabsContent value="forecast-charts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>MICAP Forecast</CardTitle>
-              <CardDescription>
-                Predicted mission capability degradation over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Chart placeholder */}
-                <div className="h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                  <div className="text-center space-y-2">
-                    <div className="text-lg font-medium text-muted-foreground">MICAP Forecast Chart</div>
-                    <div className="text-sm text-muted-foreground">Interactive timeline showing predicted capability gaps</div>
+                    {/* Summary metrics */}
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">
+                          12
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Critical Parts (Next 30d)
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-yellow-600">
+                          28
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          High Risk Parts (Next 90d)
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">
+                          156
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Sorties at Risk
+                        </div>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          85%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Mission Capability
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                {/* Summary metrics */}
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">12</div>
-                    <div className="text-sm text-muted-foreground">Critical Parts (Next 30d)</div>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">28</div>
-                    <div className="text-sm text-muted-foreground">High Risk Parts (Next 90d)</div>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">156</div>
-                    <div className="text-sm text-muted-foreground">Sorties at Risk</div>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">85%</div>
-                    <div className="text-sm text-muted-foreground">Mission Capability</div>
-                  </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="fleet-tempo" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Fleet Tempo & Environment</CardTitle>
+                    <CardDescription>
+                      Sortie rates and environmental factors by base
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Sortie Rate Chart */}
+                      <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <div className="text-lg font-medium text-muted-foreground">
+                            Sortie Rate Trends
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Monthly sortie rates by base
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Base Summary */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Base Operations Summary</h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Minot AFB:</span>
+                            <span className="font-medium">
+                              24 sorties/month
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Barksdale AFB:</span>
+                            <span className="font-medium">
+                              28 sorties/month
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Whiteman AFB:</span>
+                            <span className="font-medium">
+                              22 sorties/month
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Environmental Factors</CardTitle>
+                    <CardDescription>
+                      Weather and operational conditions impact
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Environmental Impact Chart */}
+                      <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <div className="text-lg font-medium text-muted-foreground">
+                            Environmental Impact
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Corrosion, temperature, humidity effects
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Environmental Metrics */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 border rounded-lg">
+                          <div className="text-lg font-bold text-orange-600">
+                            High
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Corrosion Risk
+                          </div>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <div className="text-lg font-bold text-yellow-600">
+                            Moderate
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Temp Stress
+                          </div>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <div className="text-lg font-bold text-blue-600">
+                            75%
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Humidity Avg
+                          </div>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <div className="text-lg font-bold text-green-600">
+                            Good
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Air Quality
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="fleet-tempo" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Fleet Tempo & Environment</CardTitle>
-                <CardDescription>
-                  Sortie rates and environmental factors by base
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Sortie Rate Chart */}
-                  <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                    <div className="text-center space-y-2">
-                      <div className="text-lg font-medium text-muted-foreground">Sortie Rate Trends</div>
-                      <div className="text-sm text-muted-foreground">Monthly sortie rates by base</div>
-                    </div>
-                  </div>
-                  
-                  {/* Base Summary */}
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Base Operations Summary</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Minot AFB:</span>
-                        <span className="font-medium">24 sorties/month</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Barksdale AFB:</span>
-                        <span className="font-medium">28 sorties/month</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Whiteman AFB:</span>
-                        <span className="font-medium">22 sorties/month</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Environmental Factors</CardTitle>
-                <CardDescription>
-                  Weather and operational conditions impact
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Environmental Impact Chart */}
-                  <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                    <div className="text-center space-y-2">
-                      <div className="text-lg font-medium text-muted-foreground">Environmental Impact</div>
-                      <div className="text-sm text-muted-foreground">Corrosion, temperature, humidity effects</div>
-                    </div>
-                  </div>
-                  
-                  {/* Environmental Metrics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-lg font-bold text-orange-600">High</div>
-                      <div className="text-xs text-muted-foreground">Corrosion Risk</div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-lg font-bold text-yellow-600">Moderate</div>
-                      <div className="text-xs text-muted-foreground">Temp Stress</div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-lg font-bold text-blue-600">75%</div>
-                      <div className="text-xs text-muted-foreground">Humidity Avg</div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-lg font-bold text-green-600">Good</div>
-                      <div className="text-xs text-muted-foreground">Air Quality</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
         </div>
       </ScrollArea>
     </div>
