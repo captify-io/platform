@@ -249,7 +249,7 @@ export function TopNavigation({
                         );
                         return (
                           <div
-                            key={app.slug || app.app_id || app.id}
+                            key={app.id}
                             className={`flex items-start space-x-3 p-3 rounded-lg border relative ${
                               isActive
                                 ? "bg-accent border-accent hover:bg-accent/80"

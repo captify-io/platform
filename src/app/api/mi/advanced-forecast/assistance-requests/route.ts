@@ -26,18 +26,38 @@ const tableName = process.env.MI_DYNAMODB_TABLE || "mi-bom-graph";
 
 // Three-tier AWS credential fallback
 async function getDynamoDBClient(session: UserSession) {
-  // For now, use static credentials - TODO: implement full three-tier system
+  const region = process.env.REGION || process.env.AWS_REGION || "us-east-1";
+  const accessKeyId = process.env.ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+  // If we have explicit credentials (local development), use them
+  if (accessKeyId && secretAccessKey) {
+    return new DynamoDBClient({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+
+  // Otherwise, use default credential provider (Amplify/IAM roles)
   return new DynamoDBClient({
-    region: process.env.REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.ACCESS_KEY_ID!,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
-    },
+    region,
   });
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Log environment info for debugging
+    console.log("Assistance Requests API Environment:", {
+      nodeEnv: process.env.NODE_ENV,
+      hasAccessKey: !!process.env.ACCESS_KEY_ID || !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.SECRET_ACCESS_KEY || !!process.env.AWS_SECRET_ACCESS_KEY,
+      tableName: process.env.MI_DYNAMODB_TABLE,
+      region: process.env.REGION || process.env.AWS_REGION,
+    });
+
     // Authentication
     const session = await requireUserSession(request);
     const client = await getDynamoDBClient(session);

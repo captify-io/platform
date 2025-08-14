@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApps } from "@/context/AppsContext";
+import { useNavigationLoading } from "@/context/NavigationLoadingContext";
 import { ApiClient } from "@/lib/api-client";
 import {
   Plus,
@@ -84,6 +85,7 @@ interface EditState {
 export default function ApplicationManagementPage() {
   const router = useRouter();
   const { applications, loading, refreshApplications } = useApps();
+  const { showLoading, hideLoading } = useNavigationLoading();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [stats, setStats] = useState<ApplicationStats>({
@@ -120,6 +122,15 @@ export default function ApplicationManagementPage() {
       });
     }
   }, [applications]);
+
+  // Manage centralized loading
+  useEffect(() => {
+    if (loading) {
+      showLoading("Loading Applications...");
+    } else {
+      hideLoading();
+    }
+  }, [loading, showLoading, hideLoading]);
 
   // Filter applications based on search and filter criteria
   const filteredApplications = applications.filter((app) => {
@@ -475,12 +486,7 @@ export default function ApplicationManagementPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                <span>Loading applications...</span>
-              </div>
-            ) : filteredApplications.length === 0 ? (
+            {loading ? null : filteredApplications.length === 0 ? (
               <div className="text-center py-8">
                 <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">

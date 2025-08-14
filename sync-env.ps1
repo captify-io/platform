@@ -39,8 +39,14 @@ Write-Host "================================================" -ForegroundColor C
 $requiredVars = @(
     "NEXTAUTH_URL",
     "NEXTAUTH_SECRET",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "AZURE_OPENAI_API_KEY",
+    "AZURE_OPENAI_ENDPOINT",
+    "GROQ_API_KEY",
     "NEXT_PUBLIC_COGNITO_CLIENT_ID",
     "NEXT_PUBLIC_COGNITO_ISSUER",
+    "NEXT_PUBLIC_BEDROCK_AGENT_ID",
     "COGNITO_CLIENT_SECRET",
     "COGNITO_USER_POOL_ID",
     "COGNITO_IDENTITY_POOL_ID",
@@ -51,8 +57,6 @@ $requiredVars = @(
     "SECRET_ACCESS_KEY",
     "BEDROCK_AGENT_ID",
     "BEDROCK_AGENT_ALIAS_ID",
-    "BEDROCK_SESSION_ID",
-    "NEXT_PUBLIC_BEDROCK_AGENT_ID",
     "S3_BUCKET",
     "S3_REGION",
     "DYNAMODB_APPLICATIONS_TABLE",
@@ -64,7 +68,9 @@ $requiredVars = @(
     "MI_DYNAMODB_TABLE",
     "AGENTS_TABLE_NAME",
     "AGENT_JOBS_TABLE_NAME",
-    "API_GATEWAY_URL"
+    "API_GATEWAY_URL",
+    "NODE_ENV",
+    "DEBUG_MODE"
 )
 
 # Check which required variables are present

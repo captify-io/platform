@@ -30,18 +30,38 @@ const tableName = process.env.MI_DYNAMODB_TABLE || "mi-bom-graph";
 
 // Three-tier AWS credential fallback
 async function getDynamoDBClient(session: UserSession) {
-  // For now, use static credentials - TODO: implement full three-tier system
+  const region = process.env.REGION || process.env.AWS_REGION || "us-east-1";
+  const accessKeyId = process.env.ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+  // If we have explicit credentials (local development), use them
+  if (accessKeyId && secretAccessKey) {
+    return new DynamoDBClient({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+
+  // Otherwise, use default credential provider (Amplify/IAM roles)
   return new DynamoDBClient({
-    region: process.env.REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.ACCESS_KEY_ID!,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
-    },
+    region,
   });
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Log environment info for debugging
+    console.log("KPI API Environment:", {
+      nodeEnv: process.env.NODE_ENV,
+      hasAccessKey: !!process.env.ACCESS_KEY_ID || !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.SECRET_ACCESS_KEY || !!process.env.AWS_SECRET_ACCESS_KEY,
+      tableName: process.env.MI_DYNAMODB_TABLE,
+      region: process.env.REGION || process.env.AWS_REGION,
+    });
+
     // Authentication
     const session = await requireUserSession(request);
     const client = await getDynamoDBClient(session);
@@ -173,9 +193,23 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Advanced forecast KPIs API error:", error);
+    console.error("Advanced forecast KPIs API error:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        hasAccessKey: !!process.env.ACCESS_KEY_ID || !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.SECRET_ACCESS_KEY || !!process.env.AWS_SECRET_ACCESS_KEY,
+        tableName: process.env.MI_DYNAMODB_TABLE,
+        region: process.env.REGION || process.env.AWS_REGION,
+      }
+    });
+    
     return NextResponse.json(
-      { error: "Failed to fetch KPI data" },
+      { 
+        error: "Failed to fetch KPI data",
+        details: process.env.NODE_ENV === "development" ? error instanceof Error ? error.message : String(error) : undefined
+      },
       { status: 500 }
     );
   }

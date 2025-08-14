@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApps } from "@/context/AppsContext";
+import { useNavigationLoading } from "@/context/NavigationLoadingContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,6 +43,7 @@ interface AdminStats {
 export default function AdminDashboard() {
   const router = useRouter();
   const { applications, loading } = useApps();
+  const { showLoading, hideLoading } = useNavigationLoading();
   const [stats, setStats] = useState<AdminStats>({
     totalApplications: 0,
     activeApplications: 0,
@@ -67,6 +69,15 @@ export default function AdminDashboard() {
       });
     }
   }, [applications]);
+
+  // Manage centralized loading
+  useEffect(() => {
+    if (loading) {
+      showLoading("Loading Admin Dashboard...");
+    } else {
+      hideLoading();
+    }
+  }, [loading, showLoading, hideLoading]);
 
   const quickActions = [
     {
@@ -267,13 +278,7 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">
-                    Loading applications...
-                  </div>
-                </div>
-              ) : recentApplications.length === 0 ? (
+              {loading ? null : recentApplications.length === 0 ? (
                 <div className="text-center py-8">
                   <Globe className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">No applications found</p>
