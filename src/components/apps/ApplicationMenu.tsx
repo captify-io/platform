@@ -127,9 +127,9 @@ export function ApplicationMenu({ onClose, onSelect }: ApplicationMenuProps) {
     markAsRecent(app.id);
     onSelect(app);
     onClose();
-    
+
     showLoading(`Loading ${app.name}...`);
-    
+
     // Small delay to show the loading screen before navigation
     setTimeout(() => {
       router.push(app.href);

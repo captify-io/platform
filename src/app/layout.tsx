@@ -100,7 +100,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      
+
       {/* Navigation Loading Screen */}
       <TitanLoadingScreen isVisible={isLoading} message={message} />
     </div>

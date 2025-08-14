@@ -79,15 +79,17 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const shouldFetchData = useMemo(() => {
     const isAuthPage = pathname?.startsWith("/auth/");
     const isPublicPage = pathname === "/" || pathname?.startsWith("/public/");
-    const isSystemPage = 
-      pathname === "/profile" || 
-      pathname?.startsWith("/settings") || 
+    const isSystemPage =
+      pathname === "/profile" ||
+      pathname?.startsWith("/settings") ||
       pathname?.startsWith("/admin/") ||
       pathname?.startsWith("/search") ||
       pathname?.startsWith("/agents");
     const isAuthenticated = status === "authenticated" && session;
 
-    return !isAuthPage && !isPublicPage && !isSystemPage && isAuthenticated && slug;
+    return (
+      !isAuthPage && !isPublicPage && !isSystemPage && isAuthenticated && slug
+    );
   }, [pathname, status, session, slug]);
 
   // Fetch application data based on slug, but only when authenticated and on appropriate pages

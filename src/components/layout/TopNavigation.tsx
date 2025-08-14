@@ -292,7 +292,11 @@ export function TopNavigation({
                               onClick={() => {
                                 const appSlug =
                                   app.slug || app.app_id || app.id;
-                                const appName = app.name || app.title || app.metadata?.name || "Application";
+                                const appName =
+                                  app.name ||
+                                  app.title ||
+                                  app.metadata?.name ||
+                                  "Application";
                                 const hasDirectRoute = [
                                   "mi",
                                   "console",
@@ -300,10 +304,10 @@ export function TopNavigation({
                                 const href = hasDirectRoute
                                   ? `/${appSlug}`
                                   : `/apps/${app.id}`;
-                                
+
                                 showLoading(`Loading ${appName}...`);
                                 setApplicationMenuOpen(false);
-                                
+
                                 // Small delay to show the loading screen before navigation
                                 setTimeout(() => {
                                   router.push(href);

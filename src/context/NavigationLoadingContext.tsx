@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { usePathname } from "next/navigation";
 
 interface NavigationLoadingContextType {
@@ -10,11 +16,15 @@ interface NavigationLoadingContextType {
   hideLoading: () => void;
 }
 
-const NavigationLoadingContext = createContext<NavigationLoadingContextType | undefined>(
-  undefined
-);
+const NavigationLoadingContext = createContext<
+  NavigationLoadingContextType | undefined
+>(undefined);
 
-export function NavigationLoadingProvider({ children }: { children: ReactNode }) {
+export function NavigationLoadingProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("Loading application...");
   const pathname = usePathname();
@@ -26,7 +36,7 @@ export function NavigationLoadingProvider({ children }: { children: ReactNode })
       const timer = setTimeout(() => {
         setIsLoading(false);
       }, 300);
-      
+
       return () => clearTimeout(timer);
     }
   }, [pathname, isLoading]);
@@ -57,7 +67,9 @@ export function NavigationLoadingProvider({ children }: { children: ReactNode })
 export function useNavigationLoading() {
   const context = useContext(NavigationLoadingContext);
   if (context === undefined) {
-    throw new Error("useNavigationLoading must be used within a NavigationLoadingProvider");
+    throw new Error(
+      "useNavigationLoading must be used within a NavigationLoadingProvider"
+    );
   }
   return context;
 }

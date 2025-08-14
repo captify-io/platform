@@ -8,9 +8,9 @@ interface TitanLoadingScreenProps {
   isVisible: boolean;
 }
 
-export function TitanLoadingScreen({ 
-  message = "Loading application...", 
-  isVisible 
+export function TitanLoadingScreen({
+  message = "Loading application...",
+  isVisible,
 }: TitanLoadingScreenProps) {
   const [progress, setProgress] = useState(0);
 
@@ -24,7 +24,7 @@ export function TitanLoadingScreen({
           return prev + Math.random() * 15;
         });
       }, 200);
-      
+
       return () => clearInterval(interval);
     }
   }, [isVisible]);
@@ -43,26 +43,32 @@ export function TitanLoadingScreen({
             <span className="text-white ml-2 tracking-wide">TITAN</span>
           </span>
         </div>
-        
+
         {/* Loading Indicator */}
         <div className="flex items-center space-x-4 text-gray-300">
           <Loader2 className="h-7 w-7 animate-spin text-blue-400" />
           <span className="text-xl font-medium">{message}</span>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="w-80 h-2 bg-gray-800 rounded-full overflow-hidden shadow-inner">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-        
+
         {/* Loading Dots */}
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          <div
+            className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+            style={{ animationDelay: "0.1s" }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+            style={{ animationDelay: "0.2s" }}
+          ></div>
         </div>
       </div>
     </div>
