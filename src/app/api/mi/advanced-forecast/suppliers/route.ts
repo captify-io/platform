@@ -18,28 +18,17 @@ interface SupplierData {
   total_parts_count: number;
 }
 
-const tableName = process.env.MI_DYNAMODB_TABLE || "mi-bom-graph";
+const tableName = "mi-bom-graph";
 
 // Three-tier AWS credential fallback
 async function getDynamoDBClient(session: UserSession) {
-  const region = process.env.REGION || process.env.AWS_REGION || "us-east-1";
-  const accessKeyId = process.env.ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-
-  // If we have explicit credentials (local development), use them
-  if (accessKeyId && secretAccessKey) {
-    return new DynamoDBClient({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
-  }
-
-  // Otherwise, use default credential provider (Amplify/IAM roles)
+  // For now, use static credentials - TODO: implement full three-tier system
   return new DynamoDBClient({
-    region,
+    region: process.env.REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.ACCESS_KEY_ID!,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+    },
   });
 }
 

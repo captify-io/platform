@@ -22,28 +22,17 @@ interface AssistanceRequestData {
   projected_shortage_date: string;
 }
 
-const tableName = process.env.MI_DYNAMODB_TABLE || "mi-bom-graph";
+const tableName = "mi-bom-graph";
 
 // Three-tier AWS credential fallback
 async function getDynamoDBClient(session: UserSession) {
-  const region = process.env.REGION || process.env.AWS_REGION || "us-east-1";
-  const accessKeyId = process.env.ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-
-  // If we have explicit credentials (local development), use them
-  if (accessKeyId && secretAccessKey) {
-    return new DynamoDBClient({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
-  }
-
-  // Otherwise, use default credential provider (Amplify/IAM roles)
+  // For now, use static credentials - TODO: implement full three-tier system
   return new DynamoDBClient({
-    region,
+    region: process.env.REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.ACCESS_KEY_ID!,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+    },
   });
 }
 
@@ -52,9 +41,11 @@ export async function GET(request: NextRequest) {
     // Log environment info for debugging
     console.log("Assistance Requests API Environment:", {
       nodeEnv: process.env.NODE_ENV,
-      hasAccessKey: !!process.env.ACCESS_KEY_ID || !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.SECRET_ACCESS_KEY || !!process.env.AWS_SECRET_ACCESS_KEY,
-      tableName: process.env.MI_DYNAMODB_TABLE,
+      hasAccessKey:
+        !!process.env.ACCESS_KEY_ID || !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey:
+        !!process.env.SECRET_ACCESS_KEY || !!process.env.AWS_SECRET_ACCESS_KEY,
+      tableName: tableName,
       region: process.env.REGION || process.env.AWS_REGION,
     });
 
@@ -92,13 +83,13 @@ export async function GET(request: NextRequest) {
     const assistanceRequests: AssistanceRequestData[] = [];
 
     items.forEach((item: Record<string, unknown>) => {
-      const predictions = item.predictions as Array<Record<string, unknown>> | undefined;
+      const predictions = item.predictions as
+        | Array<Record<string, unknown>>
+        | undefined;
       if (predictions?.length) {
         predictions.forEach((prediction: Record<string, unknown>) => {
           const entityId = prediction.entityId as string | undefined;
-          const nsnMatch = entityId?.match(
-            /nsn:(\d{4}-\d{2}-\d{3}-\d{4})/
-          );
+          const nsnMatch = entityId?.match(/nsn:(\d{4}-\d{2}-\d{3}-\d{4})/);
           const nsn = nsnMatch ? nsnMatch[1] : "Unknown";
           const score = prediction.score as number | undefined;
           const riskScore = (score || 0) * 100;
@@ -141,11 +132,11 @@ export async function GET(request: NextRequest) {
               requestedDate.getDate() - Math.floor(Math.random() * 30)
             );
 
-            const daysToFailure = prediction.daysToFailure as number | undefined;
+            const daysToFailure = prediction.daysToFailure as
+              | number
+              | undefined;
             const targetDate = new Date(requestedDate);
-            targetDate.setDate(
-              targetDate.getDate() + (daysToFailure || 30)
-            );
+            targetDate.setDate(targetDate.getDate() + (daysToFailure || 30));
 
             const shortageDate = new Date();
             shortageDate.setDate(

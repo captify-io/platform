@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
     try {
       await getUserSession(req);
     } catch (error) {
-      console.warn("No session available for GET /api/chat/bedrock-agent", error);
+      console.warn(
+        "No session available for GET /api/chat/bedrock-agent",
+        error
+      );
     }
 
     // For now, return a static list of agents based on environment variables

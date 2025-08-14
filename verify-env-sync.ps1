@@ -135,8 +135,7 @@ if ($amplifyMissing.Count -eq 0 -and $amplifyMismatch.Count -eq 0 -and
     $amplifyYmlMissing.Count -eq 0) {
     Write-Host "🎉 All configuration files are properly synced!" -ForegroundColor Green
 } else {
-    Write-Host "⚠️  Some configuration files need attention." -ForegroundColor Yellow
-    Write-Host "Run 'sync-env.ps1' to update JSON files." -ForegroundColor White
+    Write-Host "Some configuration files need attention." -ForegroundColor Yellow
 }
 
 Write-Host ""

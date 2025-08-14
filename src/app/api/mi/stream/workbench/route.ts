@@ -1,21 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUserSession } from "@/lib/services/session";
+import {
+  DynamoDBClient,
+  QueryCommand,
+  QueryCommandInput,
+} from "@aws-sdk/client-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import { requireUserSession, type UserSession } from "@/lib/services/session";
 import { WorkbenchDatabase } from "@/app/mi/services/database";
 import { getChartColor } from "@/app/mi/lib/config";
 import type { WorkbenchParams } from "@/app/mi/types";
+import type { WorkbenchIssue } from "@/types/mi";
 
-interface WorkbenchIssue {
-  status: string;
-  criticality: string;
-  priority?: string;
-  milestone?: string;
-  category?: string;
-  impactArea?: string;
-  assignee?: string;
-  riskScore?: number;
-  missionImpact?: number;
-  taskCount?: number;
-  completedTasks?: number;
+const tableName = "mi-bom-graph";
+
+// Three-tier AWS credential fallback
+async function getDynamoDBClient(session: UserSession) {
+  // For now, use static credentials - TODO: implement full three-tier system
+  return new DynamoDBClient({
+    region: process.env.REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.ACCESS_KEY_ID!,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+    },
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -111,27 +118,13 @@ export async function GET(request: NextRequest) {
           "riskScore" in issue && typeof issue.riskScore === "number"
             ? issue.riskScore
             : Math.random() * 100, // Mock data for now
-        missionImpact:
-          typeof (issue as Record<string, unknown>).missionImpact === "number"
-            ? ((issue as Record<string, unknown>).missionImpact as number)
-            : Math.random() * 100, // Mock data for now
+        missionImpact: issue.risk?.missionImpact || Math.random() * 100, // Mock data for now
         aiRecommendation:
           (issue as any).aiRecommendation || "No recommendation available", // eslint-disable-line @typescript-eslint/no-explicit-any
         links: issue.links || [],
-        taskCount:
-          "taskCount" in issue &&
-          typeof (issue as Record<string, unknown>).taskCount === "number"
-            ? ((issue as Record<string, unknown>).taskCount as number)
-            : Math.floor(Math.random() * 10) + 1,
-        completedTasks:
-          "completedTasks" in issue &&
-          typeof (issue as Record<string, unknown>).completedTasks === "number"
-            ? ((issue as Record<string, unknown>).completedTasks as number)
-            : Math.floor(Math.random() * 5),
-        priorityColor:
-          typeof (issue as Record<string, unknown>).priorityColor === "string"
-            ? ((issue as Record<string, unknown>).priorityColor as string)
-            : getChartColor(index),
+        taskCount: Math.floor(Math.random() * 10) + 1,
+        completedTasks: Math.floor(Math.random() * 5),
+        priorityColor: getChartColor(index),
         chartColor: getChartColor(index),
       })),
       chartData: {
