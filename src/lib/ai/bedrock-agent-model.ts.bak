@@ -1,0 +1,161 @@
+import {
+  BedrockAgentRuntimeClient,
+  InvokeAgentCommand,
+} from "@aws-sdk/client-bedrock-agent-runtime";
+import type {
+  LanguageModelV1,
+  LanguageModelV1CallOptions,
+  LanguageModelV1FinishReason,
+} from "ai";
+
+interface BedrockAgentConfig {
+  agentId: string;
+  agentAliasId: string;
+  region: string;
+  credentials: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    sessionToken?: string;
+  };
+  sessionId?: string;
+}
+
+export class BedrockAgentModel implements LanguageModelV1 {
+  readonly specificationVersion = "v1";
+  readonly provider = "bedrock-agent";
+  readonly modelId: string;
+  readonly maxTokens = undefined;
+
+  private client: BedrockAgentRuntimeClient;
+  private config: BedrockAgentConfig;
+
+  constructor(config: BedrockAgentConfig) {
+    this.config = config;
+    this.modelId = `bedrock-agent:${config.agentId}`;
+    this.client = new BedrockAgentRuntimeClient({
+      region: config.region,
+      credentials: config.credentials,
+    });
+  }
+
+  async doGenerate(options: LanguageModelV1CallOptions) {
+    throw new Error("BedrockAgentModel only supports streaming");
+  }
+
+  async doStream(options: LanguageModelV1CallOptions) {
+    if (options.inputFormat !== "messages") {
+      throw new Error("BedrockAgentModel only supports message format");
+    }
+
+    // Get the last user message as input from the prompt
+    const messages = options.prompt as Array<{ role: string; content: string }>;
+    const lastMessage = messages[messages.length - 1];
+    const inputText = lastMessage?.content || "";
+
+    // Generate session ID if not provided
+    const sessionId = this.config.sessionId || this.generateSessionId();
+
+    const command = new InvokeAgentCommand({
+      agentId: this.config.agentId,
+      agentAliasId: this.config.agentAliasId,
+      sessionId,
+      inputText,
+      enableTrace: true,
+    });
+
+    const response = await this.client.send(command);
+
+    return {
+      stream: this.createAsyncIterableStream(response),
+      rawCall: {
+        rawPrompt: options.prompt,
+        rawSettings: {
+          agentId: this.config.agentId,
+          agentAliasId: this.config.agentAliasId,
+          sessionId,
+        },
+      },
+    };
+  }
+
+  private async *createAsyncIterableStream(response: any) {
+    if (!response.completion) {
+      throw new Error("No completion stream received from Bedrock Agent");
+    }
+
+    let fullResponse = "";
+
+    for await (const chunk of response.completion) {
+      // Handle trace events for reasoning and debugging
+      if (chunk.trace) {
+        const rationaleText = this.extractRationaleText(chunk.trace);
+        if (rationaleText) {
+          // Yield custom data for reasoning
+          yield {
+            type: "text-delta" as const,
+            textDelta: "", // No actual text content
+            experimental_providerMetadata: {
+              reasoning: rationaleText,
+            },
+          };
+        }
+
+        // Yield trace data for debugging
+        yield {
+          type: "text-delta" as const,
+          textDelta: "", // No actual text content
+          experimental_providerMetadata: {
+            trace: chunk.trace,
+          },
+        };
+      }
+
+      // Handle actual response content
+      if (chunk.chunk?.bytes) {
+        const text = new TextDecoder().decode(chunk.chunk.bytes);
+        fullResponse += text;
+
+        yield {
+          type: "text-delta" as const,
+          textDelta: text,
+        };
+      }
+    }
+
+    // Yield final completion
+    yield {
+      type: "finish" as const,
+      finishReason: "stop" as LanguageModelV1FinishReason,
+      usage: {
+        promptTokens: 0, // Bedrock Agent doesn't provide token counts
+        completionTokens: this.estimateTokens(fullResponse),
+      },
+    };
+  }
+
+  private extractRationaleText(trace: any): string | null {
+    // Extract reasoning text from various trace types
+    return (
+      trace?.orchestrationTrace?.rationale?.text ??
+      trace?.postProcessingTrace?.rationale?.text ??
+      trace?.preProcessingTrace?.rationale?.text ??
+      null
+    );
+  }
+
+  private generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  }
+
+  private estimateTokens(text: string): number {
+    // Simple token estimation (roughly 4 characters per token)
+    return Math.ceil(text.length / 4);
+  }
+}
+
+// Factory function for creating Bedrock Agent models
+export function createBedrockAgentModel(
+  config: BedrockAgentConfig
+): BedrockAgentModel {
+  return new BedrockAgentModel(config);
+}

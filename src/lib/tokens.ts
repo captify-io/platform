@@ -1,4 +1,4 @@
-import type { Message } from "ai/react";
+import type { Message } from '@ai-sdk/react';
 
 // Lightweight estimate (~4 characters per token)
 export function estimateTokens(messages: Message[] | undefined) {

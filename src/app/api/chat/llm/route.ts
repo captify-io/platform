@@ -92,7 +92,45 @@ export async function POST(req: NextRequest) {
       maxTokens: 1000,
     });
 
-    return result.toAIStreamResponse();
+    // Create AI SDK 4.2 compatible streaming response
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+
+        try {
+          for await (const textPart of result.textStream) {
+            // Send text chunk in AI SDK format
+            controller.enqueue(
+              encoder.encode(
+                `0:"${textPart.replace(/"/g, '\\"').replace(/\n/g, "\\n")}"\n`
+              )
+            );
+          }
+
+          // Send completion signal
+          controller.enqueue(encoder.encode(`d:{"finishReason":"stop"}\n`));
+        } catch (error) {
+          console.error("LLM streaming error:", error);
+          controller.enqueue(
+            encoder.encode(
+              `d:{"error":"${
+                error instanceof Error ? error.message : "Unknown error"
+              }"}\n`
+            )
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("💥 LLM API error:", {
       name: error instanceof Error ? error.name : "Unknown",

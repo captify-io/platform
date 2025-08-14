@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -8,329 +8,309 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
-
-import { MIApiClient } from "../services/api-client";
+import { GlobalFilters } from "./components/GlobalFilters";
+import {
+  KPIBar,
+  ChartsSection,
+  RiskTable,
+  ExplainabilityDrawer,
+} from "./components";
+import {
+  AdvancedForecastApiClient,
+  AdvancedForecastKPIs,
+} from "@/app/mi/services/advanced-forecast-api-client";
 import { useChatIntegration } from "@/hooks/useChatIntegration";
-import type { HeroKPI, PredictionRow } from "../types";
+import { useRouter } from "next/navigation";
 
-// Components
-import { HeroKPICards, Top10RiskPanel, GlobalFilters } from "./components";
+// Weapon systems configuration with status indicators
+const weaponSystems: Array<{
+  value: string;
+  label: string;
+  status: "demo_ready" | "coming_soon";
+  description: string;
+}> = [
+  {
+    value: "B-52H",
+    label: "B-52H Stratofortress",
+    status: "demo_ready",
+    description: "Demo data available",
+  },
+  {
+    value: "F-16",
+    label: "F-16 Fighting Falcon",
+    status: "coming_soon",
+    description: "Integration in progress",
+  },
+  {
+    value: "F-35",
+    label: "F-35 Lightning II",
+    status: "coming_soon",
+    description: "Planned Q2 2024",
+  },
+  {
+    value: "KC-135",
+    label: "KC-135 Stratotanker",
+    status: "coming_soon",
+    description: "Planned Q3 2024",
+  },
+  {
+    value: "C-130",
+    label: "C-130 Hercules",
+    status: "coming_soon",
+    description: "Planned Q4 2024",
+  },
+  {
+    value: "A-10",
+    label: "A-10 Thunderbolt II",
+    status: "coming_soon",
+    description: "Future release",
+  },
+];
 
 export default function AdvancedForecastPage() {
-  // State for filters
-  const [weaponSystem, setWeaponSystem] = useState<string>("B52H");
-  const [horizon, setHorizon] = useState<"Now" | "12mo" | "5yr">("Now");
-  const [scenario, setScenario] = useState<"Baseline" | "What-if">("Baseline");
-
-  // State for data
-  const [kpiData, setKpiData] = useState<HeroKPI[]>([]);
-  const [predictions, setPredictions] = useState<PredictionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Chat integration
   const { sendMessage } = useChatIntegration();
+  const router = useRouter();
 
-  // Fetch dashboard data
-  const fetchDashboardData = useCallback(async () => {
+  // State management
+  const [filters, setFilters] = useState<{
+    weaponSystem: string;
+    assembly: string;
+    horizon: 90 | 180 | 270 | 365;
+    scenario: string;
+  }>({
+    weaponSystem: "B-52H",
+    assembly: "all",
+    horizon: 90,
+    scenario: "baseline",
+  });
+
+  const [data, setData] = useState<{
+    kpis: AdvancedForecastKPIs | null;
+    charts: any;
+    riskTable: any[];
+    loading: boolean;
+    error: string | null;
+  }>({
+    kpis: null,
+    charts: null,
+    riskTable: [],
+    loading: true,
+    error: null,
+  });
+
+  const [explainability, setExplainability] = useState({
+    open: false,
+    selectedPart: null,
+    explanationData: null,
+  });
+
+  // Load data based on filters
+  const loadData = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setData((prev) => ({ ...prev, loading: true, error: null }));
 
-      // Fetch KPIs and predictions in parallel
-      const [kpiResponse, predictionResponse] = await Promise.all([
-        MIApiClient.getDashboardKPIs({
-          weapon_system_id: weaponSystem,
-          horizon,
-          scenario,
-        }),
-        MIApiClient.getDashboardPredictions({
-          weapon_system_id: weaponSystem,
-          horizon,
-          page: "1",
-          sort: "risk_score_desc",
-        }),
-      ]);
-
-      if (!kpiResponse.ok) {
-        throw new Error(kpiResponse.error || "Failed to fetch KPI data");
+      // Only load data for B-52H (demo)
+      if (filters.weaponSystem !== "B-52H") {
+        setData({
+          kpis: null,
+          charts: null,
+          riskTable: [],
+          loading: false,
+          error: null,
+        });
+        return;
       }
 
-      if (!predictionResponse.ok) {
-        throw new Error(
-          predictionResponse.error || "Failed to fetch prediction data"
-        );
-      }
+      // Fetch all data in parallel
+      const [kpisResponse, chartsResponse, riskTableResponse] =
+        await Promise.all([
+          AdvancedForecastApiClient.getKPIs({
+            horizon: filters.horizon,
+            system: filters.weaponSystem,
+            assembly: filters.assembly !== "all" ? filters.assembly : undefined,
+          }),
+          AdvancedForecastApiClient.getAllCharts(filters.horizon),
+          AdvancedForecastApiClient.getRiskScores({
+            horizon: filters.horizon,
+            system: filters.weaponSystem,
+            assembly: filters.assembly !== "all" ? filters.assembly : undefined,
+          }),
+        ]);
 
-      setKpiData(kpiResponse.data?.kpis || []);
-      setPredictions(predictionResponse.data?.predictions || []);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load dashboard data"
-      );
-    } finally {
-      setLoading(false);
+      setData({
+        kpis: kpisResponse.data,
+        charts: chartsResponse,
+        riskTable: riskTableResponse.data,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error("Failed to load advanced forecast data:", error);
+      setData((prev) => ({
+        ...prev,
+        loading: false,
+        error: "Failed to load data. Please try again.",
+      }));
     }
-  }, [weaponSystem, horizon, scenario]);
+  };
 
-  // Load data on mount and when filters change
+  // Initial data load and reload on filter changes
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    loadData();
+  }, [filters]);
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            Loading advanced forecast data...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Handler functions
+  const handleFilterChange = (newFilters: any) => {
+    setFilters({ ...filters, ...newFilters });
+  };
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Dashboard Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error}</p>
-            <Button onClick={fetchDashboardData} className="mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleExplainRisk = async (record: any) => {
+    // Send a detailed message to the agent about the part's risk factors
+    const message = `I need a detailed risk analysis for ${
+      record.nomenclature || record.part_number
+    } (NSN: ${
+      record.nsn || record.part_number
+    }). This part has a risk score of ${record.risk_score} with ${
+      record.days_of_supply
+    } days of supply remaining. Can you explain the key risk factors and recommend specific mitigation strategies for this part within our ${
+      filters.horizon
+    }-day horizon?`;
+    sendMessage(message);
+  };
+
+  const handleBOM360 = (record: any) => {
+    // Navigate to BOM Explorer view for this part using hash routing
+    const nsn = record.nsn || record.part_number;
+    const partName = record.nomenclature || record.part_number;
+    window.location.hash = `bom-explorer?nsn=${nsn}&part=${encodeURIComponent(
+      partName
+    )}`;
+  };
+
+  const handleWorkbench = (record: any) => {
+    // Navigate to the part's workbench using hash routing
+    const nsn = record.nsn || record.part_number;
+    const partName = record.nomenclature || record.part_number;
+    window.location.hash = `workbench?nsn=${nsn}&part=${encodeURIComponent(
+      partName
+    )}&context=risk-analysis`;
+  };
+
+  const closeExplainability = () => {
+    setExplainability({
+      open: false,
+      selectedPart: null,
+      explanationData: null,
+    });
+  };
+
+  // Get current weapon system info
+  const currentWeaponSystem = weaponSystems.find(
+    (ws) => ws.value === filters.weaponSystem
+  );
+  const isB52Demo = filters.weaponSystem === "B-52H";
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header - Global Filters as Header */}
-      <div className="flex-shrink-0 border-b bg-background">
-        <GlobalFilters
-          weaponSystem={weaponSystem}
-          setWeaponSystem={setWeaponSystem}
-          horizon={horizon}
-          setHorizon={setHorizon}
-          scenario={scenario}
-          setScenario={setScenario}
-        />
-      </div>
+    <div className="p-6 space-y-6">
+      {/* Global Filters */}
+      <GlobalFilters
+        weaponSystems={weaponSystems}
+        filters={filters}
+        onFiltersChange={handleFilterChange}
+      />
 
-      {/* Main Content */}
-      <ScrollArea className="flex-1">
-        <div className="container mx-auto p-6 space-y-6">
-          {/* Hero KPIs */}
-          <HeroKPICards kpis={kpiData} horizon={horizon} />
-
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="risk-panel" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="risk-panel">Top-10 Problem Parts</TabsTrigger>
-              <TabsTrigger value="forecast-charts">Forecast Charts</TabsTrigger>
-              <TabsTrigger value="fleet-tempo">Fleet Tempo</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="risk-panel" className="space-y-4">
-              <Top10RiskPanel
-                predictions={predictions}
-                horizon={horizon}
-                weaponSystem={weaponSystem}
-                onRefresh={fetchDashboardData}
-                onChatMessage={sendMessage}
-              />
-            </TabsContent>
-
-            <TabsContent value="forecast-charts" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>MICAP Forecast</CardTitle>
-                  <CardDescription>
-                    Predicted mission capability degradation over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Chart placeholder */}
-                    <div className="h-64 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                      <div className="text-center space-y-2">
-                        <div className="text-lg font-medium text-muted-foreground">
-                          MICAP Forecast Chart
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Interactive timeline showing predicted capability gaps
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary metrics */}
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">
-                          12
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Critical Parts (Next 30d)
-                        </div>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-yellow-600">
-                          28
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          High Risk Parts (Next 90d)
-                        </div>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">
-                          156
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Sorties at Risk
-                        </div>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">
-                          85%
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Mission Capability
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="fleet-tempo" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Fleet Tempo & Environment</CardTitle>
-                    <CardDescription>
-                      Sortie rates and environmental factors by base
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Sortie Rate Chart */}
-                      <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                        <div className="text-center space-y-2">
-                          <div className="text-lg font-medium text-muted-foreground">
-                            Sortie Rate Trends
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Monthly sortie rates by base
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Base Summary */}
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Base Operations Summary</h4>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span>Minot AFB:</span>
-                            <span className="font-medium">
-                              24 sorties/month
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Barksdale AFB:</span>
-                            <span className="font-medium">
-                              28 sorties/month
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Whiteman AFB:</span>
-                            <span className="font-medium">
-                              22 sorties/month
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Environmental Factors</CardTitle>
-                    <CardDescription>
-                      Weather and operational conditions impact
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Environmental Impact Chart */}
-                      <div className="h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                        <div className="text-center space-y-2">
-                          <div className="text-lg font-medium text-muted-foreground">
-                            Environmental Impact
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Corrosion, temperature, humidity effects
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Environmental Metrics */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 border rounded-lg">
-                          <div className="text-lg font-bold text-orange-600">
-                            High
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Corrosion Risk
-                          </div>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <div className="text-lg font-bold text-yellow-600">
-                            Moderate
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Temp Stress
-                          </div>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <div className="text-lg font-bold text-blue-600">
-                            75%
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Humidity Avg
-                          </div>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <div className="text-lg font-bold text-green-600">
-                            Good
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Air Quality
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+      {/* Content based on weapon system selection */}
+      {!isB52Demo ? (
+        // Placeholder for non-B-52H systems
+        <Card>
+          <CardHeader className="text-center py-12">
+            <CardTitle className="flex items-center justify-center gap-2 text-xl">
+              {currentWeaponSystem?.label} Supply Chain Forecasting
+            </CardTitle>
+            <CardDescription className="max-w-md mx-auto">
+              {currentWeaponSystem?.description}. This weapon system integration
+              is planned and will provide the same comprehensive forecasting
+              capabilities currently demonstrated with the B-52H platform.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center pb-12">
+            <div className="space-y-4">
+              <Badge variant="secondary" className="text-sm">
+                {currentWeaponSystem?.status === "coming_soon"
+                  ? "Coming Soon"
+                  : "In Development"}
+              </Badge>
+              <div className="text-sm text-muted-foreground">
+                Features will include:
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </ScrollArea>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto text-sm">
+                <div>Multi-horizon forecasting</div>
+                <div>Risk assessment</div>
+                <div>Supplier analysis</div>
+                <div>AI explanations</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        // B-52H demo content
+        <>
+          {/* Error Display */}
+          {data.error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{data.error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* KPI Bar */}
+          {data.kpis && (
+            <KPIBar
+              kpis={data.kpis}
+              metadata={{}}
+              filters={{
+                weaponSystem: filters.weaponSystem,
+                horizon: filters.horizon,
+                scenario: filters.scenario,
+              }}
+            />
+          )}
+
+          {/* Charts Section */}
+          <ChartsSection
+            charts={
+              data.charts || {
+                riskTrend: null,
+                dosDistribution: null,
+                assistanceRequestTrend: null,
+                supplierPerformanceTrend: null,
+              }
+            }
+            filters={filters}
+            onRefresh={loadData}
+          />
+
+          {/* Risk Table */}
+          <RiskTable
+            data={data.riskTable}
+            filters={filters}
+            onExplain={handleExplainRisk}
+            onBOM360={handleBOM360}
+            onWorkbench={handleWorkbench}
+          />
+
+          {/* Explainability Drawer */}
+          <ExplainabilityDrawer
+            open={explainability.open}
+            onClose={closeExplainability}
+            selectedPart={explainability.selectedPart}
+            explanationData={explainability.explanationData}
+          />
+        </>
+      )}
     </div>
   );
 }

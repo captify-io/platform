@@ -170,37 +170,37 @@ export function generateAgentName(type: string, userId?: string): string {
 export function getModelCapabilities(modelId: AwsGovFoundationModel) {
   const capabilities = {
     "amazon.nova-pro-v1:0": {
-      maxTokens: 300000,
+      maxOutputTokens: 300000,
       type: "text-vision",
       capabilities: ["text", "vision"],
       recommended: ["data-analysis", "complex-reasoning"],
     },
     "amazon.nova-lite-v1:0": {
-      maxTokens: 300000,
+      maxOutputTokens: 300000,
       type: "text-vision",
       capabilities: ["text", "vision"],
       recommended: ["general-purpose", "document-analysis"],
     },
     "amazon.nova-micro-v1:0": {
-      maxTokens: 128000,
+      maxOutputTokens: 128000,
       type: "text",
       capabilities: ["text"],
       recommended: ["simple-tasks", "quick-responses"],
     },
     "anthropic.claude-3-haiku-20240307-v1:0": {
-      maxTokens: 200000,
+      maxOutputTokens: 200000,
       type: "text-vision",
       capabilities: ["text", "vision"],
       recommended: ["fast-responses", "technical-writing", "qa"],
     },
     "anthropic.claude-3-5-sonnet-20241022-v2:0": {
-      maxTokens: 200000,
+      maxOutputTokens: 200000,
       type: "text-vision",
       capabilities: ["text", "vision"],
       recommended: ["complex-analysis", "policy-work", "personal-assistant"],
     },
     "anthropic.claude-3-7-sonnet-20241022-v1:0": {
-      maxTokens: 200000,
+      maxOutputTokens: 200000,
       type: "text-vision",
       capabilities: ["text", "vision"],
       recommended: ["advanced-reasoning", "specialized-tasks"],

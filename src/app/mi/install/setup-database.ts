@@ -144,9 +144,23 @@ class MIDatabaseSetup {
   }
 
   async seedData(): Promise<void> {
-    console.log("Starting data seeding...");
-    await miSeedGenerator.generateB52HDemoData();
-    console.log("Data seeding completed");
+    console.log("🌱 Seeding MI database with demo data...");
+
+    try {
+      // Generate original MI seed data (BOM, workbench, etc.)
+      console.log("📊 Generating original MI demo data...");
+      await miSeedGenerator.generateB52HDemoData();
+
+      // TODO: Generate advanced forecasting seed data
+      console.log(
+        "🔮 Advanced forecasting data generation scheduled for next phase..."
+      );
+
+      console.log("✅ Phase 1 seed data generated successfully");
+    } catch (error) {
+      console.error("❌ Failed to seed data:", error);
+      throw error;
+    }
   }
 
   async setupMIDatabase(): Promise<void> {

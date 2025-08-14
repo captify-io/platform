@@ -41,6 +41,7 @@ import {
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useNavigationLoading } from "@/context/NavigationLoadingContext";
 
 interface FavoriteApplication {
   id: string; // UUID
@@ -102,6 +103,7 @@ export function TopNavigation({
 }: TopNavigationProps) {
   const { data: session } = useSession();
   const { applications, favoriteApps, toggleFavorite, loading } = useApps();
+  const { showLoading } = useNavigationLoading();
   const router = useRouter();
   const [applicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -290,6 +292,7 @@ export function TopNavigation({
                               onClick={() => {
                                 const appSlug =
                                   app.slug || app.app_id || app.id;
+                                const appName = app.name || app.title || app.metadata?.name || "Application";
                                 const hasDirectRoute = [
                                   "mi",
                                   "console",
@@ -297,8 +300,14 @@ export function TopNavigation({
                                 const href = hasDirectRoute
                                   ? `/${appSlug}`
                                   : `/apps/${app.id}`;
-                                router.push(href);
+                                
+                                showLoading(`Loading ${appName}...`);
                                 setApplicationMenuOpen(false);
+                                
+                                // Small delay to show the loading screen before navigation
+                                setTimeout(() => {
+                                  router.push(href);
+                                }, 100);
                               }}
                               className="flex items-start space-x-3 flex-1 cursor-pointer"
                             >
@@ -618,7 +627,13 @@ export function TopNavigation({
                   key={app.appId}
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push(app.href)}
+                  onClick={() => {
+                    showLoading(`Loading ${app.name}...`);
+                    // Small delay to show the loading screen before navigation
+                    setTimeout(() => {
+                      router.push(app.href);
+                    }, 100);
+                  }}
                   className={`transition-all duration-200 text-xs px-3 py-1 h-8 flex items-center space-x-2 cursor-pointer ${
                     isActive
                       ? "bg-gray-800 text-white border border-gray-600"

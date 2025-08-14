@@ -18,7 +18,9 @@ export default function MIPage() {
     const getHashSection = () => {
       if (typeof window !== "undefined") {
         const hash = window.location.hash.replace("#", "");
-        return hash || "advanced-forecast"; // Default to advanced-forecast if no hash
+        // Only return the part before any query parameters
+        const baseHash = hash.split("?")[0];
+        return baseHash || "advanced-forecast"; // Default to advanced-forecast if no hash
       }
       return "advanced-forecast";
     };

@@ -172,8 +172,8 @@ export function ContextPanel() {
 
   const filteredDataSources = dataSources.filter(
     (ds) =>
-      ds.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ds.type.toLowerCase().includes(searchQuery.toLowerCase())
+      ds?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ds?.type?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

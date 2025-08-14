@@ -34,7 +34,7 @@ export function ApplicationAgentTab({
     instructions: application.ai_agent?.instructions || "",
     model: application.ai_agent?.model || "claude-3-sonnet",
     temperature: application.ai_agent?.temperature?.toString() || "0.7",
-    maxTokens: application.ai_agent?.maxTokens?.toString() || "2000",
+    maxOutputTokens: application.ai_agent?.maxOutputTokens?.toString() || "2000",
     capabilities: application.ai_agent?.capabilities || [],
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -51,8 +51,8 @@ export function ApplicationAgentTab({
       formData.model !== (application.ai_agent?.model || "claude-3-sonnet") ||
       formData.temperature !==
         (application.ai_agent?.temperature?.toString() || "0.7") ||
-      formData.maxTokens !==
-        (application.ai_agent?.maxTokens?.toString() || "2000") ||
+      formData.maxOutputTokens !==
+        (application.ai_agent?.maxOutputTokens?.toString() || "2000") ||
       JSON.stringify(formData.capabilities) !==
         JSON.stringify(application.ai_agent?.capabilities || []);
 
@@ -97,7 +97,7 @@ export function ApplicationAgentTab({
             | "gpt-4"
             | "custom",
           temperature: parseFloat(formData.temperature),
-          maxTokens: parseInt(formData.maxTokens),
+          maxOutputTokens: parseInt(formData.maxOutputTokens),
           capabilities: formData.capabilities,
         },
       };
@@ -157,7 +157,6 @@ export function ApplicationAgentTab({
           </Button>
         </div>
       </div>
-
       {error && (
         <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
           <div className="flex items-center">
@@ -166,7 +165,6 @@ export function ApplicationAgentTab({
           </div>
         </div>
       )}
-
       {success && (
         <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-md">
           <div className="flex items-center">
@@ -175,7 +173,6 @@ export function ApplicationAgentTab({
           </div>
         </div>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Agent Identity */}
         <Card>
@@ -271,7 +268,7 @@ export function ApplicationAgentTab({
               <Input
                 id="max-tokens"
                 type="number"
-                value={formData.maxTokens}
+                value={formData.maxOutputTokens}
                 onChange={(e) => handleInputChange("maxTokens", e.target.value)}
                 placeholder="2000"
                 className="mt-1"
@@ -282,7 +279,6 @@ export function ApplicationAgentTab({
           </CardContent>
         </Card>
       </div>
-
       {/* Agent Instructions */}
       <Card>
         <CardHeader>
@@ -308,7 +304,6 @@ export function ApplicationAgentTab({
           </div>
         </CardContent>
       </Card>
-
       {/* Agent Capabilities */}
       <Card>
         <CardHeader>

@@ -88,8 +88,8 @@ function AppLayoutInner({
         />
       )}
 
-      {/* Legacy Menu Panel - for backward compatibility */}
-      {showMenu && !applicationId && isMenuVisible && (
+      {/* Legacy Menu Panel - for backward compatibility - only show if menuContent is provided */}
+      {showMenu && !applicationId && menuContent && isMenuVisible && (
         <div className="w-64 bg-gray-50 border-r flex-shrink-0 h-full overflow-y-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">

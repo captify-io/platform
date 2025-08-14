@@ -34,7 +34,7 @@ export interface AIAgentConfig {
     | "gpt-4"
     | "custom";
   instructions: string;
-  maxTokens?: number;
+  maxOutputTokens?: number;
   temperature?: number;
   capabilities: AgentCapability[];
   knowledgeBases?: string[];

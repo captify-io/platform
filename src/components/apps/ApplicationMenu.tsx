@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { ApplicationCategory } from "@/types/application";
 import { useApps } from "@/context/AppsContext";
+import { useNavigationLoading } from "@/context/NavigationLoadingContext";
 
 interface ApplicationDisplayData {
   id: string;
@@ -44,7 +45,8 @@ export function ApplicationMenu({ onClose, onSelect }: ApplicationMenuProps) {
     loading,
     error,
   } = useApps();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { showLoading } = useNavigationLoading();
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeTab, setActiveTab] = useState("all");
 
   // Transform database applications to display format
@@ -124,8 +126,14 @@ export function ApplicationMenu({ onClose, onSelect }: ApplicationMenuProps) {
   const handleAppClick = (app: ApplicationDisplayData) => {
     markAsRecent(app.id);
     onSelect(app);
-    router.push(app.href);
     onClose();
+    
+    showLoading(`Loading ${app.name}...`);
+    
+    // Small delay to show the loading screen before navigation
+    setTimeout(() => {
+      router.push(app.href);
+    }, 100);
   };
 
   const handleFavoriteClick = (e: React.MouseEvent, appId: string) => {

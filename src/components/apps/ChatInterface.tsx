@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useChat, type Message as AiMessage } from "ai/react";
+import { useChat, type Message } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export interface ChatInterfaceProps {
   threadId?: string; // Thread ID for the current conversation
 }
 
-export type ChatMessage = AiMessage & { createdAt?: string };
+export type ChatMessage = Message & { createdAt?: Date };
 
 export function ChatInterface({
   className,
@@ -127,6 +127,9 @@ export function ChatInterface({
     } catch {}
   }, [selectedProvider]);
 
+  // Local state for input since useChat no longer provides it
+  const [input, setInput] = React.useState("");
+
   const currentProvider = React.useMemo(
     () => providers.find((p) => p.value === selectedProvider),
     [providers, selectedProvider]
@@ -137,39 +140,25 @@ export function ChatInterface({
       ? "/api/chat/bedrock-agent"
       : "/api/chat/llm";
 
-  const {
-    messages,
-    input,
-    setInput,
-    isLoading,
-    error,
-    stop,
-    append,
-    setMessages,
-  } = useChat({
+  const { messages, setMessages, append, isLoading, error, stop } = useChat({
+    id: `chat-${selectedProvider}-${sessionId}`,
     api: apiEndpoint,
     body: {
-      sessionId: threadId || sessionId, // Use threadId if available, fallback to sessionId
-      ...(currentProvider?.type === "bedrock-agent"
-        ? {
-            agentId:
-              agentConfig.agentId || process.env.NEXT_PUBLIC_BEDROCK_AGENT_ID,
-            agentAliasId:
-              agentConfig.agentAliasId ||
-              process.env.NEXT_PUBLIC_BEDROCK_AGENT_ALIAS_ID,
-          }
-        : { provider: selectedProvider }),
+      sessionId: threadId || sessionId,
+      ...(currentProvider?.type === "bedrock-agent" && {
+        agentId: agentConfig.agentId,
+        agentAliasId: agentConfig.agentAliasId,
+      }),
+      ...(currentProvider?.type !== "bedrock-agent" && {
+        provider: selectedProvider,
+      }),
+      workspaceId: "default",
     },
-    onError: (error) => {
-      console.error("💥 Chat error occurred:", error);
-      console.error("Error details:", {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
-        cause: error?.cause,
-      });
+    onError: (error: Error) => {
+      console.error("Chat error occurred:", error);
     },
-    onFinish: async () => {
+    onFinish: async (message) => {
+      console.log("Message finished:", message);
       // Handle message finish
       try {
         const firstUser = messages.find((m) => m.role === "user");
@@ -188,79 +177,31 @@ export function ChatInterface({
         console.warn("Failed to create/save title", e);
       }
     },
-    onResponse: async (res) => {
-      const clone = res.clone();
-      const reader = clone.body?.getReader();
-      if (!reader) return;
-
+    onResponse: async (res: Response) => {
       // reset per assistant turn
       setReasoning("");
       setTraceEvents([]);
       seenTraceIdsRef.current = new Set();
-
-      const decoder = new TextDecoder();
-      let buf = "";
-
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-
-          // Parse trace markers
-          {
-            const re = /<!--TRACE:([A-Za-z0-9+/=]+)-->/g;
-            for (let m; (m = re.exec(buf)); ) {
-              try {
-                const b64 = m[1];
-                if (b64.length > 400000) continue;
-                const text =
-                  typeof window === "undefined"
-                    ? Buffer.from(b64, "base64").toString("utf-8")
-                    : atob(b64);
-                setReasoning(text);
-              } catch {
-                /* ignore */
-              }
-            }
-          }
-
-          // Parse trace JSON
-          {
-            const re = /<!--TRACEJSON:([A-Za-z0-9+/=]+)-->/g;
-            for (let m; (m = re.exec(buf)); ) {
-              try {
-                const b64 = m[1];
-                if (b64.length > 1200000) continue;
-                const jsonText =
-                  typeof window === "undefined"
-                    ? Buffer.from(b64, "base64").toString("utf-8")
-                    : atob(b64);
-                const obj = JSON.parse(jsonText);
-
-                const id =
-                  obj?.traceId ??
-                  obj?.trace?.traceId ??
-                  obj?.orchestrationTrace?.traceId ??
-                  `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-                if (!seenTraceIdsRef.current.has(id)) {
-                  seenTraceIdsRef.current.add(id);
-                  setTraceEvents((prev) => [...prev, obj.trace ?? obj]);
-                }
-              } catch {
-                /* ignore partials */
-              }
-            }
-          }
-
-          if (buf.length > 20000) buf = buf.slice(-12000);
-        }
-      } catch {
-        // never break the UI due to streaming parse errors
-      }
     },
   });
+
+  // Monitor messages for real-time streaming updates with immediate UI refresh
+  React.useEffect(() => {
+    console.log(
+      "Messages updated:",
+      messages.map((m) => ({
+        role: m.role,
+        content: m.content?.substring(0, 50),
+      }))
+    );
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === "assistant" && isLoading) {
+      // Force immediate UI update for real-time streaming
+      React.startTransition(() => {
+        setTimeout(() => {}, 0);
+      });
+    }
+  }, [messages, isLoading]);
 
   const totalTokens = React.useMemo(() => estimateTokens(messages), [messages]);
 
@@ -289,11 +230,12 @@ export function ChatInterface({
     if (e) e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
+
+    // AI SDK v4.2 append function
     await append({
       role: "user",
       content: trimmed,
-      createdAt: new Date().toISOString(),
-    } as ChatMessage);
+    });
     setInput("");
   };
 
@@ -327,10 +269,17 @@ export function ChatInterface({
       );
       const data = (await res.json()) as {
         sessionId: string;
-        messages: ChatMessage[];
+        messages: any[];
       };
       setSessionId(data.sessionId);
-      setMessages(data.messages);
+      // Convert to AI SDK Message format
+      const convertedMessages = data.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        createdAt: msg.createdAt ? new Date(msg.createdAt) : undefined,
+      }));
+      setMessages(convertedMessages);
       setShowHistory(false);
       setReasoning("");
       setTraceEvents([]);
@@ -348,13 +297,12 @@ export function ChatInterface({
   React.useEffect(() => {
     if (!onChatReady) return;
     const submitMessage = (message: string) => {
-      const appender = appendRef.current;
-      if (!message || !message.trim() || !appender) return;
-      appender({
+      const appendFn = appendRef.current;
+      if (!message || !message.trim() || !appendFn) return;
+      appendFn({
         role: "user",
         content: message.trim(),
-        createdAt: new Date().toISOString(),
-      } as ChatMessage);
+      });
     };
     onChatReady(submitMessage);
   }, [onChatReady]);
@@ -436,11 +384,11 @@ export function ChatInterface({
         )}
 
         <ChatContent
-          messages={messages as ChatMessage[]}
+          messages={messages}
           isLoading={isLoading}
           error={error ?? null}
           welcomeMessage={welcomeMessage}
-          reasoning={reasoning}
+          reasoningText={reasoning}
           traceEvents={traceEvents}
         />
 

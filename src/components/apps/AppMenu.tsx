@@ -98,9 +98,12 @@ export function AppMenu({
     // Determine if this menu item is active based on current hash
     let isActive = false;
 
+    // Extract the base hash (before any query parameters)
+    const baseHash = currentHash.split("?")[0];
+
     // Check if current hash matches this menu item's id
     const expectedHash = `#${item.id}`;
-    isActive = currentHash === expectedHash;
+    isActive = baseHash === expectedHash;
 
     // If no hash is set, default to the first menu item (advanced-forecast for MI)
     if (currentHash === "" && item.id === "advanced-forecast") {

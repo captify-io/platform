@@ -207,7 +207,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
 
                     // Stream each chunk as text-delta
                     controller.enqueue({
-                      type: "text-delta",
+                      type: 'text',
                       id: config.generateId(),
                       delta: text,
                     });
@@ -219,7 +219,7 @@ class BedrockAgentLanguageModel implements LanguageModelV2 {
             // If no content was streamed, provide a fallback message
             if (!hasContent) {
               controller.enqueue({
-                type: "text-delta",
+                type: 'text',
                 id: config.generateId(),
                 delta:
                   "I apologize, but I didn't receive a response from the agent. Please try again.",

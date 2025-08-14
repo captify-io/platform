@@ -7,15 +7,18 @@ import AuthWrapper from "@/components/AuthWrapper";
 import { ThemeProvider } from "next-themes";
 import { AppsProvider } from "@/context/AppsContext";
 import { NavigationProvider } from "@/context/NavigationContext";
+import { NavigationLoadingProvider } from "@/context/NavigationLoadingContext";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { ApplicationProvider } from "@/context/ApplicationContext";
 import { TopNavigation } from "@/components/layout/TopNavigation";
 import { SmartBreadcrumb } from "@/components/navigation/SmartBreadcrumb";
 import { MenuToggle } from "@/components/apps/MenuToggle";
+import { TitanLoadingScreen } from "@/components/layout/TitanLoadingScreen";
 import { usePathname } from "next/navigation";
 import { useAutomaticBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { useSession } from "next-auth/react";
 import { useApplication } from "@/context/ApplicationContext";
+import { useNavigationLoading } from "@/context/NavigationLoadingContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +34,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { applicationData } = useApplication();
+  const { isLoading, message } = useNavigationLoading();
 
   // Check if we're on an authentication page or other pages that shouldn't show navigation
   const isAuthPage = pathname?.startsWith("/auth/");
@@ -96,6 +100,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
+      
+      {/* Navigation Loading Screen */}
+      <TitanLoadingScreen isVisible={isLoading} message={message} />
     </div>
   );
 }
@@ -119,13 +126,15 @@ export default function RootLayout({
           <AuthProvider>
             <AuthWrapper>
               <NavigationProvider>
-                <LayoutProvider>
-                  <ApplicationProvider>
-                    <AppsProvider>
-                      <LayoutContent>{children}</LayoutContent>
-                    </AppsProvider>
-                  </ApplicationProvider>
-                </LayoutProvider>
+                <NavigationLoadingProvider>
+                  <LayoutProvider>
+                    <ApplicationProvider>
+                      <AppsProvider>
+                        <LayoutContent>{children}</LayoutContent>
+                      </AppsProvider>
+                    </ApplicationProvider>
+                  </LayoutProvider>
+                </NavigationLoadingProvider>
               </NavigationProvider>
             </AuthWrapper>
           </AuthProvider>

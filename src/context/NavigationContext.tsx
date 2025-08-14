@@ -76,6 +76,14 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
           label = "Console";
         } else if (segment === "search") {
           label = "Search";
+        } else if (segment === "mi") {
+          label = "Materiel Insights";
+        } else if (segment === "bom-explorer") {
+          label = "BOM Explorer";
+        } else if (segment === "advanced-forecast") {
+          label = "Advanced Forecast";
+        } else if (segment === "workbench") {
+          label = "Workbench";
         } else if (segment === "new") {
           label = "New";
           href = undefined; // Don't make "new" clickable
