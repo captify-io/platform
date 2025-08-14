@@ -11,19 +11,14 @@ import {
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { getUserSession } from "@/lib/services/session";
 
-interface ChatMessage {
-  role: string;
-  content: string;
-}
-
 export async function GET(req: NextRequest) {
   try {
     // Try to get user session for authentication, but don't fail if not available
     // TODO: Make this required once authentication is properly integrated
     try {
       await getUserSession(req);
-    } catch (_error) {
-      console.warn("No session available for GET /api/chat/bedrock-agent");
+    } catch (error) {
+      console.warn("No session available for GET /api/chat/bedrock-agent", error);
     }
 
     // For now, return a static list of agents based on environment variables
@@ -296,14 +291,4 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
-}
-
-// Helper function to extract rationale text from trace
-function extractRationaleText(trace: any): string | null {
-  return (
-    trace?.orchestrationTrace?.rationale?.text ??
-    trace?.postProcessingTrace?.rationale?.text ??
-    trace?.preProcessingTrace?.rationale?.text ??
-    null
-  );
 }

@@ -4,19 +4,16 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Upload,
-  Search,
   Database,
   FileText,
   Cloud,
   Layers,
   Plus,
   X,
-  ExternalLink,
   GitBranch,
   LucideIcon,
 } from "lucide-react";
@@ -41,7 +38,7 @@ export function ContextPanel() {
       icon: FileText,
     },
   ]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
   const [showAddMenu, setShowAddMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

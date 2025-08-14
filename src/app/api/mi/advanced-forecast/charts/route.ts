@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generateRiskTrendData(items: any[]) {
+function generateRiskTrendData(items: Array<Record<string, unknown>>) {
   // Generate 30-day trend data
   const days = 30;
   const data = [];
@@ -97,16 +97,19 @@ function generateRiskTrendData(items: any[]) {
 
     if (hasRealData) {
       // Calculate risk metrics from real data
-      const highRiskCount = items.filter(
-        (item) => (item.risk_score || 0) >= 0.7
-      ).length;
+      const highRiskCount = items.filter((item) => {
+        const riskScore = item.risk_score as number | undefined;
+        return (riskScore || 0) >= 0.7;
+      }).length;
       const mediumRiskCount = items.filter((item) => {
-        const score = item.risk_score || 0;
+        const riskScore = item.risk_score as number | undefined;
+        const score = riskScore || 0;
         return score >= 0.4 && score < 0.7;
       }).length;
-      const lowRiskCount = items.filter(
-        (item) => (item.risk_score || 0) < 0.4
-      ).length;
+      const lowRiskCount = items.filter((item) => {
+        const riskScore = item.risk_score as number | undefined;
+        return (riskScore || 0) < 0.4;
+      }).length;
 
       // Add some variance for trend visualization
       const variance = (Math.random() - 0.5) * 0.1;
@@ -138,7 +141,7 @@ function generateRiskTrendData(items: any[]) {
   return data;
 }
 
-function generateDosDistributionData(items: any[]) {
+function generateDosDistributionData(items: Array<Record<string, unknown>>) {
   // Generate Days of Supply distribution
   const buckets = [
     { range: "0-30", min: 0, max: 30, count: 0 },
@@ -150,9 +153,10 @@ function generateDosDistributionData(items: any[]) {
 
   // Simulate DoS values based on risk scores
   items.forEach((item) => {
-    const riskScore = item.risk_score || 0;
+    const riskScore = item.risk_score as number | undefined;
+    const score = riskScore || 0;
     // Higher risk = lower days of supply
-    const dosValue = Math.round((1 - riskScore) * 200 + Math.random() * 50);
+    const dosValue = Math.round((1 - score) * 200 + Math.random() * 50);
 
     for (const bucket of buckets) {
       if (dosValue >= bucket.min && dosValue <= bucket.max) {
@@ -170,7 +174,7 @@ function generateDosDistributionData(items: any[]) {
   }));
 }
 
-function generateSupplierPerformanceData(items: any[]) {
+function generateSupplierPerformanceData(items: Array<Record<string, unknown>>) {
   // Generate supplier risk assessment data
   const suppliers = [
     {

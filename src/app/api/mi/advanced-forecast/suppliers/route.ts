@@ -63,14 +63,58 @@ export async function GET(request: NextRequest) {
 
     // Sort suppliers
     suppliers.sort((a, b) => {
-      const aVal = (a as any)[sortBy];
-      const bVal = (b as any)[sortBy];
-
-      if (sortOrder === "asc") {
-        return aVal - bVal;
-      } else {
-        return bVal - aVal;
+      let aVal: string | number;
+      let bVal: string | number;
+      
+      switch (sortBy) {
+        case 'cage_code':
+          aVal = a.cage_code;
+          bVal = b.cage_code;
+          break;
+        case 'supplier_name':
+          aVal = a.supplier_name;
+          bVal = b.supplier_name;
+          break;
+        case 'otd_percent':
+          aVal = a.otd_percent;
+          bVal = b.otd_percent;
+          break;
+        case 'lead_time_days':
+          aVal = a.lead_time_days;
+          bVal = b.lead_time_days;
+          break;
+        case 'quality_score':
+          aVal = a.quality_score;
+          bVal = b.quality_score;
+          break;
+        case 'risk_parts_count':
+          aVal = a.risk_parts_count;
+          bVal = b.risk_parts_count;
+          break;
+        case 'total_parts_count':
+          aVal = a.total_parts_count;
+          bVal = b.total_parts_count;
+          break;
+        default:
+          aVal = a.otd_percent;
+          bVal = b.otd_percent;
       }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        if (sortOrder === "asc") {
+          return aVal.localeCompare(bVal);
+        } else {
+          return bVal.localeCompare(aVal);
+        }
+      } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+        if (sortOrder === "asc") {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      }
+      
+      return 0;
     });
 
     return NextResponse.json({
@@ -93,7 +137,7 @@ export async function GET(request: NextRequest) {
 }
 
 function generateSuppliersWithRiskData(
-  forecastItems: any[],
+  forecastItems: Array<Record<string, unknown>>,
   riskThreshold: number
 ): SupplierData[] {
   const suppliersData = [
@@ -137,9 +181,10 @@ function generateSuppliersWithRiskData(
     const totalParts = Math.round(
       forecastItems.length * (0.08 + Math.random() * 0.15)
     );
-    const riskParts = forecastItems.filter(
-      (item) => (item.risk_score || 0) >= riskThreshold
-    ).length;
+    const riskParts = forecastItems.filter((item) => {
+      const riskScore = item.risk_score as number | undefined;
+      return (riskScore || 0) >= riskThreshold;
+    }).length;
     const supplierRiskParts = Math.round(
       riskParts * (0.05 + Math.random() * 0.2)
     );

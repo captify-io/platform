@@ -17,9 +17,7 @@ import {
   Grid3x3,
   Wrench,
   Puzzle,
-  Settings,
   Star,
-  Clock,
   LucideIcon,
 } from "lucide-react";
 
@@ -162,10 +160,6 @@ export function ToolsPanel() {
   });
 
   const favoriteTools = tools.filter((tool) => tool.favorite);
-  const recentlyUsedTools = tools
-    .filter((tool) => tool.lastUsed)
-    .sort((a, b) => (b.lastUsed?.getTime() || 0) - (a.lastUsed?.getTime() || 0))
-    .slice(0, 3);
 
   const getStatusBadge = (status: Tool["status"]) => {
     if (status === "running") {

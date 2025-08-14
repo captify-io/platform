@@ -77,12 +77,12 @@ export async function GET(request: NextRequest) {
     let totalConfidence = 0;
     let totalMicapDays = 0;
 
-    items.forEach((item: any) => {
+    items.forEach((item: Record<string, unknown>) => {
       if (item.entity_type === "RISK_FORECAST") {
         totalParts++;
-        const riskScore = (item.risk_score || 0) * 100;
-        const confidence = item.confidence || 0.85;
-        const micapDays = item.projected_micap_days || 0;
+        const riskScore = (item.risk_score as number | undefined || 0) * 100;
+        const confidence = item.confidence as number | undefined || 0.85;
+        const micapDays = item.projected_micap_days as number | undefined || 0;
 
         totalConfidence += confidence;
         totalMicapDays += micapDays;

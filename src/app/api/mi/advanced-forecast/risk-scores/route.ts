@@ -111,35 +111,83 @@ export async function GET(request: NextRequest) {
 
     // Sort results
     riskScores.sort((a, b) => {
-      const aVal = (a as any)[sortBy];
-      const bVal = (b as any)[sortBy];
-
-      if (sortOrder === "asc") {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+      let aVal: unknown;
+      let bVal: unknown;
+      
+      switch (sortBy) {
+        case 'nsn':
+          aVal = a.nsn;
+          bVal = b.nsn;
+          break;
+        case 'part_name':
+          aVal = a.part_name;
+          bVal = b.part_name;
+          break;
+        case 'assembly':
+          aVal = a.assembly;
+          bVal = b.assembly;
+          break;
+        case 'risk_score':
+          aVal = a.risk_score;
+          bVal = b.risk_score;
+          break;
+        case 'confidence':
+          aVal = a.confidence;
+          bVal = b.confidence;
+          break;
+        case 'projected_micap_days':
+          aVal = a.projected_micap_days;
+          bVal = b.projected_micap_days;
+          break;
+        case 'risk_level':
+          aVal = a.risk_level;
+          bVal = b.risk_level;
+          break;
+        case 'last_updated':
+          aVal = a.last_updated;
+          bVal = b.last_updated;
+          break;
+        default:
+          aVal = a.risk_score;
+          bVal = b.risk_score;
       }
+
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        if (sortOrder === "asc") {
+          return aVal.localeCompare(bVal);
+        } else {
+          return bVal.localeCompare(aVal);
+        }
+      } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+        if (sortOrder === "asc") {
+          return aVal - bVal;
+        } else {
+          return bVal - aVal;
+        }
+      }
+      
+      return 0;
     });
 
     // Calculate summary statistics
     const totalParts = riskScores.length;
     const avgRiskScore =
       totalParts > 0
-        ? riskScores.reduce((sum, item) => sum + item.risk_score, 0) /
+        ? riskScores.reduce((sum: number, item: RiskScoreData) => sum + item.risk_score, 0) /
           totalParts
         : 0;
     const avgConfidence =
       totalParts > 0
-        ? riskScores.reduce((sum, item) => sum + item.confidence, 0) /
+        ? riskScores.reduce((sum: number, item: RiskScoreData) => sum + item.confidence, 0) /
           totalParts
         : 0;
 
     const riskDistribution = {
-      critical: riskScores.filter((item) => item.risk_level === "Critical")
+      critical: riskScores.filter((item: RiskScoreData) => item.risk_level === "Critical")
         .length,
-      high: riskScores.filter((item) => item.risk_level === "High").length,
-      medium: riskScores.filter((item) => item.risk_level === "Medium").length,
-      low: riskScores.filter((item) => item.risk_level === "Low").length,
+      high: riskScores.filter((item: RiskScoreData) => item.risk_level === "High").length,
+      medium: riskScores.filter((item: RiskScoreData) => item.risk_level === "Medium").length,
+      low: riskScores.filter((item: RiskScoreData) => item.risk_level === "Low").length,
     };
 
     return NextResponse.json({

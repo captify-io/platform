@@ -71,14 +71,17 @@ export async function GET(request: NextRequest) {
     // Generate assistance requests from forecast data
     const assistanceRequests: AssistanceRequestData[] = [];
 
-    items.forEach((item: any) => {
-      if (item.predictions?.length) {
-        item.predictions.forEach((prediction: any) => {
-          const nsnMatch = prediction.entityId?.match(
+    items.forEach((item: Record<string, unknown>) => {
+      const predictions = item.predictions as Array<Record<string, unknown>> | undefined;
+      if (predictions?.length) {
+        predictions.forEach((prediction: Record<string, unknown>) => {
+          const entityId = prediction.entityId as string | undefined;
+          const nsnMatch = entityId?.match(
             /nsn:(\d{4}-\d{2}-\d{3}-\d{4})/
           );
           const nsn = nsnMatch ? nsnMatch[1] : "Unknown";
-          const riskScore = (prediction.score || 0) * 100;
+          const score = prediction.score as number | undefined;
+          const riskScore = (score || 0) * 100;
 
           // Generate assistance requests for high-risk items
           if (riskScore >= 60) {
@@ -118,20 +121,22 @@ export async function GET(request: NextRequest) {
               requestedDate.getDate() - Math.floor(Math.random() * 30)
             );
 
+            const daysToFailure = prediction.daysToFailure as number | undefined;
             const targetDate = new Date(requestedDate);
             targetDate.setDate(
-              targetDate.getDate() + (prediction.daysToFailure || 30)
+              targetDate.getDate() + (daysToFailure || 30)
             );
 
             const shortageDate = new Date();
             shortageDate.setDate(
-              shortageDate.getDate() + (prediction.daysToFailure || 30)
+              shortageDate.getDate() + (daysToFailure || 30)
             );
 
+            const factors = prediction.factors as string[] | undefined;
             assistanceRequests.push({
               nsn,
               part_number: `P-${nsn.replace(/-/g, "")}`,
-              nomenclature: prediction.factors?.[0] || "Component",
+              nomenclature: factors?.[0] || "Component",
               request_type: requestType,
               priority,
               status,

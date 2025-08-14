@@ -37,7 +37,6 @@ export function ChatLayout({
   leftPanelTitle = "Threads",
   rightPanelTitle,
   leftPanelHeaderContent,
-  rightPanelHeaderContent,
   onLeftPanelToggle,
   onRightPanelToggle,
   className,

@@ -65,12 +65,12 @@ export function useAutomaticBreadcrumbs(enabled: boolean = true) {
       const breadcrumbPath = "/" + pathParts.slice(0, i + 1).join("/");
 
       // Skip technical path segments that aren't user-friendly
-      if (shouldSkipPathSegment(pathSegment, pathParts, i)) {
+      if (shouldSkipPathSegment(pathSegment)) {
         continue;
       }
 
       // Get a human-readable label for the segment
-      const label = getSmartSegmentLabel(pathSegment, pathParts, i);
+      const label = getSmartSegmentLabel(pathSegment);
 
       breadcrumbs.push({
         label,
@@ -88,11 +88,7 @@ export function useAutomaticBreadcrumbs(enabled: boolean = true) {
  * Determines if a path segment should be skipped in breadcrumbs
  * Skips technical segments like UUIDs, single letters, etc.
  */
-function shouldSkipPathSegment(
-  segment: string,
-  pathParts: string[],
-  index: number
-): boolean {
+function shouldSkipPathSegment(segment: string): boolean {
   // Skip UUID-like strings
   if (
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -118,11 +114,7 @@ function shouldSkipPathSegment(
 /**
  * Get a human-readable label for a path segment
  */
-function getSmartSegmentLabel(
-  segment: string,
-  pathParts: string[],
-  index: number
-): string {
+function getSmartSegmentLabel(segment: string): string {
   // Common mappings
   const labelMap: Record<string, string> = {
     settings: "Settings",
