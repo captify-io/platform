@@ -1,0 +1,47 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "out/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "next.config.*"],
+      "env": ["NODE_ENV", "REGION", "AWS_REGION"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "outputs": [],
+      "inputs": ["src/**", "*.js", "*.ts", "*.tsx", "*.json", "eslint.config.*"]
+    },
+    "type-check": {
+      "outputs": [],
+      "inputs": ["src/**", "*.ts", "*.tsx", "tsconfig.json"],
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "test/**", "*.test.*", "*.spec.*"]
+    },
+    "clean": {
+      "cache": false,
+      "outputs": ["dist/**", ".next/**", "out/**"]
+    }
+  },
+  "globalDependencies": [
+    "package.json",
+    "turbo.json",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "REGION",
+    "AWS_REGION",
+    "NEXTAUTH_URL",
+    "NEXTAUTH_SECRET"
+  ]
+}

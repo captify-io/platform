@@ -16,7 +16,7 @@ This platform hosts multiple applications with consistent patterns:
 
 - **Application Definition**: `scripts/apps/[slug]/config.json` defines app metadata
 - **Application Deployment**: `src/app/[slug]/` contains the Next.js implementation
-- **Database Registration**: `npm run install-app` registers apps in `captify-applications` table
+- **Database Registration**: `npm run install-app` registers apps in `captify-appman-App` table
 - **Menu Items**: All navigation stored in `application-menu-items` table, never hardcoded
 
 ### Three-Tier Authentication System

@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "slug": "api-package",
+  "schema": "captify",
+  "name": "Captify API Package",
+  "description": "Server-side API client with unified AWS service access and three-tier security",
+  "type": "library",
+  "category": "infrastructure",
+  "icon": "server",
+  "database": {
+    "prefix": "api",
+    "tables": []
+  },
+  "permissions": ["api.internal"],
+  "navigation": {
+    "showInMenu": false,
+    "menuItems": []
+  },
+  "installation": {
+    "installable": false,
+    "reason": "Utility package - consumed by other applications via npm"
+  },
+  "usage": {
+    "serverSide": true,
+    "clientSide": false,
+    "apiRoutes": true,
+    "components": false
+  }
+}

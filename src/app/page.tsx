@@ -7,8 +7,8 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to console dashboard as the default landing page
-    router.replace("/console");
+    // Redirect to chat as the default landing page
+    router.replace("/chat");
   }, [router]);
 
   // No loading UI - just redirect silently

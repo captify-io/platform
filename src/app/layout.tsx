@@ -2,23 +2,19 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AuthProvider from "@/components/AuthProvider";
-import AuthWrapper from "@/components/AuthWrapper";
+import { SessionProvider, useSession, signIn } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
-import { AppsProvider } from "@/context/AppsContext";
-import { NavigationProvider } from "@/context/NavigationContext";
-import { NavigationLoadingProvider } from "@/context/NavigationLoadingContext";
-import { LayoutProvider } from "@/context/LayoutContext";
-import { ApplicationProvider } from "@/context/ApplicationContext";
-import { TopNavigation } from "@/components/layout/TopNavigation";
-import { SmartBreadcrumb } from "@/components/navigation/SmartBreadcrumb";
-import { MenuToggle } from "@/components/apps/MenuToggle";
-import { TitanLoadingScreen } from "@/components/layout/TitanLoadingScreen";
-import { usePathname } from "next/navigation";
-import { useAutomaticBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useSession } from "next-auth/react";
-import { useApplication } from "@/context/ApplicationContext";
-import { useNavigationLoading } from "@/context/NavigationLoadingContext";
+import {
+  CaptifyProvider,
+  useCaptify,
+  FavoritesBar,
+  TopNavigation,
+  SmartBreadcrumb,
+  LoadingScreen,
+} from "@captify/core";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,64 +26,91 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-function LayoutContent({ children }: { children: React.ReactNode }) {
+// Dynamically import components that might cause SSR issues
+const DynamicAuthenticatedLayout = dynamic(
+  () => Promise.resolve(AuthenticatedLayout),
+  { ssr: false }
+);
+
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
-  const { applicationData } = useApplication();
-  const { isLoading, message } = useNavigationLoading();
+  const { currentApp, setSession, appData, isLoading, loadingMessage } =
+    useCaptify();
 
-  // Check if we're on an authentication page or other pages that shouldn't show navigation
-  const isAuthPage = pathname?.startsWith("/auth/");
-  const isPublicPage = pathname === "/" || pathname?.startsWith("/public/");
+  // Sync session to CaptifyContext
+  useEffect(() => {
+    if (session) {
+      setSession(session);
+    }
+  }, [session, setSession]);
 
-  // Don't show navigation on auth pages, public pages, when not authenticated, or while loading
-  const shouldShowNavigation =
-    !isAuthPage && !isPublicPage && status === "authenticated" && session;
+  // Memoize computed values to prevent unnecessary re-renders
+  const isAuthPage = useMemo(
+    () => pathname?.startsWith("/api/auth/"),
+    [pathname]
+  );
+  const isPublicPage = useMemo(
+    () => pathname === "/" || pathname?.startsWith("/public/"),
+    [pathname]
+  );
+  const shouldShowNavigation = useMemo(
+    () => status === "authenticated" && !!session,
+    [status, session]
+  );
 
-  // Set up automatic breadcrumbs based on current path and application (only when authenticated)
-  useAutomaticBreadcrumbs(!!shouldShowNavigation);
-
-  // Extract app ID from pathname for current application context (fallback)
-  const appId = pathname?.split("/")[2] || "";
-
-  // Use application data for current application, with fallback to extracted appId
-  const currentApplication = applicationData
-    ? {
-        id: applicationData.id,
-        name: applicationData.name,
-      }
-    : {
-        id: appId,
-        name: "Application",
+  // Use CaptifyContext currentApp if available, otherwise fallback to appData
+  const currentApplication = useMemo(() => {
+    if (currentApp) {
+      return {
+        id: currentApp.id,
+        name: currentApp.name,
       };
+    }
+    if (appData) {
+      return {
+        id: appData.appId,
+        name: appData.name,
+      };
+    }
+    // Extract app ID from pathname as final fallback
+    const appId = pathname?.split("/")[2] || "";
+    return {
+      id: appId,
+      name: "Application",
+    };
+  }, [currentApp, appData, pathname]);
 
-  // Show a minimal loading state while checking authentication (but not on auth pages)
-  if (status === "loading" && !isAuthPage && !isPublicPage) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Redirect to sign-in page if not authenticated and trying to access protected route
+  useEffect(() => {
+    if (status === "unauthenticated" && !isAuthPage && !isPublicPage) {
+      signIn("cognito", { callbackUrl: pathname });
+    }
+  }, [status, isAuthPage, isPublicPage, pathname]);
+
+  // Memoize the search focus handler
+  const handleSearchFocus = useCallback(() => {
+    // TODO: Implement search functionality
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-background">
       {shouldShowNavigation && (
         <>
-          {/* Top Navigation */}
+          {/* Top Navigation - Protected Area for Authenticated Users */}
           <TopNavigation
-            onSearchFocus={() => {}}
-            onApplicationMenuClick={() => {}}
+            onSearchFocus={handleSearchFocus}
             currentApplication={currentApplication}
+            session={session}
           />
+
+          {/* Favorites Bar */}
+          <FavoritesBar currentApplication={currentApplication} />
 
           {/* Breadcrumb Navigation */}
           <div className="border-b border-border bg-background">
             <div className="py-1 pl-1 flex items-center gap-3">
-              <MenuToggle />
               <SmartBreadcrumb />
             </div>
           </div>
@@ -102,8 +125,22 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Navigation Loading Screen */}
-      <TitanLoadingScreen isVisible={isLoading} message={message} />
+      <LoadingScreen isLoading={isLoading} message={loadingMessage} />
     </div>
+  );
+}
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  return <DynamicAuthenticatedLayout>{children}</DynamicAuthenticatedLayout>;
+}
+
+function AuthWrapper({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+
+  return (
+    <CaptifyProvider initialSession={session}>
+      <LayoutContent>{children}</LayoutContent>
+    </CaptifyProvider>
   );
 }
 
@@ -117,28 +154,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <AuthWrapper>
-              <NavigationProvider>
-                <NavigationLoadingProvider>
-                  <LayoutProvider>
-                    <ApplicationProvider>
-                      <AppsProvider>
-                        <LayoutContent>{children}</LayoutContent>
-                      </AppsProvider>
-                    </ApplicationProvider>
-                  </LayoutProvider>
-                </NavigationLoadingProvider>
-              </NavigationProvider>
-            </AuthWrapper>
-          </AuthProvider>
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthWrapper>{children}</AuthWrapper>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -1,0 +1,67 @@
+{
+  "name": "@captify/core",
+  "version": "1.0.0",
+  "description": "Core utilities, hooks, components, and libraries for Captify applications",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./lib/*": {
+      "import": "./dist/lib/*.mjs",
+      "require": "./dist/lib/*.js",
+      "types": "./dist/lib/*.d.ts"
+    },
+    "./hooks/*": {
+      "import": "./dist/hooks/*.mjs",
+      "require": "./dist/hooks/*.js",
+      "types": "./dist/hooks/*.d.ts"
+    },
+    "./components/*": {
+      "import": "./dist/components/*.mjs",
+      "require": "./dist/components/*.js",
+      "types": "./dist/components/*.d.ts"
+    },
+    "./auth/*": {
+      "import": "./dist/auth/*.mjs",
+      "require": "./dist/auth/*.js",
+      "types": "./dist/auth/*.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "watch": "tsup --watch",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.2",
+    "react": "^19.1.0",
+    "next": "15.0.3",
+    "next-auth": "5.0.0-beta.25"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.1.7",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "rimraf": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "next": ">=14.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

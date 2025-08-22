@@ -12,6 +12,32 @@ const nextConfig: NextConfig = {
   // Server external packages (moved from experimental)
   serverExternalPackages: ["@aws-sdk"],
 
+  // Webpack configuration to handle Node.js modules
+  webpack: (config: any, { isServer }: any) => {
+    // Add fallbacks for Node.js modules in client-side code
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        child_process: false,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+
+    // Bundle analyzer (optional, for debugging)
+    if (process.env.ANALYZE === "true") {
+      config.plugins.push(
+        new (require("@next/bundle-analyzer"))({
+          enabled: true,
+        })
+      );
+    }
+
+    return config;
+  },
+
   // Image optimization
   images: {
     formats: ["image/webp", "image/avif"],
@@ -59,22 +85,33 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Turbopack configuration (now stable)
+  turbopack: {
+    rules: {
+      // Optimize common file types
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    },
+    // Resolve alias for Turbopack
+    resolveAlias: {
+      "@": "./src",
+      "@captify/core": "./packages/core/src",
+      "@captify/api": "./packages/api/src",
+      "@captify/chat": "./packages/chat/src",
+    },
+  },
+
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
+    // Other performance optimizations
+    optimisticClientCache: true,
+    serverMinification: true,
+    // Modern bundling optimizations
+    esmExternals: true,
   },
-
-  // Bundle analyzer (optional, for debugging)
-  ...(process.env.ANALYZE === "true" && {
-    webpack: (config: any) => {
-      config.plugins.push(
-        new (require("@next/bundle-analyzer"))({
-          enabled: true,
-        })
-      );
-      return config;
-    },
-  }),
 };
 
 export default nextConfig;

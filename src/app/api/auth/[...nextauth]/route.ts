@@ -67,6 +67,8 @@ const authOptions = {
       },
       token: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/token`,
       userinfo: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/userInfo`,
+      // Configure logout endpoint for proper Cognito signout
+      idToken: true,
       checks: ["pkce", "state", "nonce"],
       profile(profile: Record<string, unknown>) {
         console.log("Cognito Profile Callback:", profile);
@@ -216,8 +218,9 @@ const authOptions = {
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/api/auth/signin",
+    error: "/api/auth/error",
+    signOut: "/", // Redirect to home page after signout
   },
   events: {
     async signIn({
@@ -231,6 +234,11 @@ const authOptions = {
       if (process.env.NODE_ENV === "development") {
         // Log sign-in event for development debugging
         console.log("Sign-in event:", { user, account });
+      }
+    },
+    async signOut() {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Sign-out event triggered");
       }
     },
   },
@@ -265,6 +273,8 @@ async function handler(
         },
         token: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/token`,
         userinfo: `${process.env.COGNITO_DOMAIN}/${process.env.COGNITO_USER_POOL_ID}/oauth2/userInfo`,
+        // Configure logout endpoint for proper Cognito signout
+        idToken: true,
         checks: ["pkce", "state", "nonce"],
         profile(profile: Record<string, unknown>) {
           // Do not log in production

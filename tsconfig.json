@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@captify/core": ["./packages/core/src"],
+      "@captify/chat": ["./packages/chat/src"],
+      "@captify/api": ["./packages/api/src"],
+      "@captify/veripicks": ["./packages/veripicks/src"]
     }
   },
   "include": [
@@ -31,7 +35,22 @@
     "src/components/apps/SlidingChatLayout.tsx",
     "src/components/layout/ShellLayout.tsx.bak",
     "src/components/layout/ApplicationLayoutEnhanced.tsx.bak",
-    "src/components/layout/ApplicationLayout-old.tsx.bak"
+    "src/components/layout/ApplicationLayout-old.tsx.bak",
+    "src/lib.bak/services/application-database.ts.bak",
+    "src/lib.bak/services/cognito-identity.ts.bak",
+    "src/lib.bak/services/config.ts.bak",
+    "src/lib.bak/services/database.ts.bak",
+    "src/lib.bak/services/dynamodb-client.ts.bak",
+    "src/lib.bak/services/external-services.ts.bak",
+    "src/lib.bak/services/organization.ts.bak",
+    "src/lib.bak/services/migration.ts.bak",
+    "src/lib.bak/services/menu-item-database.ts.bak",
+    "src/lib.bak/services/knowledge-base-service.ts.bak",
+    "src/lib.bak/services/hooks.ts.bak",
+    "src/lib.bak/services/session.ts.bak",
+    "src/lib.bak/services/progress-service.ts.bak",
+    "src/lib/services/workspace-content-database.ts.bak",
+    "packages/appman2/src/services/AppResourceHandler.ts.bak"
   ],
   "exclude": ["node_modules", "infrastructure", "scripts"]
 }

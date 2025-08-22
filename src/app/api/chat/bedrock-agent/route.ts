@@ -9,7 +9,7 @@ import {
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { getUserSession } from "@/lib/services/session";
+import { getUserSession } from "@captify/api";
 
 export async function GET(req: NextRequest) {
   try {
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     const userSessionId =
       sessionId ||
-      `session-${sanitizeSessionId(session.user_id)}-${
+      `session-${sanitizeSessionId(session.userId)}-${
         workspaceId || "default"
       }-${Date.now()}`;
 
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
                   `msg-${Date.now()}-user`,
                   "user",
                   inputText,
-                  session.user_id
+                  session.userId
                 );
 
                 // Save assistant response
@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
                   `msg-${Date.now()}-assistant`,
                   "assistant",
                   fullResponse,
-                  session.user_id
+                  session.userId
                 );
               } catch (dbError) {
                 console.error("Failed to save messages to database:", dbError);
