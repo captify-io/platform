@@ -26,10 +26,10 @@ frontend:
         - |
           if pnpm install --frozen-lockfile --dry-run 2>/dev/null; then
             echo "✅ Lockfile is up to date, installing with frozen lockfile..."
-            pnpm install --frozen-lockfile --include=dev
+            pnpm install --frozen-lockfile
           else
             echo "⚠️  Installing dependencies without frozen lockfile..."
-            pnpm install --no-frozen-lockfile --include=dev
+            pnpm install
             echo "✅ Dependencies installed successfully"
           fi
 
@@ -38,14 +38,13 @@ frontend:
         - ls -la node_modules/ | head -5 || echo "No node_modules directory"
         - ls -la node_modules/.bin/ | head -5 || echo "No .bin directory"
 
-        # Verify dependencies installation
+        # Verify dependencies installation and build workspace packages
         - echo "Verifying dependencies..."
-        - ls -la node_modules/.bin/ | head -10 || echo "No .bin directory found"
-        - pnpm list --depth=0 | grep -E "(turbo|typescript)" || echo "Key dependencies missing"
+        - pnpm list --depth=0 | grep -E "(turbo|typescript)" || echo "Key dependencies verification"
         
-        # Try to build workspace packages (non-blocking)
-        - echo "Attempting to build workspace packages..."
-        - npx turbo run build --filter=packages/* || pnpm exec turbo run build --filter=packages/* || echo "⚠️ Workspace packages build skipped, continuing with main build..."
+        # Build workspace packages
+        - echo "Building workspace packages..."
+        - pnpm run build:packages
 
         # Verify critical environment variables
         - echo "Verifying critical environment variables..."
@@ -109,8 +108,6 @@ frontend:
 
         # Run type checking before build
         - echo "Running type check..."
-        - echo "Verifying TypeScript installation..."
-        - npx tsc --version || (echo "❌ TypeScript not found, installing..." && pnpm add -D typescript@^5)
         - pnpm run type-check
 
         # Run linting

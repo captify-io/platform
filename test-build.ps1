@@ -15,7 +15,18 @@ if (!(Get-Command pnpm -ErrorAction SilentlyContinue)) {
 
 # Install dependencies with dev dependencies
 Write-Host "Installing dependencies (including dev dependencies)..." -ForegroundColor Yellow
-pnpm install --include=dev
+$ErrorActionPreference = "Stop"
+
+try {
+    pnpm install --frozen-lockfile
+    Write-Host "✅ Installed with frozen lockfile"
+} catch {
+    Write-Host "⚠️ Frozen lockfile failed, trying without..." -ForegroundColor Yellow
+    pnpm install
+    Write-Host "✅ Installed dependencies"
+}
+
+$ErrorActionPreference = "Continue"
 
 # Debug: Check if node_modules exists and has expected structure
 Write-Host "Debugging node_modules structure..." -ForegroundColor Yellow
@@ -65,32 +76,35 @@ try {
 
 # Run type checking
 Write-Host "Running type check..." -ForegroundColor Yellow
-try {
-    pnpm run type-check
-    Write-Host "✅ Type check passed"
-} catch {
+$typeCheckResult = & pnpm run type-check 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Type check passed" -ForegroundColor Green
+} else {
     Write-Host "❌ Type check failed" -ForegroundColor Red
-    throw
+    Write-Host $typeCheckResult
+    exit 1
 }
 
 # Run linting
 Write-Host "Running linting..." -ForegroundColor Yellow
-try {
-    pnpm run lint
-    Write-Host "✅ Linting passed"
-} catch {
+$lintResult = & pnpm run lint 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Linting passed" -ForegroundColor Green
+} else {
     Write-Host "❌ Linting failed" -ForegroundColor Red
-    throw
+    Write-Host $lintResult
+    exit 1
 }
 
 # Build the application
 Write-Host "Building Next.js application..." -ForegroundColor Yellow
-try {
-    pnpm run build
-    Write-Host "✅ Build completed successfully"
-} catch {
+$buildResult = & pnpm run build 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Build completed successfully" -ForegroundColor Green
+} else {
     Write-Host "❌ Build failed" -ForegroundColor Red
-    throw
+    Write-Host $buildResult
+    exit 1
 }
 
 # Verify build output
