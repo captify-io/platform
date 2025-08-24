@@ -3,12 +3,25 @@ frontend:
   phases:
     preBuild:
       commands:
+        # Set monorepo app root for Amplify
+        - export AMPLIFY_MONOREPO_APP_ROOT="."
+        - echo "AMPLIFY_MONOREPO_APP_ROOT set to: $AMPLIFY_MONOREPO_APP_ROOT"
+        
         # Set up Node.js environment
         - echo "Setting up Node.js environment..."
         - nvm install 22.15.1
         - nvm use 22.15.1
         - node --version
         - npm --version
+
+        # Debug: Verify monorepo structure and package.json
+        - echo "Debugging monorepo structure..."
+        - pwd
+        - ls -la
+        - echo "Checking package.json content..."
+        - cat package.json | head -20
+        - echo "Verifying Next.js version in package.json..."
+        - grep -E '"next".*:' package.json || echo "Next.js not found in dependencies"
 
         # Install pnpm and dependencies
         - echo "Installing pnpm and dependencies..."
