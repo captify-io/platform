@@ -36,15 +36,24 @@ frontend:
         # Debug: Check if node_modules exists and has expected structure
         - echo "Debugging node_modules structure..."
         - ls -la node_modules/ | head -5 || echo "No node_modules directory"
-        - ls -la node_modules/.bin/ | head -5 || echo "No .bin directory"
+        - ls -la node_modules/.bin/ | head -10 || echo "No .bin directory"
+        - echo "Checking for turbo specifically..."
+        - ls -la node_modules/.bin/turbo* || echo "Turbo not found in .bin"
+        - which turbo || echo "Turbo not in PATH"
 
-        # Verify dependencies installation and build workspace packages
+        # Verify dependencies installation
         - echo "Verifying dependencies..."
         - pnpm list --depth=0 | grep -E "(turbo|typescript)" || echo "Key dependencies verification"
         
-        # Build workspace packages
+        # Build workspace packages (critical for deployment)
         - echo "Building workspace packages..."
-        - pnpm run build:packages
+        - echo "Building @captify/api package..."
+        - pnpm --filter="@captify/api" run build
+        - echo "Building @captify/core package..."
+        - pnpm --filter="@captify/core" run build
+        - echo "Building @captify/veripicks package..."
+        - pnpm --filter="@captify/veripicks" run build
+        - echo "✅ All workspace packages built successfully"
 
         # Verify critical environment variables
         - echo "Verifying critical environment variables..."

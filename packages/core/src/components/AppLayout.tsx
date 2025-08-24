@@ -20,7 +20,7 @@ import {
 } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import { Bot } from "lucide-react";
-import { DynamicIcon, IconName } from "@captify/core";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import type { MenuItem } from "../context/CaptifyContext";
 
 interface AppLayoutProps {

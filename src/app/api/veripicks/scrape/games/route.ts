@@ -3,7 +3,6 @@ import {
   Game,
   Team,
   PublicBettingSentiment,
-  GameMarketChange,
 } from "@captify/veripicks";
 import { randomUUID } from "crypto";
 import {
@@ -68,7 +67,21 @@ function mapActionNetworkStatus(
 function transformProReport(proReport: any): any {
   if (!proReport) return undefined;
 
-  const transformSignals = (signals: any[]): any[] => {
+  interface ApiSignal {
+    signal_type: string;
+    explanation: string;
+    strength: string;
+    meta?: {
+      steam_moves?: any;
+      reverse_line_moves?: any;
+      bet_percent?: any;
+      money_percent?: any;
+      expert_user_ids?: any;
+      opposing_expert_user_ids?: any;
+    };
+  }
+
+  const transformSignals = (signals: ApiSignal[]): any[] => {
     if (!signals) return [];
     return signals.map((signal) => ({
       signalType: signal.signal_type,
@@ -154,7 +167,7 @@ function calculatePublicBettingSentiment(
   } as any;
 
   // Process each sportsbook's markets
-  for (const [bookId, market] of Object.entries(markets)) {
+  for (const [, market] of Object.entries(markets)) {
     const marketData = market as any;
     if (!marketData?.event) continue;
 
@@ -587,7 +600,7 @@ async function fetchLiveData(requestData: {
           for (const team of game.teams) {
             if (!teamsMap.has(team.id)) {
               // Enhanced team data processing for different sports with proper type conversion
-              const teamData: any = {
+              const teamData: Partial<Team> = {
                 teamId: randomUUID(),
                 team_id: team.id,
                 name: String(team.full_name || "Unknown Team"),
@@ -605,11 +618,11 @@ async function fetchLiveData(requestData: {
                   ? String(team.secondary_color)
                   : undefined,
                 urlSlug: team.url_slug ? String(team.url_slug) : undefined,
-                coreId:
+                core_id:
                   team.core_id !== undefined && team.core_id !== null
                     ? Number(team.core_id)
                     : undefined,
-                sport: String(SPORTS_CONFIG[sport]),
+                sport: SPORTS_CONFIG[sport] as any,
                 league: String(sport.toUpperCase()),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -663,7 +676,7 @@ async function fetchLiveData(requestData: {
         if (game.teams && Array.isArray(game.teams)) {
           // Find home and away teams from the teams array
           for (const team of game.teams) {
-            const teamData: any = {
+            const teamData: Partial<Team> = {
               teamId: randomUUID(),
               team_id: team.id,
               name: String(team.full_name || "Unknown Team"),
@@ -681,11 +694,11 @@ async function fetchLiveData(requestData: {
                 ? String(team.secondary_color)
                 : undefined,
               urlSlug: team.url_slug ? String(team.url_slug) : undefined,
-              coreId:
+              core_id:
                 team.core_id !== undefined && team.core_id !== null
                   ? Number(team.core_id)
                   : undefined,
-              sport: String(SPORTS_CONFIG[sport]),
+              sport: SPORTS_CONFIG[sport] as any,
               league: String(sport.toUpperCase()),
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -737,11 +750,11 @@ async function fetchLiveData(requestData: {
         }
 
         // Transform game data with enhanced fields and proper type conversion
-        const transformedGame: any = {
+        const transformedGame: Partial<Game> = {
           gameId: randomUUID(),
           id: game.id,
-          sport: String(SPORTS_CONFIG[sport]),
-          league: String(sport.toUpperCase()),
+          sport: SPORTS_CONFIG[sport] as any,
+          league: sport.toUpperCase() as any,
           season: String(
             game.season?.toString() || new Date().getFullYear().toString()
           ),
@@ -779,8 +792,8 @@ async function fetchLiveData(requestData: {
             game.markets && Object.keys(game.markets).length > 0
           ),
           // Embed team data directly in the Game object
-          homeTeam: homeTeamData,
-          awayTeam: awayTeamData,
+          homeTeam: homeTeamData as Team | undefined,
+          awayTeam: awayTeamData as Team | undefined,
           // Add comprehensive critical fields
           boxscore: game.boxscore || undefined, // JSON boxscore data
           broadcast: game.broadcast || undefined, // JSON broadcast info
@@ -793,23 +806,6 @@ async function fetchLiveData(requestData: {
             : undefined,
           // Add expert picks from pro_report when available
           proReport: transformProReport(game.pro_report), // Expert analysis and picks
-          // Add all additional Game interface attributes
-          point: game.point !== undefined ? Number(game.point) : undefined,
-          details: game.details || undefined,
-          injuries: game.injuries || undefined,
-          odds: game.odds || undefined,
-          periods: game.periods || undefined,
-          clock: game.clock || undefined,
-          weather: game.weather || undefined,
-          referees: game.referees || undefined,
-          notes: game.notes || undefined,
-          lastModified: game.last_modified || undefined,
-          gameNotes: game.game_notes || undefined,
-          situationCode: game.situation_code || undefined,
-          neutralSite:
-            game.neutral_site !== undefined
-              ? Boolean(game.neutral_site)
-              : undefined,
           dataSource: "action_network",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -830,11 +826,11 @@ async function fetchLiveData(requestData: {
             away:
               game.away_rotation_number !== undefined
                 ? Number(game.away_rotation_number)
-                : undefined,
+                : 0,
             home:
               game.home_rotation_number !== undefined
                 ? Number(game.home_rotation_number)
-                : undefined,
+                : 0,
           };
         }
 
@@ -860,10 +856,10 @@ async function fetchLiveData(requestData: {
             const finalTotal =
               transformedGame.score.homeScore + transformedGame.score.awayScore;
             await updateLineMovementOutcomes(
-              transformedGame.gameId,
+              transformedGame.gameId!,
               {
-                home: transformedGame.score.homeScore,
-                away: transformedGame.score.awayScore,
+                home: transformedGame.score!.homeScore,
+                away: transformedGame.score!.awayScore,
               },
               finalTotal
             );
@@ -988,7 +984,7 @@ async function scrapeGames(gamesData: any[], numGames?: number) {
       const now = new Date().toISOString();
 
       const existingGames =
-        existingResult.Items?.map((item) => unmarshall(item)) || [];
+        existingResult.Items?.map((item: Record<string, any>) => unmarshall(item)) || [];
 
       if (existingGames.length > 0) {
         console.log(`game exists`);
@@ -1012,7 +1008,7 @@ async function scrapeGames(gamesData: any[], numGames?: number) {
           // Only update fields that have actual values (not undefined/null)
           ...Object.fromEntries(
             Object.entries(gameData).filter(
-              ([key, value]) =>
+              ([, value]) =>
                 value !== undefined && value !== null && value !== ""
             )
           ),
@@ -1254,7 +1250,7 @@ async function scrapeTeams(teamsData: any[]) {
       const now = new Date().toISOString();
 
       const existingTeams =
-        existingResult.Items?.map((item) => unmarshall(item)) || [];
+        existingResult.Items?.map((item: Record<string, any>) => unmarshall(item)) || [];
       if (existingTeams.length > 0) {
         // Update existing team
         const existingTeam = existingTeams[0];
@@ -1986,69 +1982,6 @@ async function bulkImport(importData: any) {
 }
 
 /**
- * Log detailed market changes showing before/after values
- */
-function logMarketChanges(type: string, existingData: any, newData: any) {
-  if (!existingData || !newData) return;
-
-  // Only log specific odds changes for markets, skip full JSON
-  if (type === "Markets" && Array.isArray(newData)) {
-    for (const newMarket of newData) {
-      const existingMarket = existingData?.find(
-        (m: any) => m.key === newMarket.key
-      );
-      if (!existingMarket) continue;
-
-      if (newMarket.key === "h2h" && newMarket.outcomes) {
-        // Moneyline odds
-        for (const outcome of newMarket.outcomes) {
-          const existingOutcome = existingMarket?.outcomes?.find(
-            (o: any) => o.name === outcome.name
-          );
-          if (existingOutcome && existingOutcome.price !== outcome.price) {
-            console.log(
-              `    ML ${outcome.name}: ${existingOutcome.price} → ${outcome.price}`
-            );
-          }
-        }
-      } else if (newMarket.key === "spreads" && newMarket.outcomes) {
-        // Spread odds
-        for (const outcome of newMarket.outcomes) {
-          const existingOutcome = existingMarket?.outcomes?.find(
-            (o: any) => o.name === outcome.name
-          );
-          if (
-            existingOutcome &&
-            (existingOutcome.price !== outcome.price ||
-              existingOutcome.point !== outcome.point)
-          ) {
-            console.log(
-              `    Spread ${outcome.name}: ${existingOutcome.point} (${existingOutcome.price}) → ${outcome.point} (${outcome.price})`
-            );
-          }
-        }
-      } else if (newMarket.key === "totals" && newMarket.outcomes) {
-        // Total odds
-        for (const outcome of newMarket.outcomes) {
-          const existingOutcome = existingMarket?.outcomes?.find(
-            (o: any) => o.name === outcome.name
-          );
-          if (
-            existingOutcome &&
-            (existingOutcome.price !== outcome.price ||
-              existingOutcome.point !== outcome.point)
-          ) {
-            console.log(
-              `    Total ${outcome.name}: ${existingOutcome.point} (${existingOutcome.price}) → ${outcome.point} (${outcome.price})`
-            );
-          }
-        }
-      }
-    }
-  }
-}
-
-/**
  * Track market changes for an existing game
  */
 async function trackMarketChanges(
@@ -2169,7 +2102,7 @@ async function updateLineMovementOutcomes(
     const response: QueryCommandOutput = await dynamoDBClient.send(command);
 
     if (response.Items && response.Items.length > 0) {
-      const lineMovements = response.Items.map((item) => unmarshall(item));
+      const lineMovements = response.Items.map((item: Record<string, any>) => unmarshall(item));
 
       for (const movement of lineMovements) {
         let didCover = false;

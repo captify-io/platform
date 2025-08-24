@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(clientInfo);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to get client info" },
       { status: 500 }

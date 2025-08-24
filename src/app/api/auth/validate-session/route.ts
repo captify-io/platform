@@ -4,7 +4,7 @@
  * Validates the current user session using @captify/api
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getUserSession, requireUserSession } from "@captify/api";
 
 export async function GET() {
@@ -49,7 +49,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log("🔧 Session validation with requirements API called");
 

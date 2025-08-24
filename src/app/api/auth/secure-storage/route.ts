@@ -13,7 +13,7 @@ class NISTCrypto {
   private static readonly KEY_LENGTH = 256;
   private static readonly IV_LENGTH = 12;
 
-  static async encrypt(data: any, keyMaterial: string): Promise<string> {
+  static async encrypt(data: unknown, keyMaterial: string): Promise<string> {
     const encoder = new TextEncoder();
     const dataBytes = encoder.encode(JSON.stringify(data));
     const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
@@ -32,7 +32,7 @@ class NISTCrypto {
   static async decrypt(
     encryptedData: string,
     keyMaterial: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const combined = new Uint8Array(
       atob(encryptedData)
         .split("")
@@ -68,7 +68,7 @@ class NISTCrypto {
 
 interface SecureStorageRequest {
   key: string;
-  item?: any;
+  item?: unknown;
 }
 
 interface AuditLogEntry {
@@ -93,7 +93,7 @@ class ServerSecureStorage {
    */
   static async setSecureData(
     key: string,
-    data: any,
+    data: unknown,
     request: NextRequest
   ): Promise<NextResponse> {
     try {
@@ -140,7 +140,7 @@ class ServerSecureStorage {
   /**
    * Retrieve RESTRICTED data from HTTP-only cookies
    */
-  static async getSecureData(key: string, request: NextRequest): Promise<any> {
+  static async getSecureData(key: string, request: NextRequest): Promise<unknown> {
     try {
       const cookieStore = await cookies();
       const encryptedData = cookieStore.get(
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
       request
     );
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to store secure data" },
       { status: 500 }
@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
     const data = await ServerSecureStorage.getSecureData(key, request);
 
     return NextResponse.json(data);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to retrieve secure data" },
       { status: 500 }
@@ -306,7 +306,7 @@ export async function DELETE(request: NextRequest) {
 
     const response = await ServerSecureStorage.deleteSecureData(key, request);
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete secure data" },
       { status: 500 }

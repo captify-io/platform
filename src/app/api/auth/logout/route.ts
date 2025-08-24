@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Build the Cognito logout URL
     const cognitoIssuer = process.env.NEXT_PUBLIC_COGNITO_ISSUER;

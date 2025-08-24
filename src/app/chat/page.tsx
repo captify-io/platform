@@ -43,14 +43,6 @@ export default function ConsolePage() {
     }
   };
 
-  const handleClearThread = () => {
-    setCurrentThreadId(undefined);
-    // Clear hash to return to main console view
-    if (typeof window !== "undefined") {
-      window.location.hash = "";
-    }
-  };
-
   return (
     <div className="h-full w-full">
       <ConsoleLayout

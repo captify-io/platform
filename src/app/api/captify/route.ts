@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Build the user session for the API request
     const userSession: UserSession = {
       userId:
-        (session.user as any)?.id || session.user.email?.split("@")[0] || "",
+        (session.user as { id?: string })?.id || session.user.email?.split("@")[0] || "",
       email: session.user.email || userEmail || "",
       idToken: idToken || "",
       awsSessionToken: awsSessionToken || "",
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Export other HTTP methods if needed
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json(
     {
       success: false,
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
   );
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT() {
   return NextResponse.json(
     {
       success: false,
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
   );
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   return NextResponse.json(
     {
       success: false,

@@ -12,7 +12,7 @@ import {
   SmartBreadcrumb,
   LoadingScreen,
 } from "@captify/core";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 
@@ -34,7 +34,6 @@ const DynamicAuthenticatedLayout = dynamic(
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session, status } = useSession();
   const { currentApp, setSession, appData, isLoading, loadingMessage } =
     useCaptify();

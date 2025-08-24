@@ -1,14 +1,10 @@
 "use client";
 
 import { DynamicIcon } from "@captify/core";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import React from "react";
 import { useSession } from "next-auth/react";
-import {
-  Game,
-  PublicBettingSentiment,
-  MarketOutcome,
-} from "@captify/veripicks";
+import { Game, MarketOutcome } from "@captify/veripicks";
 import { CaptifyClient } from "@captify/core";
 import {
   Table,
@@ -120,16 +116,19 @@ export default function VeriPicksPage() {
   >([]);
 
   // Define all available leagues to show as toggleable pills
-  const allAvailableLeagues = [
-    { sport: "NFL", label: "NFL" },
-    { sport: "MLB", label: "MLB" },
-    { sport: "NCAAB", label: "NCAAB" },
-    { sport: "NBA", label: "NBA" },
-    { sport: "NHL", label: "NHL" },
-    { sport: "NCAAF", label: "NCAAF" },
-    { sport: "MLS", label: "MLS" },
-    { sport: "WNBA", label: "WNBA" },
-  ];
+  const allAvailableLeagues = useMemo(
+    () => [
+      { sport: "NFL", label: "NFL" },
+      { sport: "MLB", label: "MLB" },
+      { sport: "NCAAB", label: "NCAAB" },
+      { sport: "NBA", label: "NBA" },
+      { sport: "NHL", label: "NHL" },
+      { sport: "NCAAF", label: "NCAAF" },
+      { sport: "MLS", label: "MLS" },
+      { sport: "WNBA", label: "WNBA" },
+    ],
+    []
+  );
 
   const loadAllGames = useCallback(async () => {
     if (!session) return;
@@ -265,7 +264,7 @@ export default function VeriPicksPage() {
     } finally {
       setLoading(false);
     }
-  }, [session, selectedDate]);
+  }, [session, selectedDate, allAvailableLeagues]);
 
   // Filter games when league selection changes - use multi-select leagues
   useEffect(() => {
@@ -328,34 +327,6 @@ export default function VeriPicksPage() {
     });
   };
 
-  const formatLinescore = (linescore?: any[]) => {
-    if (!linescore || linescore.length === 0) return null;
-
-    return linescore
-      .map((period) => {
-        const homeScore = period.home_points ?? period.homePoints;
-        const awayScore = period.away_points ?? period.awayPoints;
-        const periodAbbr = period.abbr || period.id;
-
-        // Only show periods that have been played (have scores)
-        if (
-          homeScore === null ||
-          homeScore === undefined ||
-          awayScore === null ||
-          awayScore === undefined
-        ) {
-          return null;
-        }
-
-        return {
-          period: periodAbbr,
-          homeScore: homeScore.toString().padStart(2, " "),
-          awayScore: awayScore.toString().padStart(2, " "),
-        };
-      })
-      .filter(Boolean);
-  };
-
   const formatSelectedDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
     const today = new Date();
@@ -376,280 +347,6 @@ export default function VeriPicksPage() {
         day: "numeric",
       })}`;
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      scheduled: "bg-blue-100 text-blue-800",
-      live: "bg-green-100 text-green-800",
-      completed: "bg-gray-100 text-gray-800",
-      postponed: "bg-yellow-100 text-yellow-800",
-      cancelled: "bg-red-100 text-red-800",
-    };
-
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusColors[status as keyof typeof statusColors] ||
-          statusColors.scheduled
-        }`}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  const renderPublicBetting = (publicBetting?: PublicBettingSentiment) => {
-    if (!publicBetting) return null;
-
-    return (
-      <div className="space-y-2">
-        {publicBetting.moneyline && (
-          <div className="text-xs">
-            <div className="font-medium text-gray-600 mb-1">
-              Moneyline Public %
-            </div>
-            <div className="flex justify-between">
-              <span>
-                Away:{" "}
-                {formatPercentage(
-                  publicBetting.moneyline.awayTicketsPercent || 0
-                )}{" "}
-                tickets
-              </span>
-              <span>
-                Home:{" "}
-                {formatPercentage(
-                  publicBetting.moneyline.homeTicketsPercent || 0
-                )}{" "}
-                tickets
-              </span>
-            </div>
-            <div className="flex justify-between text-green-600">
-              <span>
-                Away:{" "}
-                {formatPercentage(
-                  publicBetting.moneyline.awayMoneyPercent || 0
-                )}{" "}
-                money
-              </span>
-              <span>
-                Home:{" "}
-                {formatPercentage(
-                  publicBetting.moneyline.homeMoneyPercent || 0
-                )}{" "}
-                money
-              </span>
-            </div>
-          </div>
-        )}
-
-        {publicBetting.spread && (
-          <div className="text-xs">
-            <div className="font-medium text-gray-600 mb-1">
-              Spread Public %
-            </div>
-            <div className="flex justify-between">
-              <span>
-                Away:{" "}
-                {formatPercentage(publicBetting.spread.awayTicketsPercent || 0)}{" "}
-                tickets
-              </span>
-              <span>
-                Home:{" "}
-                {formatPercentage(publicBetting.spread.homeTicketsPercent || 0)}{" "}
-                tickets
-              </span>
-            </div>
-            <div className="flex justify-between text-green-600">
-              <span>
-                Away:{" "}
-                {formatPercentage(publicBetting.spread.awayMoneyPercent || 0)}{" "}
-                money
-              </span>
-              <span>
-                Home:{" "}
-                {formatPercentage(publicBetting.spread.homeMoneyPercent || 0)}{" "}
-                money
-              </span>
-            </div>
-          </div>
-        )}
-
-        {publicBetting.total && (
-          <div className="text-xs">
-            <div className="font-medium text-gray-600 mb-1">Total Public %</div>
-            <div className="flex justify-between">
-              <span>
-                Over:{" "}
-                {formatPercentage(publicBetting.total.overTicketsPercent || 0)}{" "}
-                tickets
-              </span>
-              <span>
-                Under:{" "}
-                {formatPercentage(publicBetting.total.underTicketsPercent || 0)}{" "}
-                tickets
-              </span>
-            </div>
-            <div className="flex justify-between text-green-600">
-              <span>
-                Over:{" "}
-                {formatPercentage(publicBetting.total.overMoneyPercent || 0)}{" "}
-                money
-              </span>
-              <span>
-                Under:{" "}
-                {formatPercentage(publicBetting.total.underMoneyPercent || 0)}{" "}
-                money
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderOddsComparison = (game: Game) => {
-    if (!game.markets) return null;
-
-    // Get live odds for each market
-    const bestMoneylineAway = getBestOdds(game, "moneyline", "away", true);
-    const bestMoneylineHome = getBestOdds(game, "moneyline", "home", true);
-    const bestSpreadAway = getBestOdds(game, "spread", "away", true);
-    const bestSpreadHome = getBestOdds(game, "spread", "home", true);
-    const bestTotalOver = getBestOdds(game, "total", "over", true);
-    const bestTotalUnder = getBestOdds(game, "total", "under", true);
-
-    return (
-      <div className="space-y-3">
-        {/* Moneyline */}
-        {(bestMoneylineAway || bestMoneylineHome) && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Moneyline</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {bestMoneylineAway && (
-                <div className="text-center">
-                  <div className="font-medium">
-                    {game.awayTeam?.abbreviation || "Away"}
-                  </div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestMoneylineAway.odds)}
-                  </div>
-                  {bestMoneylineAway.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-              {bestMoneylineHome && (
-                <div className="text-center">
-                  <div className="font-medium">
-                    {game.homeTeam?.abbreviation || "Home"}
-                  </div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestMoneylineHome.odds)}
-                  </div>
-                  {bestMoneylineHome.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Spread */}
-        {(bestSpreadAway || bestSpreadHome) && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Spread</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {bestSpreadAway && (
-                <div className="text-center">
-                  <div className="font-medium">
-                    {game.awayTeam?.abbreviation || "Away"}
-                  </div>
-                  <div className="text-sm">
-                    {bestSpreadAway.value && bestSpreadAway.value > 0
-                      ? "+"
-                      : ""}
-                    {bestSpreadAway.value}
-                  </div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestSpreadAway.odds)}
-                  </div>
-                  {bestSpreadAway.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-              {bestSpreadHome && (
-                <div className="text-center">
-                  <div className="font-medium">
-                    {game.homeTeam?.abbreviation || "Home"}
-                  </div>
-                  <div className="text-sm">
-                    {bestSpreadHome.value && bestSpreadHome.value > 0
-                      ? "+"
-                      : ""}
-                    {bestSpreadHome.value}
-                  </div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestSpreadHome.odds)}
-                  </div>
-                  {bestSpreadHome.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Total */}
-        {(bestTotalOver || bestTotalUnder) && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Total</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {bestTotalOver && (
-                <div className="text-center">
-                  <div className="font-medium">Over {bestTotalOver.value}</div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestTotalOver.odds)}
-                  </div>
-                  {bestTotalOver.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-              {bestTotalUnder && (
-                <div className="text-center">
-                  <div className="font-medium">
-                    Under {bestTotalUnder.value}
-                  </div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {formatOdds(bestTotalUnder.odds)}
-                  </div>
-                  {bestTotalUnder.best_odds && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Best Odds
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const renderGameRow = (game: Game) => {
