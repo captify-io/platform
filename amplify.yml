@@ -14,7 +14,8 @@ frontend:
         - echo "Installing pnpm and dependencies..."
         - npm install -g pnpm@latest
         - pnpm --version
-        - pnpm store prune
+        # Skip store prune in Amplify build environment
+        # - pnpm store prune
 
         # Clean install to ensure consistency
         - rm -rf node_modules
@@ -23,13 +24,13 @@ frontend:
         # Check if lockfile is outdated and handle appropriately
         - echo "Checking lockfile status..."
         - |
-          if pnpm install --frozen-lockfile --dry-run 2>&1 | grep -q "ERR_PNPM_OUTDATED_LOCKFILE"; then
-            echo "⚠️  Lockfile is outdated, updating dependencies..."
-            pnpm install --no-frozen-lockfile
-            echo "✅ Dependencies updated successfully"
-          else
+          if pnpm install --frozen-lockfile --dry-run 2>/dev/null; then
             echo "✅ Lockfile is up to date, installing with frozen lockfile..."
             pnpm install --frozen-lockfile
+          else
+            echo "⚠️  Installing dependencies without frozen lockfile..."
+            pnpm install --no-frozen-lockfile
+            echo "✅ Dependencies installed successfully"
           fi
 
         # Verify critical environment variables
