@@ -3,10 +3,6 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Set monorepo app root for Amplify
-        - export AMPLIFY_MONOREPO_APP_ROOT="."
-        - echo "AMPLIFY_MONOREPO_APP_ROOT set to: $AMPLIFY_MONOREPO_APP_ROOT"
-        
         # Set up Node.js environment
         - echo "Setting up Node.js environment..."
         - nvm install 22.15.1

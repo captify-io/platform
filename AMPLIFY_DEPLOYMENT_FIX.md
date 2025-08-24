@@ -1,15 +1,43 @@
-# Amplify Monorepo Deployment Fix
+# Amplify Monorepo Deployment Fix - URGENT
 
-## Problem
+## 🚨 CRITICAL ISSUE
 ```
-CustomerError: Cannot read 'next' version in package.json.
+2025-08-24T20:33:06.142Z [ERROR]: !!! CustomerError: Cannot read 'next' version in package.json.
 If you are using monorepo, please ensure that AMPLIFY_MONOREPO_APP_ROOT is set correctly.
 ```
 
-## Root Cause
-AWS Amplify doesn't automatically detect that the Next.js application is in the root directory of the monorepo. It needs explicit configuration.
+## ❗ IMMEDIATE ACTION REQUIRED
 
-## Solution 1: Environment Variable in Amplify Console (Recommended)
+**The error occurs BEFORE amplify.yml runs**, so our build script fix won't work. You must set the environment variable in the Amplify Console immediately.
+
+### 🔥 Quick Fix Steps:
+1. **Go to AWS Amplify Console NOW**
+2. **Navigate to your app** → **App settings** → **Environment variables**
+3. **Click "Manage variables"**
+4. **Add new environment variable:**
+   - **Key**: `AMPLIFY_MONOREPO_APP_ROOT`
+   - **Value**: `.`
+5. **Save changes**
+6. **Redeploy the application**
+
+## Root Cause Analysis
+
+The build log shows:
+1. ✅ Git checkout successful (commit: 28006bd)
+2. ✅ Git cleanup successful  
+3. ❌ **FAILURE HERE**: Amplify tries to read package.json for Next.js version
+4. ❌ This happens during **initial detection phase** (before preBuild)
+5. ❌ Our amplify.yml environment variable export is too late
+
+## Why This Happens
+
+Amplify's deployment process:
+```
+1. Git checkout              ← ✅ Works
+2. Detect framework          ← ❌ FAILS HERE (needs AMPLIFY_MONOREPO_APP_ROOT)
+3. Read amplify.yml          ← Never reaches this step
+4. Run preBuild commands     ← Never reaches this step
+```
 
 ### Steps:
 1. Go to your Amplify App in AWS Console
