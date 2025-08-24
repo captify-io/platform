@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
 import { useCaptify } from "../../context/CaptifyContext";
@@ -25,17 +26,25 @@ export function SmartBreadcrumb({
   maxItems = 5,
   showMenuToggle = true,
 }: SmartBreadcrumbProps) {
-  const { breadcrumbs, hasMenu, toggleSidebar, isSidebarOpen } = useCaptify();
+  const { breadcrumbs, hasMenu, toggleSidebar, isSidebarOpen, toggleMenu, isMenuVisible } = useCaptify();
+  const pathname = usePathname();
+
+  // Check if we're on a chat route
+  const isChatRoute = pathname?.startsWith("/chat") || false;
+
+  // For chat routes, use toggleMenu instead of toggleSidebar
+  const handleToggle = isChatRoute ? toggleMenu : toggleSidebar;
+  const isOpen = isChatRoute ? isMenuVisible : isSidebarOpen;
 
   if (breadcrumbs.length <= 1) {
-    return showMenuToggle && hasMenu ? (
+    return showMenuToggle && (hasMenu || isChatRoute) ? (
       <div className={cn("flex items-center", className)}>
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggleSidebar}
+          onClick={handleToggle}
           className="h-8 w-8 p-0 mr-2"
-          title={isSidebarOpen ? "Hide menu" : "Show menu"}
+          title={isOpen ? "Hide menu" : "Show menu"}
         >
           <Menu className="h-4 w-4" />
         </Button>
@@ -55,13 +64,13 @@ export function SmartBreadcrumb({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {showMenuToggle && hasMenu && (
+      {showMenuToggle && (hasMenu || isChatRoute) && (
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggleSidebar}
+          onClick={handleToggle}
           className="h-8 w-8 p-0"
-          title={isSidebarOpen ? "Hide menu" : "Show menu"}
+          title={isOpen ? "Hide menu" : "Show menu"}
         >
           <Menu className="h-4 w-4" />
         </Button>

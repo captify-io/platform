@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { useCaptify } from "../context/CaptifyContext";
 import { cn } from "../lib/utils";
 import { ResizableChatPanel } from "./ChatLayout";
@@ -18,6 +18,8 @@ import {
   SidebarMenuSubItem,
   SidebarInset,
 } from "./ui/sidebar";
+import { Button } from "./ui/button";
+import { Bot } from "lucide-react";
 import { DynamicIcon, IconName } from "@captify/core";
 import type { MenuItem } from "../context/CaptifyContext";
 
@@ -41,6 +43,7 @@ export function AppLayout({
   className = "",
 }: AppLayoutProps) {
   const { currentApp, hasMenu, isSidebarOpen, setIsSidebarOpen } = useCaptify();
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   console.log("AppLayout - context values:", {
     currentApp,
@@ -201,24 +204,35 @@ export function AppLayout({
       </div>
 
       {/* Chat Panel */}
-      {showChat && (
-        <div className="w-80 flex-shrink-0 h-full flex flex-col border-l border-border">
-          <ResizableChatPanel
-            applicationName={appToUse.name}
-            agentId={currentApp?.agentId}
-            agentAliasId={currentApp?.agentAliasId}
-            isCollapsible={false}
-            isSliding={false}
-            isOpen={true}
-            showSessionControls={true}
-            welcomeMessage={`Welcome to ${appToUse.name}! How can I help you today?`}
-            placeholder="Type your message..."
-            minWidth={280}
-            maxWidth={600}
-            defaultWidth={320}
-            className="h-full"
-          />
-        </div>
+      {showChat && isChatOpen && (
+        <ResizableChatPanel
+          applicationName={appToUse.name}
+          agentId={currentApp?.agentId}
+          agentAliasId={currentApp?.agentAliasId}
+          isCollapsible={false}
+          isSliding={false}
+          isOpen={true}
+          showSessionControls={true}
+          showCloseButton={true}
+          onClose={() => setIsChatOpen(false)}
+          welcomeMessage={`Welcome to ${appToUse.name}! How can I help you today?`}
+          placeholder="Type your message..."
+          minWidth={280}
+          maxWidth={600}
+          defaultWidth={320}
+          className="h-full border-l border-border"
+        />
+      )}
+
+      {/* Floating Bot Button - appears when chat is closed */}
+      {showChat && !isChatOpen && (
+        <Button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
+          title="Open Chat"
+        >
+          <Bot className="h-6 w-6 text-primary-foreground" />
+        </Button>
       )}
     </div>
   );

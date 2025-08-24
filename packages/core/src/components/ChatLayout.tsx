@@ -79,14 +79,15 @@ export function ResizableChatPanel({
     >
       {/* Resize handle */}
       <div
-        className="absolute left-0 top-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-500/50 transition-colors z-10 group"
+        className="absolute left-0 top-0 w-2 h-full cursor-col-resize bg-transparent hover:bg-blue-500/30 transition-colors z-10 group flex items-center justify-center"
         onMouseDown={startResizing}
+        title="Drag to resize chat panel"
       >
-        <div className="absolute left-0 top-0 w-1 h-full bg-border group-hover:bg-blue-500 transition-colors" />
+        <div className="w-0.5 h-8 bg-border group-hover:bg-blue-500 transition-colors rounded-full" />
       </div>
 
       {/* Chat Interface */}
-      <ChatInterface {...chatProps} className="h-full border-l border-border" />
+      <ChatInterface {...chatProps} className="h-full" />
     </div>
   );
 }

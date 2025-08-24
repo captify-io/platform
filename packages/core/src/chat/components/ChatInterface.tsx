@@ -4,7 +4,7 @@ import React from "react";
 import { useChat, type Message } from "@ai-sdk/react";
 import { Button } from "../../components";
 import { cn } from "../../lib/utils";
-import { MessageSquare, ChevronRight } from "lucide-react";
+import { MessageSquare, ChevronRight, Bot } from "lucide-react";
 
 // Define Provider type locally since it was from main app
 export interface Provider {
@@ -43,6 +43,8 @@ export interface ChatInterfaceProps {
   onChatReady?: (submitMessage: (message: string) => void) => void;
   providers?: Provider[];
   showSessionControls?: boolean; // Control whether to show "New Session" and "Conversations" buttons
+  showCloseButton?: boolean; // Control whether to show close button
+  onClose?: () => void; // Close callback
   agentId?: string; // Override agent ID
   agentAliasId?: string; // Override agent alias ID
   threadId?: string; // Thread ID for the current conversation
@@ -71,6 +73,8 @@ export function ChatInterface({
   onChatReady,
   providers = defaultProviders,
   showSessionControls = true,
+  showCloseButton = false,
+  onClose,
   agentId,
   agentAliasId,
   threadId,
@@ -302,6 +306,12 @@ export function ChatInterface({
     }
   };
 
+  const handleCloseChat = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   // Allow parent to send message programmatically
   const appendRef = React.useRef(append);
   React.useEffect(() => {
@@ -384,7 +394,9 @@ export function ChatInterface({
           onToggleSettings={() => setShowSettings(!showSettings)}
           onOpenHistory={openHistory}
           onMinimize={() => setIsMinimized(!isMinimized)}
+          onClose={showCloseButton ? handleCloseChat : undefined}
           showSessionControls={showSessionControls}
+          showCloseButton={showCloseButton}
         />
 
         {showSettings && (

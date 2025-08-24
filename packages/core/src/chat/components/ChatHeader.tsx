@@ -9,6 +9,7 @@ import {
   ChevronRight,
   RefreshCw,
   History,
+  X,
 } from "lucide-react";
 
 // Define Provider type locally since it was from main app
@@ -31,7 +32,9 @@ interface ChatHeaderProps {
   onToggleSettings: () => void;
   onOpenHistory: () => void;
   onMinimize: () => void;
+  onClose?: () => void; // New close callback
   showSessionControls?: boolean; // Control whether to show session-related buttons
+  showCloseButton?: boolean; // Control whether to show close button
 }
 
 export function ChatHeader({
@@ -44,7 +47,9 @@ export function ChatHeader({
   onToggleSettings,
   onOpenHistory,
   onMinimize,
+  onClose,
   showSessionControls = true,
+  showCloseButton = false,
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between p-4 border-b border-border bg-background">
@@ -128,6 +133,18 @@ export function ChatHeader({
               className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
             >
               <Minimize2 className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
+
+          {showCloseButton && onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border"
+              title="Close Chat"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
             </Button>
           )}
         </div>
