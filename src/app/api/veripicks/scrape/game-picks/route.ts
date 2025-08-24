@@ -4,7 +4,6 @@ import {
   QueryCommand,
   ScanCommand,
   PutItemCommand,
-  UpdateItemCommand,
   marshall,
   unmarshall,
 } from "@captify/api";
@@ -13,9 +12,7 @@ import {
   Pick,
   PickConsensus,
   ActionUserLeagueRecord,
-  PickSideConsensus,
 } from "@/../../packages/veripicks/src/types";
-import { v4 as uuidv4 } from "uuid";
 import { UUID } from "crypto";
 
 const ACTION_NETWORK_API_KEY = process.env.ACTION_NETWORK_API_KEY;
@@ -288,7 +285,7 @@ async function processGamePicks(gameId: string, picksData: any) {
  */
 async function upsertActionUser(userData: any): Promise<boolean> {
   try {
-    const actionUserId = userData.id || userData.user_id || uuidv4();
+    const actionUserId = userData.id || userData.user_id || crypto.randomUUID;
 
     // Check if user exists
     const existingUser = await getUserById(actionUserId);
@@ -396,7 +393,7 @@ function calculateInfluenceScore(userData: any): number {
  */
 async function upsertPick(gameId: string, pickData: any) {
   try {
-    const pickId = pickData.id || uuidv4();
+    const pickId = pickData.id || crypto.randomUUID();
 
     const pick: Pick = {
       pickId: pickId as UUID,
@@ -508,7 +505,7 @@ async function generatePickConsensus(gameId: string) {
       });
 
       const consensus: PickConsensus = {
-        consensusId: uuidv4() as UUID,
+        consensusId: crypto.randomUUID() as UUID,
         gameId: gameId as UUID,
         actionNetworkGameId: parseInt(gameId) || 0,
         marketType: pickType,

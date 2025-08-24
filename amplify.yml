@@ -26,12 +26,16 @@ frontend:
         - |
           if pnpm install --frozen-lockfile --dry-run 2>/dev/null; then
             echo "✅ Lockfile is up to date, installing with frozen lockfile..."
-            pnpm install --frozen-lockfile
+            pnpm install --frozen-lockfile --include=dev
           else
             echo "⚠️  Installing dependencies without frozen lockfile..."
-            pnpm install --no-frozen-lockfile
+            pnpm install --no-frozen-lockfile --include=dev
             echo "✅ Dependencies installed successfully"
           fi
+
+        # Ensure all workspace packages are built
+        - echo "Building workspace packages..."
+        - pnpm run build:packages
 
         # Verify critical environment variables
         - echo "Verifying critical environment variables..."
@@ -95,6 +99,8 @@ frontend:
 
         # Run type checking before build
         - echo "Running type check..."
+        - echo "Verifying TypeScript installation..."
+        - npx tsc --version || (echo "❌ TypeScript not found, installing..." && pnpm add -D typescript@^5)
         - pnpm run type-check
 
         # Run linting
