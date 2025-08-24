@@ -21,7 +21,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@captify/core": ["./packages/core/src"],
-      "@captify/chat": ["./packages/chat/src"],
+      "@captify/core/chat": ["./packages/core/src/chat"],
       "@captify/api": ["./packages/api/src"],
       "@captify/veripicks": ["./packages/veripicks/src"]
     }
@@ -50,7 +50,8 @@
     "src/lib.bak/services/session.ts.bak",
     "src/lib.bak/services/progress-service.ts.bak",
     "src/lib/services/workspace-content-database.ts.bak",
-    "packages/appman2/src/services/AppResourceHandler.ts.bak"
+    "packages/appman2/src/services/AppResourceHandler.ts.bak",
+    "src/app/app/veripicks/layout.tsx.bak"
   ],
   "exclude": ["node_modules", "infrastructure", "scripts"]
 }

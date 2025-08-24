@@ -144,10 +144,36 @@ export class CaptifyClient {
 
       switch (method) {
         case "GET":
-          operation = request.key ? "get" : "scan";
+          // Use provided operation or determine based on request type
+          if (request.operation) {
+            operation = request.operation;
+          } else {
+            operation = request.key ? "get" : "scan";
+          }
+
           if (request.key) {
             data.key = request.key;
           }
+
+          // Add DynamoDB query/scan parameters if provided (filter out undefined values)
+          const queryParams = {
+            indexName: request.indexName,
+            keyConditionExpression: request.keyConditionExpression,
+            filterExpression: request.filterExpression,
+            expressionAttributeValues: request.expressionAttributeValues,
+            expressionAttributeNames: request.expressionAttributeNames,
+            limit: request.limit,
+            scanIndexForward: request.scanIndexForward,
+            exclusiveStartKey: request.exclusiveStartKey,
+          };
+
+          // Only include defined values
+          Object.entries(queryParams).forEach(([key, value]) => {
+            if (value !== undefined) {
+              data[key] = value;
+            }
+          });
+
           break;
         case "POST":
           operation = "put";

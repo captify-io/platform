@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  CognitoIdentityProviderClient,
-  ListUsersCommand,
-} from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, ListUsersCommand } from "@captify/api";
 
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.REGION || "us-east-1",

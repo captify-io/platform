@@ -4,9 +4,6 @@
 // API package types - Infrastructure and AWS interface types
 export * from "./api/src/types";
 
-// Chat package types - Chat and agent domain types
-export * from "./chat/src/types";
-
 // Core package types - Shared utilities and configuration types
 export * from "./core/src/types";
 

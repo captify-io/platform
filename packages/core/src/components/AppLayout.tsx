@@ -1,13 +1,25 @@
 "use client";
 
-import { ReactNode, lazy, Suspense } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { useCaptify } from "../context/CaptifyContext";
 import { cn } from "../lib/utils";
-
-// Lazy load AppMenu to avoid circular imports
-const AppMenu = lazy(() =>
-  import("./AppMenu").then((module) => ({ default: module.AppMenu }))
-);
+import { ResizableChatPanel } from "./ChatLayout";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarInset,
+} from "./ui/sidebar";
+import { DynamicIcon, IconName } from "@captify/core";
+import type { MenuItem } from "../context/CaptifyContext";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,7 +30,7 @@ interface AppLayoutProps {
 }
 
 /**
- * Simplified AppLayout using CaptifyContext
+ * AppLayout with integrated menu using shadcn sidebar pattern
  * Automatically detects app from URL and manages sidebar state
  */
 export function AppLayout({
@@ -28,7 +40,28 @@ export function AppLayout({
   showChat = false,
   className = "",
 }: AppLayoutProps) {
-  const { currentApp, hasMenu, isSidebarOpen } = useCaptify();
+  const { currentApp, hasMenu, isSidebarOpen, setIsSidebarOpen } = useCaptify();
+
+  console.log("AppLayout - context values:", {
+    currentApp,
+    hasMenu,
+    isSidebarOpen,
+  });
+
+  // Track hash changes for hash-based navigation
+  useEffect(() => {
+    const updateHash = () => {
+      if (typeof window !== "undefined") {
+        // Handle hash changes for menu navigation
+        const hash = window.location.hash;
+        // Menu navigation logic can be added here
+      }
+    };
+
+    updateHash();
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, []);
 
   // Use currentApp from context or fallback to applicationId prop
   const appToUse =
@@ -44,35 +77,147 @@ export function AppLayout({
 
   const shouldShowMenu = showMenu && hasMenu;
 
+  // Convert ApplicationMenuItem[] to MenuItem[] if needed
+  const menuItems =
+    currentApp?.menu ||
+    currentApp?.menuItems?.map(
+      (item): MenuItem => ({
+        id: item.menu_item_id,
+        name: item.icon,
+        label: item.label,
+        icon: item.icon,
+        href: item.href,
+        order: item.order,
+        parentId: item.parent_id,
+        isActive: false,
+      })
+    ) ||
+    [];
+
+  const renderMenuItem = (item: MenuItem, level = 0) => {
+    const hasChildren = item.children && item.children.length > 0;
+
+    if (hasChildren) {
+      return (
+        <SidebarMenuItem key={item.id}>
+          <SidebarMenuButton asChild>
+            <span
+              className={cn("flex items-center gap-2", level > 0 && "ml-4")}
+            >
+              {item.icon && <span className="text-sm">{item.icon}</span>}
+              <span>{item.label}</span>
+            </span>
+          </SidebarMenuButton>
+          <SidebarMenuSub>
+            {item.children?.map((child) => (
+              <SidebarMenuSubItem key={child.id}>
+                <SidebarMenuSubButton asChild>
+                  <a
+                    href={`#${child.id}`}
+                    className="flex items-center gap-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.hash = child.id;
+                    }}
+                  >
+                    {child.icon && (
+                      <span className="text-sm">{child.icon}</span>
+                    )}
+                    <span>{child.label}</span>
+                  </a>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </SidebarMenuItem>
+      );
+    }
+
+    return (
+      <SidebarMenuItem key={item.id}>
+        <SidebarMenuButton asChild>
+          <a
+            href={`#${item.id}`}
+            className={cn("flex items-center gap-2", level > 0 && "ml-4")}
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.hash = item.id;
+            }}
+          >
+            <DynamicIcon name={(item.icon as IconName) || "menu"} />
+            <span>{item.label}</span>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
+
+  const AppSidebar = () => (
+    <Sidebar variant="sidebar" className="h-full">
+      <SidebarContent className="h-full">
+        <SidebarGroup className="h-full">
+          <SidebarGroupContent className="h-full overflow-auto">
+            <SidebarMenu>
+              {menuItems.map((item: MenuItem) => renderMenuItem(item))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+
   return (
-    <div className={cn("flex h-screen", className)}>
-      {/* App Menu Sidebar */}
-      {shouldShowMenu && (
-        <Suspense
-          fallback={
-            <div className="w-64 border-r bg-background animate-pulse" />
-          }
-        >
-          <AppMenu
-            appId={appToUse.id}
-            className={cn(
-              "transition-all duration-200",
-              isSidebarOpen ? "w-64" : "w-0 overflow-hidden"
-            )}
-          />
-        </Suspense>
+    <div className="h-full flex">
+      {/* Custom Sidebar - Non-fixed positioning */}
+      {isSidebarOpen && shouldShowMenu && (
+        <div className="w-64 flex-shrink-0 bg-sidebar border-r border-border">
+          <div className="h-full overflow-auto p-2">
+            <div className="space-y-1">
+              {menuItems.map((item: MenuItem) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="flex items-center gap-2 rounded-md p-2 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.hash = item.id;
+                  }}
+                >
+                  <DynamicIcon
+                    name={(item.icon as IconName) || "menu"}
+                    className="h-4 w-4"
+                  />
+                  <span>{item.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0">{children}</div>
+      </div>
 
-      {/* Chat Panel - Future Implementation */}
+      {/* Chat Panel */}
       {showChat && (
-        <div className="w-80 border-l bg-background">
-          {/* Chat will be implemented later */}
-          <div className="p-4 text-muted-foreground text-sm">
-            Chat panel coming soon...
-          </div>
+        <div className="w-80 flex-shrink-0 h-full flex flex-col border-l border-border">
+          <ResizableChatPanel
+            applicationName={appToUse.name}
+            agentId={currentApp?.agentId}
+            agentAliasId={currentApp?.agentAliasId}
+            isCollapsible={false}
+            isSliding={false}
+            isOpen={true}
+            showSessionControls={true}
+            welcomeMessage={`Welcome to ${appToUse.name}! How can I help you today?`}
+            placeholder="Type your message..."
+            minWidth={280}
+            maxWidth={600}
+            defaultWidth={320}
+            className="h-full"
+          />
         </div>
       )}
     </div>

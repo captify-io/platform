@@ -1,6 +1,4 @@
-import { openai, createOpenAI } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { openai, createOpenAI, anthropic, streamText } from "@captify/core";
 import { NextRequest } from "next/server";
 
 // Type definition for supported providers

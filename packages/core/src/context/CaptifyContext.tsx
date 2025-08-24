@@ -184,6 +184,7 @@ export interface CurrentApp {
 export interface MenuItem {
   id: string;
   label: string;
+  name: string;
   href?: string;
   icon?: string;
   children?: MenuItem[];
@@ -242,6 +243,7 @@ export interface CaptifyContextType {
   toggleMenu: () => void;
   toggleChat: () => void;
   toggleSidebar: () => void;
+  setIsSidebarOpen: (open: boolean) => void;
   setHasMenu: (hasMenu: boolean) => void;
   setHasChat: (hasChat: boolean) => void;
 
@@ -375,35 +377,56 @@ export function CaptifyProvider({
         setAppLoading(true);
         setAppError(null);
 
+        console.log("CaptifyContext - fetchAppData called for slug:", slug);
+
         // Create Captify client with session
         const client = new CaptifyClient({
           appId: "appman",
           session: session,
         });
 
-        // Query the captify-appman-App table by slug
+        console.log("CaptifyContext - created client, querying table");
+
+        // Query the captify-core-App table by slug using GSI
         const response = await client.get<App>({
-          table: "captify-appman-App",
-          operation: "scan",
-          params: {
-            FilterExpression: "slug = :slug",
-            ExpressionAttributeValues: {
-              ":slug": slug,
-            },
+          table: "captify-core-App",
+          operation: "query",
+          indexName: "slug-index",
+          keyConditionExpression: "slug = :slug",
+          expressionAttributeValues: {
+            ":slug": slug,
           },
         });
 
+        console.log("CaptifyContext - received response:", response);
+
         if (response.success && response.data) {
-          // If scan returns an array, get the first item
-          const appData = Array.isArray(response.data)
-            ? response.data[0]
-            : response.data;
-          setAppData(appData || null);
+          // If response returns an array, find the app with matching slug
+          let appData: App | null = null;
+
+          if (Array.isArray(response.data)) {
+            // Find the app with the correct slug
+            appData =
+              response.data.find((app: App) => app.slug === slug) || null;
+          } else {
+            // Single item response
+            appData = response.data;
+          }
+
+          console.log(
+            "CaptifyContext - filtered appData for slug",
+            slug,
+            ":",
+            appData
+          );
+          setAppData(appData);
         } else {
+          console.log("CaptifyContext - no data or failed response");
           setAppError(response.error || "Failed to fetch app data");
           setAppData(null);
         }
       } catch (error) {
+        console.error("CaptifyContext - fetch error:", error);
         setAppError(
           error instanceof Error ? error.message : "Failed to fetch app data"
         );
@@ -425,13 +448,40 @@ export function CaptifyProvider({
   // Current app computation
   const currentApp = useMemo((): CurrentApp | null => {
     if (appData) {
-      return {
+      console.log("CaptifyContext - appData:", appData);
+
+      // Convert raw menu data to MenuItem format
+      // Handle DynamoDB list format where each item is wrapped in {M: {...}}
+      const menuItems =
+        appData.menu?.map((item: any, index: number): MenuItem => {
+          // Handle DynamoDB format where data is in item.M or flat structure
+          const menuData = item.M || item;
+          return {
+            id: menuData.id?.S || menuData.id || `${appData.slug}-${index}`,
+            label: menuData.label?.S || menuData.label || "",
+            href: menuData.href?.S || menuData.href || "",
+            icon: menuData.icon?.S || menuData.icon || "",
+            order: parseInt(
+              menuData.order?.N || menuData.order || index.toString()
+            ),
+            isActive: false,
+            name: "",
+          };
+        }) || [];
+
+      console.log("CaptifyContext - converted menuItems:", menuItems);
+
+      const result = {
         id: appData.appId,
         name: appData.name,
         slug: appData.slug,
         agentId: appData.agentId,
         agentAliasId: appData.agentAliasId,
+        menu: menuItems,
       };
+
+      console.log("CaptifyContext - currentApp result:", result);
+      return result;
     }
 
     if (slug) {
@@ -444,6 +494,16 @@ export function CaptifyProvider({
 
     return null;
   }, [appData, slug]);
+
+  // Update hasMenu based on currentApp
+  useEffect(() => {
+    const hasMenuItems = currentApp?.menu && currentApp.menu.length > 0;
+    console.log("CaptifyContext - hasMenu update:", {
+      currentApp,
+      hasMenuItems,
+    });
+    setHasMenuState(!!hasMenuItems);
+  }, [currentApp]);
 
   // Session management with security logging
   const setSession = useCallback(
@@ -462,7 +522,7 @@ export function CaptifyProvider({
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           timestamp: Date.now(),
           event: newSession ? "SESSION_CREATED" : "SESSION_DESTROYED",
-          userId: newSession?.user?.id || "anonymous", // Using user.id (NIST compliant)
+          userId: newSession?.user?.email || "anonymous", // Using user.email as identifier
           details: { hasSession: !!newSession },
           source: "CaptifyContext",
           createdAt: new Date().toISOString(),
@@ -530,18 +590,33 @@ export function CaptifyProvider({
           session: session,
         });
 
-        // Fetch user state to get favorites using user.id (NIST compliant)
+        const userId = (session.user as any).id;
+        // Debug logging for development
+        if (process.env.NODE_ENV === "development") {
+          console.log("fetchUserFavorites - session.user:", session.user);
+          console.log("fetchUserFavorites - userId:", userId);
+        }
+
+        // Fetch user state to get favorites using userId GSI (efficient query)
         const userStatesResponse = await client.get({
           table: "captify-core-UserState",
-          operation: "scan",
+          operation: "query",
           params: {
-            FilterExpression: "userId = :userId",
+            IndexName: "userId-index",
+            KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: {
-              ":userId": (session.user as any).id, // Using user.id instead of email
+              ":userId": userId, // Using user.id instead of email
             },
             limit: 1,
           },
         });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "fetchUserFavorites - userStatesResponse:",
+            userStatesResponse
+          );
+        }
 
         let favoriteAppIds: string[] = [];
         if (
@@ -557,7 +632,7 @@ export function CaptifyProvider({
         // If user has favorites, fetch the application details
         if (favoriteAppIds.length > 0) {
           const applicationsResponse = await client.get({
-            table: "captify-appman-App",
+            table: "captify-core-App",
             operation: "scan",
             params: {
               FilterExpression: "appId IN (:favoriteApps)",
@@ -572,14 +647,21 @@ export function CaptifyProvider({
             const applications = applicationsResponse.data?.Items || [];
             const favoriteAppsData: FavoriteApplication[] = applications
               .filter((app: any) => favoriteAppIds.includes(app.appId))
-              .map((app: any) => ({
-                id: app.id,
-                appId: app.appId,
-                name: app.name,
-                icon: app.icon,
-                color: app.color,
-                href: `/apps/${app.slug}`,
-              }));
+              .map((app: any) => {
+                // Match ApplicationLauncher navigation logic
+                const appSlug = app.slug || app.appId;
+                const hasDirectRoute = ["mi", "console"].includes(appSlug);
+                const href = hasDirectRoute ? `/${appSlug}` : `/app/${appSlug}`;
+
+                return {
+                  id: app.id || app.appId,
+                  appId: app.appId,
+                  name: app.name || app.appId,
+                  icon: app.config?.icon || app.icon || "Bot",
+                  color: app.color || "#6366f1",
+                  href: href,
+                };
+              });
 
             setFavoriteApplications(favoriteAppsData);
           }
@@ -693,21 +775,89 @@ export function CaptifyProvider({
         });
         const userId = (session.user as any).id; // Using user.id (NIST compliant)
 
-        // Check if app is currently favorited
-        const isFavorited = favoriteApps.includes(appId);
-        const newFavorites = isFavorited
-          ? favoriteApps.filter((id) => id !== appId)
-          : [...favoriteApps, appId];
+        // Debug logging for development
+        if (process.env.NODE_ENV === "development") {
+          console.log("toggleFavorite - userId from session:", userId);
+          console.log("toggleFavorite - session.user:", session.user);
+        }
 
-        // Update user state in database
+        // Find the user state by userId using GSI (efficient query)
+        const userStatesResponse = await client.get({
+          table: "captify-core-UserState",
+          operation: "query",
+          params: {
+            IndexName: "userId-index",
+            KeyConditionExpression: "userId = :userId",
+            ExpressionAttributeValues: {
+              ":userId": userId,
+            },
+            limit: 1,
+          },
+        });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "toggleFavorite - userStatesResponse:",
+            userStatesResponse
+          );
+        }
+
+        let userStateId: string;
+        let currentFavorites: string[] = [];
+
+        if (
+          userStatesResponse.success &&
+          userStatesResponse.data?.Items?.length > 0
+        ) {
+          const userState = userStatesResponse.data.Items[0] as any;
+          userStateId = userState.userStateId;
+          currentFavorites = userState.favoriteApps || [];
+        } else {
+          // Create new user state if it doesn't exist
+          const newUserState = {
+            userStateId: globalThis.crypto.randomUUID(),
+            userId: userId,
+            favoriteApps: [],
+            theme: "auto",
+            language: "en",
+            timezone: "UTC",
+            lastActiveAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          const createResponse = await client.post({
+            table: "captify-core-UserState",
+            item: newUserState,
+          });
+
+          if (!createResponse.success) {
+            throw new Error(
+              `Failed to create user state: ${createResponse.error}`
+            );
+          }
+
+          userStateId = newUserState.userStateId;
+          currentFavorites = [];
+        }
+
+        // Check if app is currently favorited
+        const isFavorited = currentFavorites.includes(appId);
+        const newFavorites = isFavorited
+          ? currentFavorites.filter((id) => id !== appId)
+          : [...currentFavorites, appId];
+
+        // Update user state in database using the correct userStateId as key
         await client.put({
           table: "captify-core-UserState",
           operation: "update",
           params: {
-            Key: { userId },
-            UpdateExpression: "SET favoriteApps = :favoriteApps",
+            Key: { userStateId },
+            UpdateExpression:
+              "SET favoriteApps = :favoriteApps, updatedAt = :updatedAt",
             ExpressionAttributeValues: {
               ":favoriteApps": newFavorites,
+              ":updatedAt": new Date(),
             },
           },
         });
@@ -937,6 +1087,7 @@ export function CaptifyProvider({
       toggleMenu,
       toggleChat,
       toggleSidebar,
+      setIsSidebarOpen,
       setHasMenu,
       setHasChat,
 
@@ -986,6 +1137,7 @@ export function CaptifyProvider({
       toggleMenu,
       toggleChat,
       toggleSidebar,
+      setIsSidebarOpen,
       setHasMenu,
       setHasChat,
       // Navigation state

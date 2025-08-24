@@ -2,14 +2,12 @@ import { NextRequest } from "next/server";
 import {
   BedrockAgentRuntimeClient,
   InvokeAgentCommand,
-} from "@aws-sdk/client-bedrock-agent-runtime";
-import {
   DynamoDBClient,
   PutItemCommand,
   UpdateItemCommand,
-} from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
-import { getUserSession } from "@captify/api";
+  marshall,
+  getUserSession,
+} from "@captify/api";
 
 export async function GET(req: NextRequest) {
   try {

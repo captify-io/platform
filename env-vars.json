@@ -21,7 +21,7 @@
   "COGNITO_DOMAIN": "https://cognito-idp.us-east-1.amazonaws.com",
   "S3_BUCKET": "titan-dev-documents-211125459951",
   "S3_REGION": "us-east-1",
-  "DYNAMODB_APPLICATIONS_TABLE": "captify-appman-App",
+  "DYNAMODB_APPLICATIONS_TABLE": "captify-core-App",
   "DYNAMODB_USER_APPLICATION_STATE_TABLE": "captify-user-application-state",
   "DYNAMODB_ORGANIZATION_SETTINGS_TABLE": "captify-organization-settings",
   "DYNAMODB_MENU_ITEMS_TABLE": "captify-application-menu-items",

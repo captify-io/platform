@@ -1,0 +1,1915 @@
+{
+  "league": {
+    "id": 2,
+    "sport": "football",
+    "name": "ncaaf",
+    "description": "Men's College Football",
+    "logo": "https://static.sprtactn.co/leagues/500/ncaa.png",
+    "current_season": "2025",
+    "current_season_type": "reg",
+    "pre_season_start": null,
+    "pre_season_end": null,
+    "reg_season_start": "2025-04-01T07:00:00.000Z",
+    "reg_season_end": "2025-12-12T07:59:59.000Z",
+    "post_season_start": "2025-12-03T08:00:00.000Z",
+    "post_season_end": "2026-03-24T06:59:59.000Z",
+    "blacklist_dates": [
+      "2023-05-23T07:00:00.000Z",
+      "2023-05-24T07:00:00.000Z",
+      "2023-05-25T07:00:00.000Z",
+      "2023-05-26T07:00:00.000Z",
+      "2023-05-27T07:00:00.000Z",
+      "2023-05-28T07:00:00.000Z",
+      "2023-05-29T07:00:00.000Z",
+      "2023-05-30T07:00:00.000Z",
+      "2023-05-31T07:00:00.000Z",
+      "2023-06-01T07:00:00.000Z",
+      "2023-06-02T07:00:00.000Z",
+      "2023-06-03T07:00:00.000Z",
+      "2023-06-04T07:00:00.000Z",
+      "2023-06-05T07:00:00.000Z",
+      "2023-06-06T07:00:00.000Z",
+      "2023-06-07T07:00:00.000Z",
+      "2023-06-08T07:00:00.000Z",
+      "2023-06-09T07:00:00.000Z",
+      "2023-06-10T07:00:00.000Z",
+      "2023-06-11T07:00:00.000Z",
+      "2023-06-12T07:00:00.000Z",
+      "2023-06-13T07:00:00.000Z",
+      "2023-06-14T07:00:00.000Z",
+      "2023-06-15T07:00:00.000Z",
+      "2023-06-16T07:00:00.000Z",
+      "2023-06-17T07:00:00.000Z",
+      "2023-06-18T07:00:00.000Z",
+      "2023-06-19T07:00:00.000Z",
+      "2023-06-20T07:00:00.000Z",
+      "2023-06-21T07:00:00.000Z",
+      "2023-06-22T07:00:00.000Z",
+      "2023-06-23T07:00:00.000Z",
+      "2023-06-24T07:00:00.000Z",
+      "2023-06-25T07:00:00.000Z",
+      "2023-06-26T07:00:00.000Z",
+      "2023-06-27T07:00:00.000Z",
+      "2023-06-28T07:00:00.000Z",
+      "2023-06-29T07:00:00.000Z",
+      "2023-06-30T07:00:00.000Z",
+      "2023-07-01T07:00:00.000Z",
+      "2023-07-02T07:00:00.000Z",
+      "2023-07-03T07:00:00.000Z",
+      "2023-07-04T07:00:00.000Z",
+      "2023-07-05T07:00:00.000Z",
+      "2023-07-06T07:00:00.000Z",
+      "2023-07-07T07:00:00.000Z",
+      "2023-07-08T07:00:00.000Z",
+      "2023-07-09T07:00:00.000Z",
+      "2023-07-10T07:00:00.000Z",
+      "2023-07-11T07:00:00.000Z",
+      "2023-07-12T07:00:00.000Z",
+      "2023-07-13T07:00:00.000Z",
+      "2023-07-14T07:00:00.000Z",
+      "2023-07-15T07:00:00.000Z",
+      "2023-07-16T07:00:00.000Z",
+      "2023-07-17T07:00:00.000Z",
+      "2023-07-18T07:00:00.000Z",
+      "2023-07-19T07:00:00.000Z",
+      "2023-07-20T07:00:00.000Z",
+      "2023-07-21T07:00:00.000Z",
+      "2023-07-22T07:00:00.000Z",
+      "2023-07-23T07:00:00.000Z",
+      "2023-07-24T07:00:00.000Z",
+      "2023-07-25T07:00:00.000Z",
+      "2023-07-26T07:00:00.000Z",
+      "2023-07-27T07:00:00.000Z",
+      "2023-07-28T07:00:00.000Z",
+      "2023-07-29T07:00:00.000Z",
+      "2023-07-30T07:00:00.000Z",
+      "2023-07-31T07:00:00.000Z",
+      "2023-08-01T07:00:00.000Z",
+      "2023-08-02T07:00:00.000Z",
+      "2023-08-03T07:00:00.000Z",
+      "2023-08-04T07:00:00.000Z",
+      "2023-08-05T07:00:00.000Z",
+      "2023-08-06T07:00:00.000Z",
+      "2023-08-07T07:00:00.000Z",
+      "2023-08-08T07:00:00.000Z",
+      "2023-08-09T07:00:00.000Z",
+      "2023-08-10T07:00:00.000Z",
+      "2023-08-11T07:00:00.000Z",
+      "2023-08-12T07:00:00.000Z",
+      "2023-08-13T07:00:00.000Z",
+      "2023-08-14T07:00:00.000Z",
+      "2023-08-15T07:00:00.000Z",
+      "2023-08-16T07:00:00.000Z",
+      "2023-08-17T07:00:00.000Z",
+      "2023-08-18T07:00:00.000Z",
+      "2023-08-19T07:00:00.000Z",
+      "2023-08-20T07:00:00.000Z",
+      "2023-08-21T07:00:00.000Z",
+      "2023-08-22T07:00:00.000Z",
+      "2023-08-23T07:00:00.000Z",
+      "2023-08-24T07:00:00.000Z",
+      "2023-08-25T07:00:00.000Z",
+      "2023-08-27T07:00:00.000Z",
+      "2023-08-28T07:00:00.000Z",
+      "2023-08-29T07:00:00.000Z",
+      "2023-08-30T07:00:00.000Z",
+      "2023-09-05T07:00:00.000Z",
+      "2023-09-06T07:00:00.000Z",
+      "2023-09-10T07:00:00.000Z",
+      "2023-09-11T07:00:00.000Z",
+      "2023-09-12T07:00:00.000Z",
+      "2023-09-13T07:00:00.000Z",
+      "2023-09-17T07:00:00.000Z",
+      "2023-09-18T07:00:00.000Z",
+      "2023-09-19T07:00:00.000Z",
+      "2023-09-20T07:00:00.000Z",
+      "2023-09-24T07:00:00.000Z",
+      "2023-09-25T07:00:00.000Z",
+      "2023-09-26T07:00:00.000Z",
+      "2023-09-27T07:00:00.000Z",
+      "2023-10-01T07:00:00.000Z",
+      "2023-10-02T07:00:00.000Z",
+      "2023-10-03T07:00:00.000Z",
+      "2023-10-08T07:00:00.000Z",
+      "2023-10-09T07:00:00.000Z",
+      "2023-10-15T07:00:00.000Z",
+      "2023-10-16T07:00:00.000Z",
+      "2023-10-22T07:00:00.000Z",
+      "2023-10-23T07:00:00.000Z",
+      "2023-10-29T07:00:00.000Z",
+      "2023-10-30T07:00:00.000Z",
+      "2023-11-05T07:00:00.000Z",
+      "2023-11-06T08:00:00.000Z",
+      "2023-11-13T08:00:00.000Z",
+      "2023-11-19T08:00:00.000Z",
+      "2023-11-20T08:00:00.000Z",
+      "2023-11-22T08:00:00.000Z",
+      "2023-11-26T08:00:00.000Z",
+      "2023-11-27T08:00:00.000Z",
+      "2023-11-28T08:00:00.000Z",
+      "2023-11-29T08:00:00.000Z",
+      "2023-11-30T08:00:00.000Z",
+      "2023-12-03T08:00:00.000Z",
+      "2023-12-04T08:00:00.000Z",
+      "2023-12-05T08:00:00.000Z",
+      "2023-12-06T08:00:00.000Z",
+      "2023-12-07T08:00:00.000Z",
+      "2023-12-10T08:00:00.000Z",
+      "2023-12-11T08:00:00.000Z",
+      "2023-12-12T08:00:00.000Z",
+      "2023-12-13T08:00:00.000Z",
+      "2023-12-14T08:00:00.000Z",
+      "2023-12-15T08:00:00.000Z",
+      "2023-12-16T08:00:00.000Z",
+      "2023-12-17T08:00:00.000Z",
+      "2023-12-18T08:00:00.000Z",
+      "2023-12-19T08:00:00.000Z",
+      "2023-12-20T08:00:00.000Z",
+      "2023-12-21T08:00:00.000Z",
+      "2023-12-22T08:00:00.000Z",
+      "2023-12-24T08:00:00.000Z",
+      "2023-12-25T08:00:00.000Z",
+      "2023-12-26T08:00:00.000Z",
+      "2023-12-27T08:00:00.000Z",
+      "2023-12-28T08:00:00.000Z",
+      "2023-12-29T08:00:00.000Z",
+      "2023-12-30T08:00:00.000Z",
+      "2023-12-31T08:00:00.000Z",
+      "2024-01-02T08:00:00.000Z",
+      "2024-01-03T08:00:00.000Z",
+      "2024-01-04T08:00:00.000Z",
+      "2024-01-05T08:00:00.000Z",
+      "2024-01-06T08:00:00.000Z",
+      "2024-01-07T08:00:00.000Z",
+      "2024-01-08T08:00:00.000Z",
+      "2024-01-09T08:00:00.000Z",
+      "2024-01-10T08:00:00.000Z",
+      "2024-01-11T08:00:00.000Z",
+      "2024-01-12T08:00:00.000Z",
+      "2024-01-13T08:00:00.000Z",
+      "2024-01-14T08:00:00.000Z",
+      "2024-01-15T08:00:00.000Z",
+      "2024-01-16T08:00:00.000Z",
+      "2024-01-17T08:00:00.000Z",
+      "2024-01-18T08:00:00.000Z",
+      "2024-01-19T08:00:00.000Z",
+      "2024-01-20T08:00:00.000Z",
+      "2024-01-21T08:00:00.000Z",
+      "2024-01-22T08:00:00.000Z",
+      "2024-01-23T08:00:00.000Z",
+      "2024-01-24T08:00:00.000Z",
+      "2024-01-25T08:00:00.000Z",
+      "2024-01-26T08:00:00.000Z",
+      "2024-01-27T08:00:00.000Z",
+      "2024-01-28T08:00:00.000Z",
+      "2024-01-29T08:00:00.000Z",
+      "2024-01-30T08:00:00.000Z",
+      "2024-01-31T08:00:00.000Z",
+      "2024-02-01T08:00:00.000Z",
+      "2024-02-02T08:00:00.000Z",
+      "2024-02-03T08:00:00.000Z",
+      "2024-02-04T08:00:00.000Z",
+      "2024-02-05T08:00:00.000Z",
+      "2024-02-06T08:00:00.000Z",
+      "2024-02-07T08:00:00.000Z",
+      "2024-02-08T08:00:00.000Z",
+      "2024-02-09T08:00:00.000Z",
+      "2024-02-10T08:00:00.000Z",
+      "2024-02-11T08:00:00.000Z",
+      "2024-02-12T08:00:00.000Z",
+      "2024-02-13T08:00:00.000Z",
+      "2024-02-14T08:00:00.000Z",
+      "2024-02-15T08:00:00.000Z",
+      "2024-02-16T08:00:00.000Z",
+      "2024-02-17T08:00:00.000Z",
+      "2024-02-18T08:00:00.000Z",
+      "2024-02-19T08:00:00.000Z",
+      "2024-02-20T08:00:00.000Z",
+      "2024-02-21T08:00:00.000Z",
+      "2024-02-22T08:00:00.000Z",
+      "2024-02-23T08:00:00.000Z",
+      "2024-02-24T08:00:00.000Z",
+      "2024-02-25T08:00:00.000Z"
+    ],
+    "calendar_info": {
+      "reg": [
+        {
+          "abbr": "Week 1",
+          "week": 1,
+          "label": "Week 0 / 1",
+          "endDate": "2025-09-02T06:59Z",
+          "startDate": "2025-05-12T07:00Z"
+        },
+        {
+          "abbr": "Week 2",
+          "week": 2,
+          "label": "Week 2",
+          "endDate": "2025-09-07T06:59Z",
+          "startDate": "2025-09-02T07:00Z"
+        },
+        {
+          "abbr": "Week 3",
+          "week": 3,
+          "label": "Week 3",
+          "endDate": "2025-09-14T06:59Z",
+          "startDate": "2025-09-07T07:00Z"
+        },
+        {
+          "abbr": "Week 4",
+          "week": 4,
+          "label": "Week 4",
+          "endDate": "2025-09-21T06:59Z",
+          "startDate": "2025-09-14T07:00Z"
+        },
+        {
+          "abbr": "Week 5",
+          "week": 5,
+          "label": "Week 5",
+          "endDate": "2025-09-28T06:59Z",
+          "startDate": "2025-09-21T07:00Z"
+        },
+        {
+          "abbr": "Week 6",
+          "week": 6,
+          "label": "Week 6",
+          "endDate": "2025-10-05T06:59Z",
+          "startDate": "2025-09-28T07:00Z"
+        },
+        {
+          "abbr": "Week 7",
+          "week": 7,
+          "label": "Week 7",
+          "endDate": "2025-10-12T06:59Z",
+          "startDate": "2025-10-05T07:00Z"
+        },
+        {
+          "abbr": "Week 8",
+          "week": 8,
+          "label": "Week 8",
+          "endDate": "2025-10-19T06:59Z",
+          "startDate": "2025-10-12T07:00Z"
+        },
+        {
+          "abbr": "Week 9",
+          "week": 9,
+          "label": "Week 9",
+          "endDate": "2025-10-26T06:59Z",
+          "startDate": "2025-10-19T07:00Z"
+        },
+        {
+          "abbr": "Week 10",
+          "week": 10,
+          "label": "Week 10",
+          "endDate": "2025-11-02T06:59Z",
+          "startDate": "2025-10-26T07:00Z"
+        },
+        {
+          "abbr": "Week 11",
+          "week": 11,
+          "label": "Week 11",
+          "endDate": "2025-11-09T06:59Z",
+          "startDate": "2025-11-02T07:00Z"
+        },
+        {
+          "abbr": "Week 12",
+          "week": 12,
+          "label": "Week 12",
+          "endDate": "2025-11-16T06:59Z",
+          "startDate": "2025-11-09T07:00Z"
+        },
+        {
+          "abbr": "Week 13",
+          "week": 13,
+          "label": "Week 13",
+          "endDate": "2025-11-23T06:59Z",
+          "startDate": "2025-11-16T07:00Z"
+        },
+        {
+          "abbr": "Week 14",
+          "week": 14,
+          "label": "Week 14",
+          "endDate": "2025-11-30T03:59Z",
+          "startDate": "2025-11-23T07:00Z"
+        }
+      ],
+      "post": [
+        {
+          "abbr": "Conf. Champ",
+          "week": 15,
+          "label": "Conf. Champ",
+          "endDate": "2025-12-07T06:59Z",
+          "startDate": "2025-11-30T04:00Z"
+        },
+        {
+          "abbr": "Bowls",
+          "week": 16,
+          "label": "Bowls",
+          "endDate": "2026-01-31T06:59Z",
+          "startDate": "2025-12-07T07:00Z"
+        }
+      ]
+    },
+    "current_week": 1,
+    "updated_at": "2025-05-13T16:35:20.049Z",
+    "is_active": true,
+    "conferences": [
+      {
+        "id": "AAC",
+        "display": "AAC"
+      },
+      {
+        "id": "ACC",
+        "display": "ACC"
+      },
+      {
+        "id": "BIG12",
+        "display": "Big 12"
+      },
+      {
+        "id": "BIGSKY",
+        "display": "Big Sky"
+      },
+      {
+        "id": "BIGSOUTHOVC",
+        "display": "Big South - OVC"
+      },
+      {
+        "id": "BIGTEN",
+        "display": "Big Ten"
+      },
+      {
+        "id": "CONFERENCEUSA",
+        "display": "CUSA"
+      },
+      {
+        "id": "CAA",
+        "display": "CAA"
+      },
+      {
+        "id": "IAINDEPENDENTS",
+        "display": "FBS (Ind)"
+      },
+      {
+        "id": "IAAINDEPENDENTS",
+        "display": "FCS (Ind)"
+      },
+      {
+        "id": "IVY",
+        "display": "Ivy"
+      },
+      {
+        "id": "MEAC",
+        "display": "MEAC"
+      },
+      {
+        "id": "MIDAMERICAN",
+        "display": "MAC"
+      },
+      {
+        "id": "MISSOURIVALLEY",
+        "display": "MVFC"
+      },
+      {
+        "id": "MOUNTAINWEST",
+        "display": "MWC"
+      },
+      {
+        "id": "NORTHEAST",
+        "display": "NEC"
+      },
+      {
+        "id": "PAC12",
+        "display": "PAC-12"
+      },
+      {
+        "id": "PATRIOTLEAGUE",
+        "display": "Patriot"
+      },
+      {
+        "id": "PIONEER",
+        "display": "Pioneer"
+      },
+      {
+        "id": "SEC",
+        "display": "SEC"
+      },
+      {
+        "id": "SOUTHERN",
+        "display": "SoCon"
+      },
+      {
+        "id": "SOUTHLAND",
+        "display": "SLC"
+      },
+      {
+        "id": "SUNBELT",
+        "display": "SBC"
+      },
+      {
+        "id": "SWAC",
+        "display": "SWAC"
+      },
+      {
+        "id": "UAC",
+        "display": "UAC"
+      }
+    ],
+    "divisions": [
+      {
+        "id": "FBS",
+        "display": "ALL FBS"
+      },
+      {
+        "id": "TOP25",
+        "display": "Top 25"
+      },
+      {
+        "id": "FCS",
+        "display": "ALL FCS"
+      }
+    ]
+  },
+  "games": [
+    {
+      "id": 254120,
+      "league_id": 2,
+      "status": "scheduled",
+      "real_status": "scheduled",
+      "status_display": null,
+      "start_time": "2025-08-23T16:00:00.000Z",
+      "away_team_id": 285,
+      "home_team_id": 291,
+      "winning_team_id": null,
+      "league_name": "ncaaf",
+      "type": "reg",
+      "season": 2025,
+      "week": 1,
+      "attendance": 0,
+      "coverage": "full",
+      "is_free": false,
+      "trending": false,
+      "away_rotation_number": 305,
+      "home_rotation_number": 306,
+      "teams": [
+        {
+          "id": 285,
+          "full_name": "Iowa State Cyclones",
+          "display_name": "Iowa State",
+          "short_name": "Cyclones",
+          "location": "Iowa State",
+          "abbr": "ISU",
+          "logo": "https://static.sprtactn.co/teamlogos/ncaaf/100/isu.png",
+          "primary_color": "a71930",
+          "secondary_color": "fdc82f",
+          "conference_type": "BIG12",
+          "division_type": "FBS",
+          "url_slug": "iowa-state-cyclones",
+          "standings": {
+            "win": 0,
+            "loss": 0,
+            "ties": 0,
+            "overtime_losses": null,
+            "draw": null
+          },
+          "core_id": 2211
+        },
+        {
+          "id": 291,
+          "full_name": "Kansas State Wildcats",
+          "display_name": "K State",
+          "short_name": "Wildcats",
+          "location": "Kansas State",
+          "abbr": "KSU",
+          "logo": "https://static.sprtactn.co/teamlogos/ncaaf/100/kstd.png",
+          "primary_color": "512888",
+          "secondary_color": "a8adad",
+          "conference_type": "BIG12",
+          "division_type": "FBS",
+          "url_slug": "kansas-state-wildcats",
+          "standings": {
+            "win": 0,
+            "loss": 0,
+            "ties": 0,
+            "overtime_losses": null,
+            "draw": null
+          },
+          "core_id": 2067
+        }
+      ],
+      "meta": {},
+      "num_bets": 73817,
+      "core_id": 7818850,
+      "broadcast": {
+        "network": "ESPN",
+        "satellite": "206",
+        "network_short": "ESPN"
+      },
+      "ranks": [
+        {
+          "team_id": 285,
+          "rank": 22,
+          "poll": "AP25"
+        },
+        {
+          "team_id": 291,
+          "rank": 17,
+          "poll": "AP25"
+        }
+      ],
+      "pro_report": {
+        "spread": {
+          "home": [
+            {
+              "signal_type": "experts",
+              "explanation": "Two of our top NCAAF experts are betting on KSU.",
+              "strength": 1,
+              "meta": {
+                "expert_user_ids": [49763, 48942],
+                "opposing_expert_user_ids": []
+              }
+            },
+            {
+              "signal_type": "pro_systems",
+              "explanation": "There's one PRO System on KSU -- Ranked Matchups (PRO) -- which has a 58% win rate and a 12% ROI.",
+              "strength": 0.5,
+              "meta": {
+                "system_id": 1274414
+              }
+            }
+          ]
+        },
+        "total": {
+          "over": [
+            {
+              "signal_type": "big_bets",
+              "explanation": "The Over is getting 87% of the money and 72% of the bets.",
+              "strength": 0.5,
+              "meta": {
+                "bet_percent": 72,
+                "money_percent": 87
+              }
+            }
+          ]
+        }
+      },
+      "markets": {
+        "15": {
+          "event": {
+            "moneyline": [
+              {
+                "outcome_id": 1487411956,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 136,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 20
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 12
+                  }
+                },
+                "odds_coefficient_score": null
+              },
+              {
+                "outcome_id": 1487411946,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -162,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 80
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 88
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487411923,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -105,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 40
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 49
+                  }
+                },
+                "odds_coefficient_score": -10000
+              },
+              {
+                "outcome_id": 1487411915,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -115,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 60
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 51
+                  }
+                },
+                "odds_coefficient_score": -10000
+              }
+            ],
+            "total": [
+              {
+                "outcome_id": 1487411974,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -115,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 28
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 13
+                  }
+                },
+                "odds_coefficient_score": -10000
+              },
+              {
+                "outcome_id": 1487411989,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 15,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -105,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 72
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 87
+                  }
+                },
+                "odds_coefficient_score": -10000
+              }
+            ]
+          }
+        },
+        "30": {
+          "event": {
+            "spread": [
+              {
+                "event_id": 254120,
+                "value": 3.5,
+                "side": "away",
+                "odds": -105,
+                "type": "spread",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 285,
+                "event_type": "game",
+                "market_id": 12696129,
+                "outcome_id": 1487411923,
+                "option_type_id": 0
+              },
+              {
+                "event_id": 254120,
+                "value": -3.5,
+                "side": "home",
+                "odds": -115,
+                "type": "spread",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 291,
+                "event_type": "game",
+                "market_id": 12696129,
+                "outcome_id": 1487411915,
+                "option_type_id": 0
+              }
+            ],
+            "total": [
+              {
+                "event_id": 254120,
+                "value": 49.5,
+                "side": "over",
+                "odds": -110,
+                "type": "total",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 0,
+                "event_type": "game",
+                "market_id": 12696132,
+                "outcome_id": 1487411989,
+                "option_type_id": 0
+              },
+              {
+                "event_id": 254120,
+                "value": 49.5,
+                "side": "under",
+                "odds": -110,
+                "type": "total",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 0,
+                "event_type": "game",
+                "market_id": 12696132,
+                "outcome_id": 1487411974,
+                "option_type_id": 0
+              }
+            ],
+            "moneyline": [
+              {
+                "event_id": 254120,
+                "value": 0,
+                "side": "home",
+                "odds": -162,
+                "type": "moneyline",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 291,
+                "event_type": "game",
+                "market_id": 12696130,
+                "outcome_id": 1487411946,
+                "option_type_id": 0
+              },
+              {
+                "event_id": 254120,
+                "value": 0,
+                "side": "away",
+                "odds": 136,
+                "type": "moneyline",
+                "book_id": 30,
+                "period": "event",
+                "player_id": 0,
+                "competitor_id": 0,
+                "team_id": 285,
+                "event_type": "game",
+                "market_id": 12696130,
+                "outcome_id": 1487411956,
+                "option_type_id": 0
+              }
+            ]
+          }
+        },
+        "68": {
+          "event": {
+            "moneyline": [
+              {
+                "outcome_id": 1487412637,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -162,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412637",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              },
+              {
+                "outcome_id": 1487412639,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 136,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412639",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487412642,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -115,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "ML1487412642",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.62851
+              },
+              {
+                "outcome_id": 1487412644,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -105,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "ML1487412644",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.418569
+              }
+            ],
+            "total": [
+              {
+                "outcome_id": 1487412646,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -105,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412646",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064471,
+                "best_odds": true
+              },
+              {
+                "outcome_id": 1487412648,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 68,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -115,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412648",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11155
+              }
+            ]
+          }
+        },
+        "69": {
+          "event": {
+            "total": [
+              {
+                "outcome_id": 1487412764,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -105,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412764",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064471
+              },
+              {
+                "outcome_id": 1487412766,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -115,
+                "value": 52.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412766",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11155
+              }
+            ],
+            "moneyline": [
+              {
+                "outcome_id": 1487412759,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -160,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412759",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null,
+                "best_odds": true
+              },
+              {
+                "outcome_id": 1487412757,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 136,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412757",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487412770,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -115,
+                "value": 3.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412770",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.416526,
+                "best_odds": true
+              },
+              {
+                "outcome_id": 1487412782,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 69,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -104,
+                "value": -3.5,
+                "is_live": false,
+                "deeplink_id": "ML1487412782",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.628162
+              }
+            ]
+          }
+        },
+        "71": {
+          "event": {
+            "total": [
+              {
+                "outcome_id": 1487407671,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -110,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1487407671",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064005
+              },
+              {
+                "outcome_id": 1487407670,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -113,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1487407670",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11833
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487407648,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -110,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "ML1487407648",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.430184
+              },
+              {
+                "outcome_id": 1487407650,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -113,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "ML1487407650",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.624142
+              }
+            ],
+            "moneyline": [
+              {
+                "outcome_id": 1487407660,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -177,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487407660",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              },
+              {
+                "outcome_id": 1487407656,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 71,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 138,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487407656",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ]
+          }
+        },
+        "75": {
+          "event": {
+            "total": [
+              {
+                "outcome_id": 1612905883,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -115,
+                "value": 51.5,
+                "is_live": false,
+                "deeplink_id": "ML1612905883",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064008
+              },
+              {
+                "outcome_id": 1612905897,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -105,
+                "value": 51.5,
+                "is_live": false,
+                "deeplink_id": "ML1612905897",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11109,
+                "best_odds": true
+              }
+            ],
+            "moneyline": [
+              {
+                "outcome_id": 1691245491,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 140,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1691245491",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null,
+                "best_odds": true
+              },
+              {
+                "outcome_id": 1691245504,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -170,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1691245504",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1612905849,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -115,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "ML1612905849",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.62851
+              },
+              {
+                "outcome_id": 1612905836,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 75,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -105,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "ML1612905836",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.418569
+              }
+            ]
+          }
+        },
+        "79": {
+          "event": {
+            "total": [
+              {
+                "outcome_id": 1487412903,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -110,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1487412903",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064005
+              },
+              {
+                "outcome_id": 1487412912,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -110,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1487412912",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11162
+              }
+            ],
+            "moneyline": [
+              {
+                "outcome_id": 1487412825,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -165,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412825",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              },
+              {
+                "outcome_id": 1487412814,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 140,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1487412814",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487412886,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -110,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "ML1487412886",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.617436,
+                "best_odds": true
+              },
+              {
+                "outcome_id": 1487412863,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 79,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -110,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "ML1487412863",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.430184
+              }
+            ]
+          }
+        },
+        "123": {
+          "event": {
+            "total": [
+              {
+                "outcome_id": 1587516757,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "total",
+                "side": "under",
+                "period": "event",
+                "odds": -110,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1587516757",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": -0.11162
+              },
+              {
+                "outcome_id": 1587516756,
+                "market_id": 12696132,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "total",
+                "side": "over",
+                "period": "event",
+                "odds": -110,
+                "value": 52,
+                "is_live": false,
+                "deeplink_id": "ML1587516756",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.064005
+              }
+            ],
+            "spread": [
+              {
+                "outcome_id": 1487408740,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "spread",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": -110,
+                "value": 3,
+                "is_live": false,
+                "deeplink_id": "ML1487408740",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.430184
+              },
+              {
+                "outcome_id": 1487408739,
+                "market_id": 12696129,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "spread",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -110,
+                "value": -3,
+                "is_live": false,
+                "deeplink_id": "ML1487408739",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": 0.617436
+              }
+            ],
+            "moneyline": [
+              {
+                "outcome_id": 1587516767,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "moneyline",
+                "side": "home",
+                "period": "event",
+                "team_id": 291,
+                "odds": -165,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1587516767",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              },
+              {
+                "outcome_id": 1587516762,
+                "market_id": 12696130,
+                "event_type": "game",
+                "event_id": 254120,
+                "book_id": 123,
+                "type": "moneyline",
+                "side": "away",
+                "period": "event",
+                "team_id": 285,
+                "odds": 140,
+                "value": 0,
+                "is_live": false,
+                "deeplink_id": "ML1587516762",
+                "line_status": "normal",
+                "bet_info": {
+                  "tickets": {
+                    "value": 0,
+                    "percent": 0
+                  },
+                  "money": {
+                    "value": 0,
+                    "percent": 0
+                  }
+                },
+                "odds_coefficient_score": null
+              }
+            ]
+          }
+        }
+      },
+      "has_best_odds": {
+        "away": {
+          "book_id": 69,
+          "idx": 0,
+          "value": 0.416526,
+          "outcome_id": 1487412770
+        },
+        "home": {
+          "book_id": 79,
+          "idx": 0,
+          "value": 0.617436,
+          "outcome_id": 1487412886
+        }
+      }
+    }
+  ]
+}

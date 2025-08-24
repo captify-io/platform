@@ -165,6 +165,9 @@ export interface App {
   capabilities?: string[];
   permissions?: string[];
 
+  // Menu/Navigation
+  menu?: any[]; // Raw menu data from database
+
   // Audit fields
   createdAt: string;
   updatedAt: string;

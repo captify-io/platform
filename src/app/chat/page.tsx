@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ConsoleLayout, useBreadcrumbs } from "@captify/chat";
+import { ConsoleLayout } from "@captify/core";
 
 export default function ConsolePage() {
   const [currentThreadId, setCurrentThreadId] = useState<string | undefined>();
-
-  // Set up smart breadcrumbs for the console
-  const { threadData } = useBreadcrumbs();
 
   useEffect(() => {
     // Extract thread ID from URL hash if present (for deep links)

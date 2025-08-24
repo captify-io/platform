@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { CaptifyApi, createCaptifyApi } from "@captify/api";
-import type { ApiRequest, UserSession } from "@captify/api";
+import { getServerSession, CaptifyApi, createCaptifyApi } from "@captify/api";
+import type { ApiRequest } from "@captify/api";
+import type { UserSession } from "@captify/core";
 
 // Initialize the main API orchestrator for legacy support
 const captifyApi = new CaptifyApi();

@@ -20,10 +20,36 @@ export {
   validateServerSession,
 } from "./lib/auth";
 
-export { organizationService } from "./lib/organization";
+// Re-export NextAuth and related providers for auth routes
+export { default as NextAuth } from "next-auth/next";
+export { default as CognitoProvider } from "next-auth/providers/cognito";
+export { getServerSession } from "next-auth/next";
 
-// Re-export UserSession from core for API route convenience
-export type { UserSession } from "@captify/core";
+// Re-export AWS SDK utilities for auth routes
+export { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
+export {
+  CognitoIdentityProviderClient,
+  AdminGetUserCommand,
+  GetUserCommand,
+  ListUsersCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+
+// Re-export AWS SDK utilities for chat routes
+export {
+  BedrockAgentRuntimeClient,
+  InvokeAgentCommand,
+} from "@aws-sdk/client-bedrock-agent-runtime";
+export {
+  DynamoDBClient,
+  PutItemCommand,
+  UpdateItemCommand,
+  ScanCommand,
+  QueryCommand,
+} from "@aws-sdk/client-dynamodb";
+export type { QueryCommandOutput } from "@aws-sdk/client-dynamodb";
+export { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+
+export { organizationService } from "./lib/organization";
 
 // 🚫 Internal AWS services - not for export (use via ServiceAPIs)
 // export { AwsClientFactory } from "./aws/client-factory";

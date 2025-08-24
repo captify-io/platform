@@ -1,7 +1,6 @@
 "use client";
 
-import { AppLayout } from "@captify/core";
-import { Key, Plus, Search, Loader2, Shield, Users, Lock } from "lucide-react";
+import { AppLayout, DynamicIcon } from "@captify/core";
 import { useEffect, useState } from "react";
 import { UserRole } from "@captify/core";
 import { useSession } from "next-auth/react";
@@ -16,7 +15,7 @@ function RoleTable({ roles, loading, error }: RoleListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <DynamicIcon name="loader-2" className="h-6 w-6 animate-spin" />
         <span className="ml-2">Loading roles...</span>
       </div>
     );
@@ -33,7 +32,7 @@ function RoleTable({ roles, loading, error }: RoleListProps) {
   if (roles.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-gray-300 p-8 text-center">
-        <Key className="mx-auto h-12 w-12 text-gray-400" />
+        <DynamicIcon name="key" className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">No roles</h3>
         <p className="mt-1 text-sm text-gray-500">
           Get started by creating a new role.
@@ -67,7 +66,10 @@ function RoleTable({ roles, loading, error }: RoleListProps) {
               <td className="h-12 px-4 align-middle">
                 <div className="flex items-center space-x-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
-                    <Shield className="h-4 w-4 text-purple-600" />
+                    <DynamicIcon
+                      name="shield"
+                      className="h-4 w-4 text-purple-600"
+                    />
                   </div>
                   <div>
                     <div className="font-medium">{role.name}</div>
@@ -84,7 +86,10 @@ function RoleTable({ roles, loading, error }: RoleListProps) {
               </td>
               <td className="h-12 px-4 align-middle">
                 <div className="flex items-center space-x-2">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
+                  <DynamicIcon
+                    name="lock"
+                    className="h-4 w-4 text-muted-foreground"
+                  />
                   <span className="text-sm">
                     {role.permissions.length} permissions
                   </span>
@@ -178,7 +183,10 @@ export default function RolesPage() {
         <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div className="flex flex-1 items-center space-x-4">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <DynamicIcon
+                name="search"
+                className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
+              />
               <input
                 placeholder="Search roles..."
                 value={searchTerm}
@@ -192,7 +200,7 @@ export default function RolesPage() {
             onClick={handleCreateRole}
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <DynamicIcon name="plus" className="mr-2 h-4 w-4" />
             Add Role
           </button>
         </div>

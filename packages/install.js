@@ -505,7 +505,7 @@ async function copyDirectory(src, dest) {
  * Register application in platform database
  */
 async function registerApplication(config, region) {
-  console.log(`📋 Registering application in captify-appman-App table...`);
+  console.log(`📋 Registering application in captify-core-App table...`);
 
   // Transform navigation menu items to match MenuItem interface
   const menuItems =
@@ -525,7 +525,7 @@ async function registerApplication(config, region) {
     try {
       // Check if slug-index GSI is active
       const describeOutput = execSync(
-        `aws dynamodb describe-table --table-name captify-appman-App --region ${region}`,
+        `aws dynamodb describe-table --table-name captify-core-App --region ${region}`,
         { encoding: "utf8" }
       );
       const tableDesc = JSON.parse(describeOutput);
@@ -536,7 +536,7 @@ async function registerApplication(config, region) {
       if (slugGSI && slugGSI.IndexStatus === "ACTIVE") {
         // Use GSI query (preferred method)
         const queryCommand = JSON.stringify({
-          TableName: "captify-appman-App",
+          TableName: "captify-core-App",
           IndexName: "slug-index",
           KeyConditionExpression: "slug = :slug",
           ExpressionAttributeValues: {
@@ -561,7 +561,7 @@ async function registerApplication(config, region) {
         // Fallback to scan if GSI is not active yet
         console.log(`    ⏳ slug-index GSI not ready, using scan fallback...`);
         const scanCommand = JSON.stringify({
-          TableName: "captify-appman-App",
+          TableName: "captify-core-App",
           FilterExpression: "slug = :slug",
           ExpressionAttributeValues: {
             ":slug": { S: config.slug },
@@ -632,7 +632,7 @@ async function registerApplication(config, region) {
 
     // Use PUT to create or update the record
     const putCommand = JSON.stringify({
-      TableName: "captify-appman-App",
+      TableName: "captify-core-App",
       Item: applicationRecord,
     }).replace(/"/g, '\\"');
 
@@ -643,7 +643,7 @@ async function registerApplication(config, region) {
 
     const action = existingApp ? "Updated" : "Created";
     console.log(
-      `✅ ${action} application '${config.name}' in captify-appman-App table`
+      `✅ ${action} application '${config.name}' in captify-core-App table`
     );
   } catch (error) {
     console.log(`⚠️  Failed to register/update application: ${error.message}`);

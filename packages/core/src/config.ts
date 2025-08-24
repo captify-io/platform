@@ -64,7 +64,7 @@ export function createConfigFromEnv(): CaptifyConfig {
     database: {
       dynamoTablePrefix: process.env.DYNAMO_TABLE_PREFIX,
       applicationsTable:
-        process.env.DYNAMODB_APPLICATIONS_TABLE || "captify-appman-App",
+        process.env.DYNAMODB_APPLICATIONS_TABLE || "captify-core-App",
       userStateTable:
         process.env.DYNAMODB_USER_APPLICATION_STATE_TABLE ||
         "captify-user-application-state",

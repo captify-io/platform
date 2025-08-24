@@ -6,6 +6,16 @@ export interface CaptifyRequest {
   key?: Record<string, any>;
   item?: Record<string, any>;
 
+  // DynamoDB Query/Scan parameters (camelCase to match backend)
+  indexName?: string;
+  keyConditionExpression?: string;
+  filterExpression?: string;
+  expressionAttributeValues?: Record<string, any>;
+  expressionAttributeNames?: Record<string, string>;
+  limit?: number;
+  scanIndexForward?: boolean;
+  exclusiveStartKey?: Record<string, any>;
+
   // S3 operations (future)
   bucket?: string;
 

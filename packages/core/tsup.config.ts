@@ -7,6 +7,7 @@ export default defineConfig({
     "src/hooks/index.ts",
     "src/components/index.ts",
     "src/auth/index.ts",
+    "src/chat/index.ts",
   ],
   format: ["cjs", "esm"],
   dts: true,

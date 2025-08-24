@@ -380,3 +380,23 @@ pre::-webkit-scrollbar-thumb:hover {
 .prose h3 {
   @apply text-sm mb-1 mt-2 first:mt-0;
 }
+
+/* Override shadcn sidebar fixed positioning for inline layout */
+[data-sidebar] {
+  position: relative !important;
+}
+
+.group\/sidebar[data-sidebar] {
+  position: relative !important;
+}
+
+/* Ensure sidebar doesn't use fixed positioning within AppLayout */
+.sidebar {
+  position: relative !important;
+}
+
+/* Override any fixed positioning from shadcn sidebar */
+[data-sidebar="sidebar"] {
+  position: relative !important;
+  inset: unset !important;
+}

@@ -5,7 +5,17 @@
 
 import { DynamoDBService } from "../aws/dynamodb";
 import type { ApiResponse } from "../types";
-import { UserSession } from "@captify/core";
+
+interface UserSession {
+  userId: string;
+  email: string;
+  orgId?: string;
+  appId?: string;
+  idToken?: string;
+  awsSessionToken?: string;
+  awsExpiresAt?: number;
+  permissions?: string[];
+}
 
 export interface DynamoDBRequest {
   operation: "get" | "put" | "update" | "delete" | "query" | "scan";
@@ -63,6 +73,7 @@ export class DynamoDBServiceAPI {
             keyConditionExpression: data.keyConditionExpression,
             expressionAttributeValues: data.expressionAttributeValues,
             filterExpression: data.filterExpression,
+            indexName: data.indexName,
             limit: data.limit,
           });
           break;
@@ -72,7 +83,7 @@ export class DynamoDBServiceAPI {
             tableName,
             filterExpression: data.filterExpression,
             expressionAttributeValues: data.expressionAttributeValues,
-            limit: data.limit || 50, // Default limit for safety
+            limit: data.limit, // No default limit - get all results unless specified
           });
           break;
 

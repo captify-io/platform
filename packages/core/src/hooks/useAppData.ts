@@ -39,15 +39,19 @@ export function useAppData(slug: string): UseAppDataReturn {
         setLoading(true);
         setError(null);
 
+        console.log("useAppData - fetching data for slug:", slug);
+
         // Create Captify client with session
         const client = new CaptifyClient({
           appId: "appman",
           session: session,
         });
 
-        // Query the captify-appman-App table by slug
+        console.log("useAppData - created client, querying table");
+
+        // Query the captify-core-App table by slug
         const response = await client.get<App>({
-          table: "captify-appman-App",
+          table: "captify-core-App",
           operation: "scan",
           params: {
             FilterExpression: "slug = :slug",
@@ -57,17 +61,22 @@ export function useAppData(slug: string): UseAppDataReturn {
           },
         });
 
+        console.log("useAppData - received response:", response);
+
         if (response.success && response.data) {
           // If scan returns an array, get the first item
           const appData = Array.isArray(response.data)
             ? response.data[0]
             : response.data;
+          console.log("useAppData - processed appData:", appData);
           setData(appData || null);
         } else {
+          console.log("useAppData - no data or failed response:", response);
           setError(response.error || "Failed to fetch app data");
           setData(null);
         }
       } catch (err) {
+        console.error("useAppData - error:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
         setData(null);
       } finally {

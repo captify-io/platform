@@ -11,7 +11,6 @@ import {
   ChevronDown,
   Shield,
   Settings,
-  Grid3X3,
   Bot,
 } from "lucide-react";
 import { Button } from "../ui/button";
@@ -26,6 +25,7 @@ import {
 } from "../ui/dropdown-menu";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { GlobalSearch } from "../search";
+import { ApplicationLauncher } from "../ApplicationLauncher";
 
 interface TopNavigationProps {
   onSearchFocus?: () => void;
@@ -63,22 +63,9 @@ export function TopNavigation({
           </div>
 
           {/* App Menu Button - Fixed width */}
-          {(applicationLauncher || onAppMenuClick) && (
-            <div className="flex-shrink-0">
-              {applicationLauncher ? (
-                applicationLauncher
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onAppMenuClick}
-                  className="text-white hover:bg-gray-800 hover:text-white p-2 cursor-pointer"
-                >
-                  <Grid3X3 className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex-shrink-0">
+            <ApplicationLauncher />
+          </div>
 
           {/* Search - Takes all available space */}
           <div className="flex-1 min-w-0">

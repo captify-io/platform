@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
+import { fromCognitoIdentityPool } from "@captify/api";
 
 interface CognitoCredentials {
   accessKeyId: string;

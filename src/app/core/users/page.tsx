@@ -1,16 +1,6 @@
 "use client";
 
-import { AppLayout } from "@captify/core";
-import {
-  Users,
-  Plus,
-  Search,
-  Loader2,
-  UserCheck,
-  UserX,
-  Mail,
-  Building,
-} from "lucide-react";
+import { AppLayout, DynamicIcon } from "@captify/core";
 import { useEffect, useState } from "react";
 import { User } from "@captify/core";
 import { useSession } from "next-auth/react";
@@ -25,7 +15,7 @@ function UserTable({ users, loading, error }: UserListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <DynamicIcon name="loader-2" className="h-6 w-6 animate-spin" />
         <span className="ml-2">Loading users...</span>
       </div>
     );
@@ -42,7 +32,7 @@ function UserTable({ users, loading, error }: UserListProps) {
   if (users.length === 0) {
     return (
       <div className="rounded-md border border-dashed border-gray-300 p-8 text-center">
-        <Users className="mx-auto h-12 w-12 text-gray-400" />
+        <DynamicIcon name="users" className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">No users</h3>
         <p className="mt-1 text-sm text-gray-500">
           Get started by creating a new user.
@@ -85,7 +75,10 @@ function UserTable({ users, loading, error }: UserListProps) {
               <td className="h-12 px-4 align-middle">
                 <div className="flex items-center space-x-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                    <Users className="h-4 w-4 text-blue-600" />
+                    <DynamicIcon
+                      name="users"
+                      className="h-4 w-4 text-blue-600"
+                    />
                   </div>
                   <div>
                     <div className="font-medium">{user.name || "Unknown"}</div>
@@ -97,13 +90,19 @@ function UserTable({ users, loading, error }: UserListProps) {
               </td>
               <td className="h-12 px-4 align-middle">
                 <div className="flex items-center">
-                  <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <DynamicIcon
+                    name="mail"
+                    className="mr-2 h-4 w-4 text-muted-foreground"
+                  />
                   {user.email}
                 </div>
               </td>
               <td className="h-12 px-4 align-middle">
                 <div className="flex items-center">
-                  <Building className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <DynamicIcon
+                    name="building"
+                    className="mr-2 h-4 w-4 text-muted-foreground"
+                  />
                   {user.orgId || "None"}
                 </div>
               </td>
@@ -131,10 +130,10 @@ function UserTable({ users, loading, error }: UserListProps) {
                   }`}
                 >
                   {user.status === "active" && (
-                    <UserCheck className="mr-1 h-3 w-3" />
+                    <DynamicIcon name="user-check" className="mr-1 h-3 w-3" />
                   )}
                   {user.status === "suspended" && (
-                    <UserX className="mr-1 h-3 w-3" />
+                    <DynamicIcon name="user-x" className="mr-1 h-3 w-3" />
                   )}
                   {user.status}
                 </span>
@@ -225,7 +224,10 @@ export default function UsersPage() {
         <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div className="flex flex-1 items-center space-x-4">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <DynamicIcon
+                name="search"
+                className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
+              />
               <input
                 placeholder="Search users..."
                 value={searchTerm}
@@ -261,7 +263,7 @@ export default function UsersPage() {
             onClick={handleCreateUser}
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <DynamicIcon name="plus" className="mr-2 h-4 w-4" />
             Add User
           </button>
         </div>

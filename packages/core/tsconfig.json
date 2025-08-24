@@ -7,7 +7,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "incremental": false,
-    "noEmit": false
+    "noEmit": false,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"]

@@ -29,19 +29,39 @@ export class DynamoDBService {
    * Scan a DynamoDB table with optional filters
    */
   async scan<T = any>(options: DynamoDbOptions): Promise<T[]> {
-    const command = new ScanCommand({
-      TableName: options.tableName,
-      FilterExpression: options.filterExpression,
-      ExpressionAttributeValues: options.expressionAttributeValues
-        ? marshall(options.expressionAttributeValues)
-        : undefined,
-      Limit: options.limit,
-    });
+    const allItems: T[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined;
 
-    const result = await this.client.send(command);
-    return result.Items
-      ? result.Items.map((item) => unmarshall(item) as T)
-      : [];
+    do {
+      const command = new ScanCommand({
+        TableName: options.tableName,
+        FilterExpression: options.filterExpression,
+        ExpressionAttributeValues: options.expressionAttributeValues
+          ? marshall(options.expressionAttributeValues, {
+              removeUndefinedValues: true,
+            })
+          : undefined,
+        Limit: options.limit,
+        ExclusiveStartKey: lastEvaluatedKey,
+      });
+
+      const result = await this.client.send(command);
+
+      if (result.Items) {
+        const items = result.Items.map((item) => unmarshall(item) as T);
+        allItems.push(...items);
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+
+      // If a limit was specified and we've reached it, break
+      if (options.limit && allItems.length >= options.limit) {
+        break;
+      }
+    } while (lastEvaluatedKey);
+
+    // Return only up to the specified limit if one was provided
+    return options.limit ? allItems.slice(0, options.limit) : allItems;
   }
 
   /**
@@ -54,7 +74,9 @@ export class DynamoDBService {
       TableName: options.tableName,
       KeyConditionExpression: options.keyConditionExpression,
       ExpressionAttributeValues: options.expressionAttributeValues
-        ? marshall(options.expressionAttributeValues)
+        ? marshall(options.expressionAttributeValues, {
+            removeUndefinedValues: true,
+          })
         : undefined,
       IndexName: options.indexName,
       Limit: options.limit,
@@ -93,7 +115,7 @@ export class DynamoDBService {
   async deleteItem(tableName: string, key: Record<string, any>): Promise<void> {
     const command = new DeleteItemCommand({
       TableName: tableName,
-      Key: marshall(key),
+      Key: marshall(key, { removeUndefinedValues: true }),
     });
 
     await this.client.send(command);
@@ -109,7 +131,9 @@ export class DynamoDBService {
   ): Promise<void> {
     const command = new PutItemCommand({
       TableName: tableName,
-      Item: marshall(item as Record<string, any>),
+      Item: marshall(item as Record<string, any>, {
+        removeUndefinedValues: true,
+      }),
       ConditionExpression: conditionExpression,
     });
 
@@ -128,9 +152,11 @@ export class DynamoDBService {
   ): Promise<any> {
     const command = new UpdateItemCommand({
       TableName: tableName,
-      Key: marshall(key),
+      Key: marshall(key, { removeUndefinedValues: true }),
       UpdateExpression: updateExpression,
-      ExpressionAttributeValues: marshall(expressionAttributeValues),
+      ExpressionAttributeValues: marshall(expressionAttributeValues, {
+        removeUndefinedValues: true,
+      }),
       ExpressionAttributeNames: expressionAttributeNames,
       ReturnValues: "ALL_NEW",
     });

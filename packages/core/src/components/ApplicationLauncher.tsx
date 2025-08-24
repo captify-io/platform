@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Grid3X3, Star, StarIcon, X } from "lucide-react";
+import { DynamicIcon } from "lucide-react/dynamic";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { CaptifyClient } from "../api/client";
@@ -10,7 +11,7 @@ import { generateUUID } from "../lib/utils";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Badge } from "./ui/badge";
-import { DynamicIcon } from "./ui/dynamic-icon";
+import { useCaptify } from "../context/CaptifyContext";
 
 // Category-based color mappings
 const getCategoryColor = (category?: string) => {
@@ -118,11 +119,10 @@ const AppCard: React.FC<AppCardProps> = ({
 export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [applications, setApplications] = useState<App[]>([]);
-  const [favoriteApps, setFavoriteApps] = useState<string[]>([]);
-  const [userState, setUserState] = useState<UserState | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
+  const { favoriteApps, toggleFavorite, favoritesLoading } = useCaptify();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
@@ -146,13 +146,13 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
 
       // Create authenticated client
       const captify = new CaptifyClient({
-        appId: "appman",
+        appId: "core",
         session: session,
       });
 
-      // Fetch applications from captify-appman-App table
+      // Fetch applications from captify-core-App table
       const applicationsResponse = await captify.get({
-        table: "captify-appman-App",
+        table: "captify-core-App",
         params: {
           filterExpression: "attribute_exists(appId)",
           limit: 50,
@@ -181,52 +181,6 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
 
       console.log("ApplicationLauncher: Processed applications:", applications);
       setApplications(applications);
-
-      // Fetch user state from centralized UserState table
-      const userStateResponse = await captify.get({
-        table: "captify-core-UserState",
-        params: {
-          filterExpression: "attribute_exists(userStateId)",
-          limit: 1,
-        },
-      });
-
-      let currentUserState: UserState | null = null;
-      if (userStateResponse.success && userStateResponse.data?.Items?.length) {
-        currentUserState = userStateResponse.data.Items[0] as UserState;
-      } else {
-        // Create initial user state if it doesn't exist
-        const newUserState: UserState = {
-          userStateId: generateUUID() as any,
-          userId: "current-user",
-          favoriteApps: [],
-          appDisplayOrder: {},
-          lastActiveAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        const createResponse = await captify.put({
-          table: "captify-core-UserState",
-          item: newUserState,
-        });
-
-        if (createResponse.success) {
-          currentUserState = newUserState;
-        }
-      }
-
-      setUserState(currentUserState);
-
-      // Extract favorite app IDs and sort by display order
-      const favorites = currentUserState?.favoriteApps || [];
-      const sortedFavorites = favorites.sort((a: string, b: string) => {
-        const orderA = currentUserState?.appDisplayOrder?.[a] ?? 999;
-        const orderB = currentUserState?.appDisplayOrder?.[b] ?? 999;
-        return orderA - orderB;
-      });
-
-      setFavoriteApps(sortedFavorites);
     } catch (err) {
       console.error("Error fetching apps:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -243,43 +197,10 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   }, [isOpen, applications.length, fetchApps]);
 
   const handleToggleFavorite = async (appId: string) => {
-    if (!session || !userState) return;
+    if (!session) return;
 
-    try {
-      const captify = new CaptifyClient({
-        appId: "appman",
-        session: session,
-      });
-
-      const isCurrentlyFavorite = favoriteApps.includes(appId);
-      let updatedFavorites: string[];
-
-      if (isCurrentlyFavorite) {
-        // Remove from favorites
-        updatedFavorites = favoriteApps.filter((id) => id !== appId);
-      } else {
-        // Add to favorites
-        updatedFavorites = [...favoriteApps, appId];
-      }
-
-      const updatedUserState = {
-        ...userState,
-        favoriteApps: updatedFavorites,
-        updatedAt: new Date(),
-      };
-
-      const updateResponse = await captify.put({
-        table: "captify-core-UserState",
-        item: updatedUserState,
-      });
-
-      if (updateResponse.success) {
-        setFavoriteApps(updatedFavorites);
-        setUserState(updatedUserState);
-      }
-    } catch (error) {
-      console.error("Failed to toggle favorite:", error);
-    }
+    // Use the centralized toggle method from CaptifyContext
+    await toggleFavorite(appId);
   };
 
   const handleAppClick = (app: App) => {

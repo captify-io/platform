@@ -1,7 +1,9 @@
-import NextAuth from "next-auth/next";
-import CognitoProvider from "next-auth/providers/cognito";
+import {
+  NextAuth,
+  CognitoProvider,
+  fromCognitoIdentityPool,
+} from "@captify/api";
 import { NextRequest } from "next/server";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 
 // Debug logging for environment variables
 console.log("Environment debug:", {
