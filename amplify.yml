@@ -1,26 +1,27 @@
 version: 1
-frontend:
-  framework: nextjs
-  phases:
-    preBuild:
-      commands:
-        - nvm install 20
-        - nvm use 20
-        - node -v && npm -v
-        - npm i -g pnpm@8
-        - pnpm -v
-        - pnpm install --frozen-lockfile
-        # Build shared packages first
-        - pnpm -r --filter "@captify/*" run build
-    build:
-      commands:
-        - pnpm run build
-  artifacts:
-    baseDirectory: .next
-    files:
-      - "**/*"
-  cache:
-    paths:
-      - .next/cache/**/*
-      - node_modules/.pnpm/**/*
-      - ~/.pnpm-store/**/*
+applications:
+  - appRoot: .
+    frontend:
+      framework: nextjs
+      phases:
+        preBuild:
+          commands:
+            - nvm install 20
+            - nvm use 20
+            - node -v && npm -v
+            - npm i -g pnpm@8
+            - pnpm -v
+            - pnpm install --frozen-lockfile
+            - pnpm -r --filter "@captify/*" run build
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - .next/cache/**/*
+          - node_modules/.pnpm/**/*
+          - ~/.pnpm-store/**/*
