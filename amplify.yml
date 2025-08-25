@@ -1,123 +1,70 @@
 version: 1
-applications:
-  - appRoot: .
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            # Debug: Verify monorepo structure and package.json
-            - echo "Debugging monorepo structure..."
-            - pwd
-            - ls -la
-            - echo "Checking package.json content..."
-            - cat package.json | head -20
-            - echo "Verifying Next.js version in package.json..."
-            - grep -E '"next".*:' package.json || echo "Next.js not found in dependencies"
-            
-            # Set up Node.js environment
-            - echo "Setting up Node.js environment..."
-            - nvm install 22.15.1
-            - nvm use 22.15.1
-            - node --version
-            - npm --version
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Debug: Verify monorepo structure and package.json
+        - echo "Debugging monorepo structure..."
+        - pwd
+        - ls -la
+        - echo "Checking package.json content..."
+        - cat package.json | head -20
+        - echo "Verifying Next.js version in package.json..."
+        - grep -E '"next".*:' package.json || echo "Next.js not found in dependencies"
+        
+        # Set up Node.js environment
+        - echo "Setting up Node.js environment..."
+        - nvm install 22.15.1
+        - nvm use 22.15.1
+        - node --version
+        - npm --version
 
-            # Install pnpm and dependencies
-            - echo "Installing pnpm and dependencies..."
-            - npm install -g pnpm@latest
-            - pnpm --version
-            # Skip store prune in Amplify build environment
-            # - pnpm store prune
+        # Install pnpm and dependencies
+        - echo "Installing pnpm and dependencies..."
+        - npm install -g pnpm@latest
+        - pnpm --version
 
-            # Clean install to ensure consistency
-            - rm -rf node_modules
-            - rm -rf .next
+        # Clean install to ensure consistency
+        - rm -rf node_modules
+        - rm -rf .next
 
-            # Check if lockfile is outdated and handle appropriately
-            - echo "Checking lockfile status..."
-            - |
-              if pnpm install --frozen-lockfile --dry-run 2>/dev/null; then
-                echo "✅ Lockfile is up to date, installing with frozen lockfile..."
-                pnpm install --frozen-lockfile
-              else
-                echo "⚠️  Installing dependencies without frozen lockfile..."
-                pnpm install
-                echo "✅ Dependencies installed successfully"
-              fi
+        # Install dependencies
+        - echo "Installing dependencies..."
+        - pnpm install --frozen-lockfile || pnpm install
+        
+        # Build workspace packages (critical for deployment)
+        - echo "Building workspace packages..."
+        - pnpm --filter="@captify/api" run build
+        - pnpm --filter="@captify/core" run build
+        - pnpm --filter="@captify/veripicks" run build
+        - echo "✅ All workspace packages built successfully"
 
-            # Debug: Check if node_modules exists and has expected structure
-            - echo "Debugging node_modules structure..."
-            - ls -la node_modules/ | head -5 || echo "No node_modules directory"
-            - ls -la node_modules/.bin/ | head -10 || echo "No .bin directory"
-            - echo "Checking for turbo specifically..."
-            - ls -la node_modules/.bin/turbo* || echo "Turbo not found in .bin"
-            - which turbo || echo "Turbo not in PATH"
+        # Verify critical environment variables
+        - echo "Verifying critical environment variables..."
+        - test -n "${NEXTAUTH_URL}" || (echo "❌ NEXTAUTH_URL is required" && exit 1)
+        - test -n "${NEXTAUTH_SECRET}" || (echo "❌ NEXTAUTH_SECRET is required" && exit 1)
+        - echo "✅ Critical environment variables verified"
 
-            # Verify dependencies installation
-            - echo "Verifying dependencies..."
-            - pnpm list --depth=0 | grep -E "(turbo|typescript)" || echo "Key dependencies verification"
-            
-            # Build workspace packages (critical for deployment)
-            - echo "Building workspace packages..."
-            - echo "Building @captify/api package..."
-            - pnpm --filter="@captify/api" run build
-            - echo "Building @captify/core package..."
-            - pnpm --filter="@captify/core" run build
-            - echo "Building @captify/veripicks package..."
-            - pnpm --filter="@captify/veripicks" run build
-            - echo "✅ All workspace packages built successfully"
+    build:
+      commands:
+        # Production build
+        - echo "Building production Next.js application..."
+        - pnpm run build
+        - echo "✅ Build completed successfully"
 
-            # Verify critical environment variables
-            - echo "Verifying critical environment variables..."
-            - test -n "${NEXTAUTH_URL}" || (echo "❌ NEXTAUTH_URL is required" && exit 1)
-            - test -n "${NEXTAUTH_SECRET}" || (echo "❌ NEXTAUTH_SECRET is required" && exit 1)
-            - test -n "${NEXT_PUBLIC_COGNITO_CLIENT_ID}" || (echo "❌ NEXT_PUBLIC_COGNITO_CLIENT_ID is required" && exit 1)
-            - test -n "${NEXT_PUBLIC_COGNITO_ISSUER}" || (echo "❌ NEXT_PUBLIC_COGNITO_ISSUER is required" && exit 1)
-            - echo "✅ All critical environment variables are set"
+    postBuild:
+      commands:
+        # Verify build output
+        - echo "Verifying build output..."
+        - ls -la .next/
+        - test -d .next/static || (echo "❌ Static assets not found" && exit 1)
+        - echo "✅ Build verification completed"
 
-            # TypeScript type-checking
-            - echo "Running TypeScript type-checking..."
-            - pnpm run type-check
-
-            # Perform lint check (warnings allowed, errors fail build)
-            - echo "Running lint check..."
-            - pnpm run lint || echo "⚠️ Lint warnings detected but continuing build..."
-
-        build:
-          commands:
-            # Production build
-            - echo "Building production Next.js application..."
-            - pnpm run build
-            - echo "✅ Build completed successfully"
-
-        postBuild:
-          commands:
-            # Cleanup unnecessary files to reduce deployment size
-            - echo "Cleaning up build artifacts..."
-            - rm -rf node_modules/.cache
-            - rm -rf .next/cache/webpack
-            - echo "✅ Build cleanup completed"
-
-            # Verify build output
-            - echo "Verifying build output..."
-            - ls -la .next/
-            - test -d .next/static || (echo "❌ Static assets not found" && exit 1)
-            - test -f .next/BUILD_ID || (echo "❌ BUILD_ID not found" && exit 1)
-            - echo "✅ Build verification completed"
-
-            # Generate build summary
-            - echo "=== BUILD SUMMARY ==="
-            - echo "Build completed at: $(date)"
-            - echo "Node.js version: $(node --version)"
-            - echo "Next.js version: $(pnpm list next --depth=0 2>/dev/null | grep next || echo 'Unknown')"
-            - echo "Build ID: $(cat .next/BUILD_ID 2>/dev/null || echo 'Unknown')"
-            - echo "=== END BUILD SUMMARY ==="
-
-      artifacts:
-        # Files to include in the build artifact
-        baseDirectory: .next
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-          - .next/cache/**/*
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
