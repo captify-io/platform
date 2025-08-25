@@ -10,17 +10,19 @@ export default defineConfig({
   // Ensure proper module resolution
   bundle: true,
   splitting: false,
-  // Help with path resolution
+  // Don't bundle these external dependencies
   external: [
-    // Don't bundle these dependencies
     "@captify/core",
     "next-auth",
     "next-auth/next",
-    "next-auth/providers/cognito",
-    "@aws-sdk/*"
+    "next-auth/providers/cognito"
   ],
-  // Add explicit resolution for local modules
+  // Exclude AWS SDK to avoid bundling large dependencies
+  noExternal: [],
+  // Configure esbuild for proper module resolution
   esbuildOptions(options) {
     options.resolveExtensions = ['.ts', '.js', '.tsx', '.jsx'];
+    // Don't transform relative imports
+    options.preserveSymlinks = false;
   }
 });
