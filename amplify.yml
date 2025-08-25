@@ -1,8 +1,14 @@
 version: 1
 frontend:
+  environment:
+    variables:
+      AMPLIFY_MONOREPO_APP_ROOT: "."
   phases:
     preBuild:
       commands:
+        # Verify AMPLIFY_MONOREPO_APP_ROOT is set
+        - echo "AMPLIFY_MONOREPO_APP_ROOT = $AMPLIFY_MONOREPO_APP_ROOT"
+        
         # Set up Node.js environment
         - echo "Setting up Node.js environment..."
         - nvm install 22.15.1
