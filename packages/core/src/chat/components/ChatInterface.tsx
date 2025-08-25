@@ -3,7 +3,7 @@
 import React from "react";
 import { useChat, type Message } from "@ai-sdk/react";
 import { Button } from "../../components";
-import { cn } from "../../lib/utils";
+import { cn } from "../../lib";
 import { MessageSquare, ChevronRight, Bot } from "lucide-react";
 
 // Define Provider type locally since it was from main app

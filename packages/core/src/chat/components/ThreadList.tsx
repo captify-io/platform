@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components";
-import { cn } from "../../lib/utils";
+import { cn } from "../../lib";
 import {
   MessageSquare,
   Pin,

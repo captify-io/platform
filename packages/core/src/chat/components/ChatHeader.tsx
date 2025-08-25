@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Button, Badge } from "../../components";
-import { cn } from "../../lib/utils";
+import { cn } from "../../lib";
 import {
   Settings,
   Minimize2,
