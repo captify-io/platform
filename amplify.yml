@@ -5,66 +5,37 @@ applications:
       variables:
         AMPLIFY_MONOREPO_APP_ROOT: "."
     frontend:
+      framework: nextjs
+      buildPath: / # run install/build from repo root
       phases:
         preBuild:
           commands:
             - echo "AMPLIFY_MONOREPO_APP_ROOT = $AMPLIFY_MONOREPO_APP_ROOT"
-            - echo "Setting up Node.js environment..."
             - nvm install 22.15.1
             - nvm use 22.15.1
             - node --version
             - npm --version
-            - echo "Debugging monorepo structure..."
-            - pwd
-            - ls -la
-            - echo "Checking package.json content..."
-            - cat package.json | head -20
-            - echo "Verifying Next.js version in package.json..."
-            - grep -E '"next".*:' package.json || echo "Next.js not found in dependencies"
-            - echo "Installing pnpm and dependencies..."
             - npm install -g pnpm@latest
             - pnpm --version
-            - rm -rf node_modules
-            - rm -rf .next
-            - echo "Checking lockfile status..."
+            - rm -rf node_modules .next
             - |
               if pnpm install --frozen-lockfile --dry-run 2>/dev/null; then
-                echo "✅ Lockfile is up to date, installing with frozen lockfile..."
                 pnpm install --frozen-lockfile
               else
-                echo "⚠️  Installing dependencies without frozen lockfile..."
                 pnpm install
-                echo "✅ Dependencies installed successfully"
               fi
-            - echo "Debugging node_modules structure..."
-            - ls -la node_modules/ | head -5 || echo "No node_modules directory"
-            - ls -la node_modules/.bin/ | head -10 || echo "No .bin directory"
-            - echo "Checking for turbo specifically..."
-            - ls -la node_modules/.bin/turbo* || echo "Turbo not found in .bin"
-            - which turbo || echo "Turbo not in PATH"
-            - echo "Verifying dependencies..."
-            - pnpm list --depth=0 | grep -E "(turbo|typescript)" || echo "Key dependencies verification"
-            - echo "Building workspace packages..."
-            - echo "Building @captify/api package..."
             - pnpm --filter="@captify/api" run build || (echo "❌ @captify/api build failed" && exit 1)
-            - echo "Building @captify/core package..."
             - pnpm --filter="@captify/core" run build || (echo "❌ @captify/core build failed" && exit 1)
-            - echo "Building @captify/veripicks package..."
             - pnpm --filter="@captify/veripicks" run build || (echo "❌ @captify/veripicks build failed" && exit 1)
-            - echo "✅ All workspace packages built successfully"
-            - echo "Verifying critical environment variables..."
             - test -n "${NEXTAUTH_URL}" || (echo "❌ NEXTAUTH_URL is required" && exit 1)
             - test -n "${NEXTAUTH_SECRET}" || (echo "❌ NEXTAUTH_SECRET is required" && exit 1)
             - test -n "${NEXT_PUBLIC_COGNITO_CLIENT_ID}" || (echo "❌ NEXT_PUBLIC_COGNITO_CLIENT_ID is required" && exit 1)
             - test -n "${COGNITO_CLIENT_SECRET}" || (echo "❌ COGNITO_CLIENT_SECRET is required" && exit 1)
             - test -n "${ACCESS_KEY_ID}" || (echo "❌ ACCESS_KEY_ID is required" && exit 1)
             - test -n "${SECRET_ACCESS_KEY}" || (echo "❌ SECRET_ACCESS_KEY is required" && exit 1)
-            - test -n "${MI_DYNAMODB_TABLE}" || (echo "❌ MI_DYNAMODB_TABLE is required for MI APIs" && exit 1)
-            - echo "✅ Critical environment variables verified"
+            - test -n "${MI_DYNAMODB_TABLE}" || (echo "❌ MI_DYNAMODB_TABLE is required" && exit 1)
         build:
           commands:
-            - echo "🚀 Starting production build..."
-            - echo "Creating .env.production..."
             - |
               cat > .env.production << EOF
               NODE_ENV=production
@@ -105,33 +76,18 @@ applications:
             - export NEXT_PUBLIC_COGNITO_CLIENT_ID=${NEXT_PUBLIC_COGNITO_CLIENT_ID}
             - export NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}
             - export NEXT_PUBLIC_BEDROCK_AGENT_ID=${NEXT_PUBLIC_BEDROCK_AGENT_ID}
-            - echo "Running type check..."
             - pnpm run type-check
-            - echo "Running linting..."
             - pnpm run lint
-            - echo "Building Next.js application..."
             - pnpm run build
             - cp .env.production .next/
-            - echo "✅ Build completed successfully"
-            - ls -la .next/
         postBuild:
           commands:
-            - echo "Verifying build output..."
             - test -f .next/BUILD_ID || (echo "❌ BUILD_ID not found" && exit 1)
             - test -d .next/static || (echo "❌ Static assets not found" && exit 1)
-            - test -f .next/package.json || (echo "❌ Next.js package.json not found" && exit 1)
-            - echo "Build verification - Next.js BUILD_ID: $(cat .next/BUILD_ID 2>/dev/null || echo 'Unknown')"
-            - echo "Build verification - Static assets count: $(find .next/static -type f 2>/dev/null | wc -l || echo '0')"
-            - echo "✅ Build verification completed successfully"
       artifacts:
-        baseDirectory: .next
+        baseDirectory: .next # relative to buildPath (which is /)
         files:
           - "**/*"
-        excludePaths:
-          - node_modules/**/*
-          - .git/**/*
-          - "*.log"
-          - coverage/**/*
       cache:
         paths:
           - .next/cache/**/*
