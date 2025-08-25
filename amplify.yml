@@ -29,11 +29,13 @@ applications:
             - pnpm install --no-frozen-lockfile
             - echo "Verifying workspace packages after install..."
             - pnpm list --depth=0
-            - pnpm -r --filter "@captify/api" run build || echo "Failed to build @captify/api"
-            - pnpm -r --filter "@captify/core" run build || echo "Failed to build @captify/core"
-            - pnpm -r --filter "@captify/veripicks" run build || echo "Failed to build @captify/veripicks"
+            - echo "Skipping workspace package builds (not required for Next.js deployment)"
+            - echo "Dependencies installed successfully"
         build:
           commands:
+            - echo "Ensuring TypeScript is available for Next.js config..."
+            - pnpm add -w --save-dev typescript
+            - echo "Starting Next.js build..."
             - pnpm run build
       artifacts:
         baseDirectory: .next
