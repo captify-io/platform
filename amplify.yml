@@ -29,7 +29,14 @@ applications:
             - pnpm install --no-frozen-lockfile
             - echo "Verifying workspace packages after install..."
             - pnpm list --depth=0
-            - echo "Dependencies installed successfully"
+            - echo "Building workspace packages (required for Next.js imports)..."
+            - echo "Building @captify/api..."
+            - pnpm --filter="@captify/api" run build
+            - echo "Building @captify/core..."
+            - pnpm --filter="@captify/core" run build
+            - echo "Building @captify/veripicks..."
+            - pnpm --filter="@captify/veripicks" run build
+            - echo "All workspace packages built successfully"
         build:
           commands:
             - echo "Starting Next.js build..."
