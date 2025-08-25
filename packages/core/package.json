@@ -7,39 +7,39 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./lib/*": {
+      "types": "./dist/lib/*.d.ts",
       "import": "./dist/lib/*.mjs",
-      "require": "./dist/lib/*.js",
-      "types": "./dist/lib/*.d.ts"
+      "require": "./dist/lib/*.js"
     },
     "./hooks/*": {
+      "types": "./dist/hooks/*.d.ts",
       "import": "./dist/hooks/*.mjs",
-      "require": "./dist/hooks/*.js",
-      "types": "./dist/hooks/*.d.ts"
+      "require": "./dist/hooks/*.js"
     },
     "./components/*": {
+      "types": "./dist/components/*.d.ts",
       "import": "./dist/components/*.mjs",
-      "require": "./dist/components/*.js",
-      "types": "./dist/components/*.d.ts"
+      "require": "./dist/components/*.js"
     },
     "./auth/*": {
+      "types": "./dist/auth/*.d.ts",
       "import": "./dist/auth/*.mjs",
-      "require": "./dist/auth/*.js",
-      "types": "./dist/auth/*.d.ts"
+      "require": "./dist/auth/*.js"
     },
     "./chat": {
+      "types": "./dist/chat/index.d.ts",
       "import": "./dist/chat/index.mjs",
-      "require": "./dist/chat/index.js",
-      "types": "./dist/chat/index.d.ts"
+      "require": "./dist/chat/index.js"
     },
     "./chat/*": {
+      "types": "./dist/chat/*.d.ts",
       "import": "./dist/chat/*.mjs",
-      "require": "./dist/chat/*.js",
-      "types": "./dist/chat/*.d.ts"
+      "require": "./dist/chat/*.js"
     }
   },
   "scripts": {
