@@ -14,7 +14,7 @@ applications:
             - node -v && npm -v
             - npm i -g pnpm@latest
             - pnpm -v
-            - pnpm install --frozen-lockfile || pnpm install
+            - pnpm install --no-frozen-lockfile
             - pnpm -r --filter "@captify/*" run build
         build:
           commands:
