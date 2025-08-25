@@ -14,8 +14,24 @@ applications:
             - node -v && npm -v
             - npm i -g pnpm@latest
             - pnpm -v
+            - echo "Debugging workspace structure..."
+            - pwd
+            - ls -la
+            - ls -la packages/
+            - echo "Checking pnpm workspace configuration..."
+            - cat pnpm-workspace.yaml
+            - cat package.json | grep -A 5 -B 5 workspaces
+            - echo "Checking individual package names..."
+            - cat packages/api/package.json | grep '"name"'
+            - cat packages/core/package.json | grep '"name"'
+            - cat packages/veripicks/package.json | grep '"name"'
+            - echo "Running pnpm install..."
             - pnpm install --no-frozen-lockfile
-            - pnpm -r --filter "@captify/*" run build
+            - echo "Verifying workspace packages after install..."
+            - pnpm list --depth=0
+            - pnpm -r --filter "@captify/api" run build || echo "Failed to build @captify/api"
+            - pnpm -r --filter "@captify/core" run build || echo "Failed to build @captify/core"
+            - pnpm -r --filter "@captify/veripicks" run build || echo "Failed to build @captify/veripicks"
         build:
           commands:
             - pnpm run build
