@@ -3,8 +3,8 @@
  * Handles all DynamoDB operations with centralized credential management
  */
 
-import { DynamoDBService } from "../aws/dynamodb";
-import type { ApiResponse } from "../types";
+import { DynamoDBService } from "@/aws/dynamodb";
+import type { ApiResponse } from "@/types";
 
 interface UserSession {
   userId: string;

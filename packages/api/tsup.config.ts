@@ -24,5 +24,9 @@ export default defineConfig({
     options.resolveExtensions = ['.ts', '.js', '.tsx', '.jsx'];
     // Don't transform relative imports
     options.preserveSymlinks = false;
+    // Add @ alias for local imports
+    options.alias = {
+      '@': './src'
+    };
   }
 });

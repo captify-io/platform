@@ -7,7 +7,7 @@ import {
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import type { DynamoDbOptions } from "../types";
+import type { DynamoDbOptions } from "@/types";
 
 export class DynamoDBService {
   private client: DynamoDBClient;

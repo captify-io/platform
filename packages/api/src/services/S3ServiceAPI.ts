@@ -10,7 +10,7 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import type { ApiResponse } from "../types";
+import type { ApiResponse } from "@/types";
 import { UserSession } from "@captify/core";
 
 export interface S3Request {

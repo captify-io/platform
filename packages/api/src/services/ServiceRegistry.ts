@@ -3,7 +3,7 @@
  * Dependency injection container for services
  */
 
-import type { ServiceRegistry } from "../types";
+import type { ServiceRegistry } from "@/types";
 
 export class ServiceRegistryImpl implements ServiceRegistry {
   private services = new Map<string, any>();

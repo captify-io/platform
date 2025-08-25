@@ -22,7 +22,6 @@
       "@/*": ["./src/*"],
       "@captify/core": ["./packages/core/src"],
       "@captify/core/chat": ["./packages/core/src/chat"],
-      "@captify/api": ["./packages/api/src"],
       "@captify/veripicks": ["./packages/veripicks/src"]
     }
   },

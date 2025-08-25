@@ -6,14 +6,6 @@ const nextConfig: NextConfig = {
   generateEtags: false,
   compress: true,
 
-  // Static optimization for better performance
-  // output: "standalone", // Temporarily disabled due to Windows symlink issues
-
-  // Let packages manage their own dependencies - bundle everything for better isolation
-  // serverExternalPackages: [
-  //   "@aws-sdk/*",
-  // ],
-
   // Webpack configuration to handle Node.js modules
   webpack: (config: any, { isServer }: any) => {
     // Add fallbacks for Node.js modules in client-side code
@@ -100,7 +92,6 @@ const nextConfig: NextConfig = {
     resolveAlias: {
       "@": "./src",
       "@captify/core": "./packages/core/src",
-      "@captify/api": "./packages/api/src",
       "@captify/core/chat": "./packages/core/src/chat",
     },
   },

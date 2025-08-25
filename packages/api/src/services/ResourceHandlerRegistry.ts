@@ -3,7 +3,7 @@
  * Manages all resource type handlers
  */
 
-import type { ResourceHandler, ApiRequest, ApiResponse } from "../types";
+import type { ResourceHandler, ApiRequest, ApiResponse } from "@/types";
 
 export class ResourceHandlerRegistry {
   private handlers = new Map<string, ResourceHandler>();

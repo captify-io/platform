@@ -3,8 +3,8 @@
  * Service-based architecture with centralized AWS credential management and automatic authentication
  */
 
-import { SessionService } from "./SessionService";
-import type { ApiRequest, ApiResponse } from "./types";
+import { SessionService } from "@/SessionService";
+import type { ApiRequest, ApiResponse } from "@/types";
 import type { UserSession } from "@captify/core";
 
 /**
@@ -141,7 +141,7 @@ class S3Executor implements ServiceExecutor {
   constructor(private userSession: UserSession) {}
 
   async execute(operation: string, params: any): Promise<ApiResponse> {
-    const { S3ServiceAPI } = await import("./services/S3ServiceAPI");
+    const { S3ServiceAPI } = await import("@/services/S3ServiceAPI");
 
     // Validate operation type
     const validOperations = ["get", "put", "delete", "list"];
