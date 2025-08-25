@@ -5,10 +5,10 @@
  */
 
 // Core API Configuration
-import { UserSession, SessionInfo } from "@captify/core";
+import { UserSession } from "@captify/core";
 
 // Re-export core types for convenience
-export type { UserSession, SessionInfo };
+export type { UserSession };
 
 // Extended session interface for API package with additional properties
 export interface ExtendedUserSession extends UserSession {
