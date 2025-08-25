@@ -1,27 +1,35 @@
 version: 1
-applications:
-  - appRoot: .
-    frontend:
-      framework: nextjs
-      phases:
-        preBuild:
-          commands:
-            - nvm install 20
-            - nvm use 20
-            - node -v && npm -v
-            - npm i -g pnpm@8
-            - pnpm -v
-            - pnpm install --frozen-lockfile
-            - pnpm -r --filter "@captify/*" run build
-        build:
-          commands:
-            - pnpm run build
-      artifacts:
-        baseDirectory: .next
-        files:
-          - "**/*"
-      cache:
-        paths:
-          - .next/cache/**/*
-          - node_modules/.pnpm/**/*
-          - ~/.pnpm-store/**/*
+frontend:
+  framework: nextjs
+  phases:
+    preBuild:
+      commands:
+        - nvm install 20
+        - nvm use 20
+        - node -v && npm -v
+        - npm i -g pnpm@8
+        - pnpm -v
+        - pnpm install --frozen-lockfile || pnpm install
+        # Try to build workspace packages like your local script
+        - |
+          if npx --yes turbo --version >/dev/null 2>&1; then
+            echo "turbo found; building packages/* with turbo"
+            npx turbo run build --filter=packages/*
+          else
+            echo "turbo not found; building @captify/* via pnpm filters"
+            pnpm -r --filter "@captify/*" run build || echo "No package builds required"
+          fi
+    build:
+      commands:
+        - pnpm run type-check
+        - pnpm run lint
+        - pnpm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - .next/cache/**/*
+      - node_modules/.pnpm/**/*
+      - ~/.pnpm-store/**/*
