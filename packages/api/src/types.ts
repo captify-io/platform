@@ -4,14 +4,36 @@
  * Infrastructure and AWS interface types only
  */
 
-// Core API Configuration
-import { UserSession } from "@captify/core";
+// Core session type - defined locally to avoid client dependencies
+export interface UserSession {
+  userId: string;
+  email: string;
+  orgId?: string;
+  appId?: string;
+  idToken?: string;
+  awsSessionToken?: string;
+  awsExpiresAt?: number;
+  permissions?: string[];
+}
 
-// Re-export core types for convenience
-export type { UserSession };
+// Organization type for API package
+export interface Organization {
+  orgId: string;
+  name: string;
+  displayName: string;
+  domain: string;
+  status: string;
+  subscriptionTier: string;
+  settings: {
+    maxUsers: number;
+    maxApplications: number;
+    allowCustomApps: boolean;
+    requireApproval: boolean;
+  };
+}
 
 // Extended session interface for API package with additional properties
-export interface ExtendedUserSession extends UserSession {
+export interface ApiUserSession extends UserSession {
   name?: string;
   roles: string[];
   isAdmin: boolean;
@@ -64,10 +86,13 @@ export interface DynamoDbOptions {
 
 // API Request/Response Types
 export interface ApiRequest {
-  resource: string;
+  service: string;
   operation?: string;
+  resource?: string;
+  table?: string;
   data?: any;
-  userSession?: UserSession;
+  params?: any;
+  userSession?: ApiUserSession;
 }
 
 export interface ApiResponse<T = any> {
@@ -93,7 +118,7 @@ export interface ApiEvent {
   resource: string;
   action: string;
   data: any;
-  userSession?: UserSession;
+  userSession?: ApiUserSession;
   timestamp: number;
 }
 
@@ -200,7 +225,7 @@ export interface ResourceHandler {
   resourceType: string;
   handle(request: ApiRequest): Promise<ApiResponse>;
   validatePermissions?(
-    userSession: UserSession,
+    userSession: ApiUserSession,
     operation: string
   ): Promise<boolean>;
   transformRequest?(request: ApiRequest): Promise<ApiRequest>;

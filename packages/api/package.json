@@ -2,30 +2,38 @@
   "name": "@captify/api",
   "version": "0.0.1",
   "description": "API client with built-in security for Captify SDK",
-  "main": "./dist/index.js",
+  "type": "module",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.cjs"
     }
   },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs --format esm --dts",
-    "dev": "tsup src/index.ts --format cjs --format esm --dts --watch",
-    "watch": "tsup src/index.ts --format cjs --format esm --dts --watch",
-    "lint": "eslint src/**/*.ts",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "watch": "tsup --watch",
+    "lint": "eslint \"src/**/*.ts\"",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue\""
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent": "^3.873.0",
-    "@aws-sdk/client-bedrock-agent-runtime": "^3.873.0",
     "@aws-sdk/client-bedrock-runtime": "^3.873.0",
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.873.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.873.0",
     "@aws-sdk/client-dynamodb": "^3.873.0",
+    "@aws-sdk/util-dynamodb": "^3.873.0",
+    "@aws-sdk/lib-dynamodb": "^3.873.0",
+    "@aws-sdk/credential-providers": "^3.873.0",
     "@aws-sdk/client-lambda": "^3.873.0",
     "@aws-sdk/client-neptunedata": "^3.873.0",
     "@aws-sdk/client-opensearchserverless": "^3.873.0",
@@ -34,23 +42,20 @@
     "@aws-sdk/client-service-catalog": "^3.873.0",
     "@aws-sdk/client-ssm": "^3.873.0",
     "@aws-sdk/client-sts": "^3.873.0",
-    "@aws-sdk/credential-providers": "^3.873.0",
-    "@aws-sdk/lib-dynamodb": "^3.873.0",
-    "@aws-sdk/types": "^3.862.0",
-    "@aws-sdk/util-dynamodb": "^3.873.0",
-    "@captify/core": "workspace:*",
-    "aws-sdk": "^2.1692.0",
-    "next-auth": "^4.24.11"
+    "@aws-sdk/types": "^3.862.0"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.11",
-    "tsup": "^8.5.0",
+    "@types/node": "^22.10.2",
+    "tsup": "^8.0.0",
     "typescript": "^5.9.2"
   },
-  "files": [
-    "dist"
-  ],
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

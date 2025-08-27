@@ -1,4 +1,4 @@
-import type { UserSession } from "@captify/core";
+import type { UserSession } from "./types";
 
 export class SessionService {
   /**

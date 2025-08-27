@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "es6"]
+  },
+  "include": ["src/**/*", "captify.manifest.ts"],
+  "exclude": ["dist", "node_modules"]
+}

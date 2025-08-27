@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "allowJs": false,
+    "paths": {
+      "@/*": ["src/*"],
+      "@captify/api": ["packages/api/src"],
+      "@captify/identity": ["packages/identity/src"],
+      "@captify/client": ["packages/client/src"],
+      "@captify/chat": ["packages/chat/src"],
+      "@captify/veripicks": ["apps/veripicks/src"],
+      "@captify/applications": ["packages/applications/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "**/*.js", "**/*.mjs", "**/*.cjs"],
+  "include": []
+}

@@ -4,8 +4,24 @@
 // API package types - Infrastructure and AWS interface types
 export * from "./api/src/types";
 
-// Core package types - Shared utilities and configuration types
-export * from "./core/src/types";
+// Client package types - All exports except conflicting ones
+export type {
+  CaptifyConfig,
+  User,
+  UserRole,
+  UserState,
+  SessionInfo,
+  App,
+  AppCategory,
+  Application,
+  ApplicationMenuItem,
+} from "./client/src/types";
+
+// Re-export conflicting types with prefixes to avoid ambiguity
+export type {
+  Organization as ClientOrganization,
+  UserSession as ClientUserSession,
+} from "./client/src/types";
 
 // Type organization rules:
 // 1. Each package has a dedicated types/ folder with concern-separated files

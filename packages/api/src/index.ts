@@ -1,8 +1,17 @@
 // ⚠️ Server-side only exports - use only in API routes and server-side code
-export { CaptifyApi, captifyApi, createCaptifyApi } from "@/CaptifyApi";
-export { DynamoDBServiceAPI } from "@/services/DynamoDBServiceAPI";
-export { S3ServiceAPI } from "@/services/S3ServiceAPI";
-export { SessionService } from "@/SessionService";
+export { CaptifyApi, captifyApi, createCaptifyApi } from "./CaptifyApi";
+
+// Alias for backward compatibility and convenience
+export { captifyApi as apiClient } from "./CaptifyApi";
+
+// Session service for authentication
+export { SessionService } from "./SessionService";
+
+// Service operation discovery functions
+export { getOps as getDynamoOps } from "./services/dynamo";
+export { getOps as getS3Ops } from "./services/s3";
+export { getOps as getChatOps } from "./services/chat";
+export { getOps as getNeptuneOps } from "./services/neptune";
 
 // 📁 Library exports - authentication, session, and organization utilities
 export {
@@ -12,51 +21,48 @@ export {
   validateOrgAccess,
   getAccessibleOrgs,
   getSessionContext,
-} from "@/lib/session";
+} from "./lib/session";
 
 export {
   authOptions,
   getExtendedServerSession,
   validateServerSession,
-} from "@/lib/auth";
+} from "./lib/auth";
 
 // Re-export NextAuth and related providers for auth routes
 export { default as NextAuth } from "next-auth/next";
 export { default as CognitoProvider } from "next-auth/providers/cognito";
 export { getServerSession } from "next-auth/next";
 
-// Re-export AWS SDK utilities for auth routes
-export { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
+// 🔐 Auth Route Handlers - for use in app/api/auth route files
 export {
-  CognitoIdentityProviderClient,
-  AdminGetUserCommand,
-  GetUserCommand,
-  ListUsersCommand,
-} from "@aws-sdk/client-cognito-identity-provider";
+  nextAuthGET,
+  nextAuthPOST,
+  cognitoIdentityHandler,
+  clientInfoHandler,
+  validateSessionHandler,
+  validateEmailHandler,
+  saveEmailHandler,
+  getSecureStorageHandler,
+  setSecureStorageHandler,
+  deleteSecureStorageHandler,
+  setLoginHintHandler,
+  signinWithHintHandler,
+  cognitoAuthHandler,
+} from "./handlers/auth";
 
-// Re-export AWS SDK utilities for chat routes
-export {
-  BedrockAgentRuntimeClient,
-  InvokeAgentCommand,
-} from "@aws-sdk/client-bedrock-agent-runtime";
-export {
-  DynamoDBClient,
-  PutItemCommand,
-  UpdateItemCommand,
-  ScanCommand,
-  QueryCommand,
-} from "@aws-sdk/client-dynamodb";
-export type { QueryCommandOutput } from "@aws-sdk/client-dynamodb";
-export { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+// 🚀 Manifest System - for dynamic routing
+export { authManifest, apiManifest, manifests } from "./api.manifest";
+export type {
+  RouteHandler,
+  ManifestRoute,
+  ApplicationManifest,
+} from "./api.manifest";
 
-export { organizationService } from "@/lib/organization";
+export { organizationService } from "./lib/organization";
 
-// 🚫 Internal AWS services - not for export (use via ServiceAPIs)
-// export { AwsClientFactory } from "./aws/client-factory";
-// export { DynamoDBService } from "./aws/dynamodb";
-
-// ✅ Client-side API moved to @captify/core package
-// Use: import { CaptifyClient } from "@captify/core"
+// ✅ Client-side API moved to @captify/client package
+// Use: import { CaptifyClient } from "@captify/client"
 
 // Export all types from the consolidated types file
 export type {
@@ -64,8 +70,8 @@ export type {
   ApiConfig,
   ApiClientConfig,
 
-  // Extended session type for API package
-  ExtendedUserSession,
+  // Session types for API package
+  ApiUserSession,
 
   // AWS Infrastructure Types
   AwsCredentials,
@@ -97,4 +103,4 @@ export type {
   AuthProfile,
   ExtendedSession,
   AuthUser,
-} from "@/types";
+} from "./types";

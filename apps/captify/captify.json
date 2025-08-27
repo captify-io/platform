@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "slug": "captify",
+  "schema": "captify",
+  "name": "Captify Platform",
+  "description": "Platform management and application administration dashboard",
+  "type": "application",
+  "category": "platform-management",
+  "icon": "settings",
+  "api": {
+    "enabled": true,
+    "source": "./api",
+    "destination": "src/api/captify/platform",
+    "build": true
+  },
+  "permissions": [
+    "dynamodb:read",
+    "dynamodb:write",
+    "s3:read",
+    "s3:write",
+    "bedrock:invoke",
+    "platform:admin"
+  ],
+  "features": {
+    "chat": true,
+    "notifications": true,
+    "analytics": true,
+    "export": true,
+    "admin": true
+  },
+  "database": {
+    "prefix": "captify",
+    "tables": [
+      "Application",
+      "User",
+      "Session",
+      "SystemConfig",
+      "AuditLog",
+      "ApiKey",
+      "Deployment"
+    ]
+  },
+  "navigation": {
+    "showInMenu": true,
+    "menuItems": [
+      {
+        "label": "Dashboard",
+        "href": "/",
+        "icon": "layout-dashboard"
+      },
+      {
+        "label": "Applications",
+        "href": "/applications",
+        "icon": "grid-3x3"
+      },
+      {
+        "label": "Users",
+        "href": "/users",
+        "icon": "users"
+      },
+      {
+        "label": "Settings",
+        "href": "/settings",
+        "icon": "settings"
+      }
+    ]
+  },
+  "dependencies": {
+    "@captify/api": "workspace:*",
+    "@captify/client": "workspace:*",
+    "@captify/chat": "workspace:*"
+  }
+}

@@ -14,33 +14,16 @@ applications:
             - node -v && npm -v
             - npm i -g pnpm@latest
             - pnpm -v
-            - echo "Debugging workspace structure..."
-            - pwd
-            - ls -la
-            - ls -la packages/
-            - echo "Checking pnpm workspace configuration..."
-            - cat pnpm-workspace.yaml
-            - cat package.json | grep -A 5 -B 5 workspaces
-            - echo "Checking individual package names..."
-            - cat packages/api/package.json | grep '"name"'
-            - cat packages/core/package.json | grep '"name"'
-            - cat packages/veripicks/package.json | grep '"name"'
-            - echo "Running pnpm install..."
+            - echo "Installing dependencies..."
             - pnpm install --no-frozen-lockfile
             - echo "Verifying workspace packages after install..."
             - pnpm list --depth=0
-            - echo "Building workspace packages (required for Next.js imports)..."
-            - echo "Building @captify/api..."
-            - pnpm --filter="@captify/api" run build --no-dts || echo "Failed to build @captify/api"
-            - echo "Building @captify/core..."
-            - pnpm --filter="@captify/core" run build || echo "Failed to build @captify/core"
-            - echo "Building @captify/veripicks..."
-            - pnpm --filter="@captify/veripicks" run build || echo "Failed to build @captify/veripicks"
-            - echo "All workspace packages built successfully"
         build:
           commands:
-            - echo "Starting Next.js build..."
-            - pnpm run build
+            - echo "Building all packages and Next.js application..."
+            - pnpm run build:packages:direct
+            - echo "Building Next.js with Amplify optimizations..."
+            - AMPLIFY=true pnpm run build:next
       artifacts:
         baseDirectory: .next
         files:

@@ -1,16 +1,40 @@
-"use client";
-
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-lg text-gray-600 mb-8">Page not found</p>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <h1
+          style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem" }}
+        >
+          404
+        </h1>
+        <p
+          style={{
+            fontSize: "1.125rem",
+            color: "#6b7280",
+            marginBottom: "2rem",
+          }}
+        >
+          Page not found
+        </p>
         <Link
           href="/"
-          className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          style={{
+            display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#2563eb",
+            color: "white",
+            borderRadius: "0.375rem",
+            textDecoration: "none",
+          }}
         >
           Go home
         </Link>
@@ -18,3 +42,6 @@ export default function NotFound() {
     </div>
   );
 }
+
+// Force this page to be dynamically rendered, not statically generated
+export const dynamic = "force-dynamic";

@@ -3,30 +3,17 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts"],
   format: ["cjs", "esm"],
+  target: "node18",
+  platform: "node",
   dts: true,
+  splitting: false,
   sourcemap: true,
   clean: true,
-  target: "es2017",
-  // Ensure proper module resolution
-  bundle: true,
-  splitting: false,
-  // Don't bundle these external dependencies
   external: [
-    "@captify/core",
+    // AWS SDK packages
+    "@aws-sdk/*",
+    // Next.js packages
     "next-auth",
-    "next-auth/next",
-    "next-auth/providers/cognito"
+    "next-auth/*",
   ],
-  // Exclude AWS SDK to avoid bundling large dependencies
-  noExternal: [],
-  // Configure esbuild for proper module resolution
-  esbuildOptions(options) {
-    options.resolveExtensions = ['.ts', '.js', '.tsx', '.jsx'];
-    // Don't transform relative imports
-    options.preserveSymlinks = false;
-    // Add @ alias for local imports
-    options.alias = {
-      '@': './src'
-    };
-  }
 });

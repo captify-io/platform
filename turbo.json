@@ -4,7 +4,14 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "out/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json", "next.config.*"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "tsup.config.ts",
+        "next.config.*"
+      ],
       "env": ["NODE_ENV", "REGION", "AWS_REGION"]
     },
     "dev": {
@@ -18,7 +25,7 @@
     },
     "type-check": {
       "outputs": [],
-      "inputs": ["src/**", "*.ts", "*.tsx", "tsconfig.json"],
+      "inputs": ["src/**", "*.ts", "*.tsx", "tsconfig.json", "tsconfig.*.json"],
       "dependsOn": ["^build"]
     },
     "test": {
