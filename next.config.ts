@@ -1,16 +1,16 @@
-// MINIMAL NEXT CONFIG FOR DEBUGGING
-// Previous config removed (dynamic package discovery, externals manipulation, headers, images)
-// to isolate persistent JSON.parse failure during build.
-import path from "node:path";
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...(config.resolve.alias ?? {}),
-      "@": path.resolve(__dirname, "src"),
-    };
-    return config;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Enable React strict mode for highlighting potential problems
+  reactStrictMode: true,
+  
+  // Optimize images
+  images: {
+    domains: ['localhost'],
+  },
+  
+  // Environment variables to expose to the client
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 };
 

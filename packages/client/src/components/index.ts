@@ -59,4 +59,4 @@ export * from "../lib/utils";
 
 // Re-export common utilities for components
 export { cva, type VariantProps } from "class-variance-authority";
-export { DynamicIcon, type IconName } from "./ui/dynamic-icon";
+export { DynamicIcon, type IconName } from "lucide-react/dynamic";

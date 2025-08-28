@@ -5,3 +5,6 @@ export * from "./types";
 export * from "./core-types";
 export * from "./utils";
 export * from "./config";
+
+// Re-export AI SDK for convenience
+export { useChat, type Message } from "@ai-sdk/react";

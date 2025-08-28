@@ -1,11 +1,8 @@
-import { defineConfig } from 'tsup';
+import baseConfig from "../../tsup.config.base.js";
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  outDir: 'dist',
-  format: ['cjs', 'esm'],
-  dts: true,
-  sourcemap: true,
-  clean: true,
-});
-
+export default {
+  ...baseConfig,
+  entry: ["src/index.ts"], // override entry for this package
+  platform: "node", // this one is server-only
+  target: "node18",
+};

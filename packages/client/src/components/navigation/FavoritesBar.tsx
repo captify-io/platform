@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { DynamicIcon } from "../ui/dynamic-icon";
+import { DynamicIcon } from "lucide-react/dynamic";
 import { useCaptify } from "../../context/index";
 interface FavoritesBarProps {
   currentApplication?: {

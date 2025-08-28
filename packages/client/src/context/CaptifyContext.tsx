@@ -11,7 +11,6 @@ import React, {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
 import { CaptifyClient } from "../api/client";
 import type { User, UserSession, App, ApplicationMenuItem } from "../types";
 
@@ -1170,11 +1169,9 @@ export function CaptifyProvider({
   );
 
   return (
-    <SessionProvider>
-      <CaptifyContext.Provider value={contextValue}>
-        {children}
-      </CaptifyContext.Provider>
-    </SessionProvider>
+    <CaptifyContext.Provider value={contextValue}>
+      {children}
+    </CaptifyContext.Provider>
   );
 }
 

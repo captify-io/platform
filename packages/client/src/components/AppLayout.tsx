@@ -20,7 +20,7 @@ import {
 import { Button } from "./ui/button";
 import { ResizableChatPanel } from "./ResizablePanel";
 import { Bot } from "lucide-react";
-import { DynamicIcon, type IconName } from "./ui/dynamic-icon";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import type { MenuItem } from "../context/CaptifyContext";
 
 interface AppLayoutProps {

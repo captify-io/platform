@@ -3,8 +3,8 @@
  * Helper functions for chat operations
  */
 
-import { CaptifyApi } from "../lib/api-client";
-import type { ApiUserSession } from "../lib/api-client";
+import { CaptifyApi } from "@captify/api";
+import type { ApiUserSession } from "@captify/api";
 
 export interface ChatMessage {
   id: string;
@@ -43,7 +43,8 @@ export async function processMessage(
     const captifyApi = new CaptifyApi();
 
     // Store user message
-    await captifyApi.chat({
+    await captifyApi.request({
+      service: "chat",
       operation: "storeMessage",
       data: {
         content: message,
@@ -52,10 +53,12 @@ export async function processMessage(
         sessionId: finalSessionId,
         agentId,
       },
-    }, userSession);
+      userSession,
+    });
 
     // Store assistant response
-    await captifyApi.chat({
+    await captifyApi.request({
+      service: "chat",
       operation: "storeMessage",
       data: {
         content: response,
@@ -64,7 +67,8 @@ export async function processMessage(
         sessionId: finalSessionId,
         agentId,
       },
-    }, userSession);
+      userSession,
+    });
 
     return {
       response,
@@ -99,10 +103,12 @@ export async function createChatSession(
   };
 
   const captifyApi = new CaptifyApi();
-  const response = await captifyApi.chat({
+  const response = await captifyApi.request({
+    service: "chat",
     operation: "createSession",
     data: session,
-  }, userSession);
+    userSession,
+  });
 
   if (!response.success) {
     throw new Error(`Failed to create session: ${response.error}`);
@@ -119,10 +125,12 @@ export async function getUserChatSessions(
   userSession: ApiUserSession
 ): Promise<ChatSession[]> {
   const captifyApi = new CaptifyApi();
-  const response = await captifyApi.chat({
+  const response = await captifyApi.request({
+    service: "chat",
     operation: "getSessions",
     data: { userId },
-  }, userSession);
+    userSession,
+  });
 
   if (!response.success) {
     throw new Error(`Failed to get sessions: ${response.error}`);
@@ -140,10 +148,12 @@ export async function getSessionMessages(
   userSession: ApiUserSession
 ): Promise<ChatMessage[]> {
   const captifyApi = new CaptifyApi();
-  const response = await captifyApi.chat({
+  const response = await captifyApi.request({
+    service: "chat",
     operation: "getMessages",
     data: { sessionId, userId },
-  }, userSession);
+    userSession,
+  });
 
   if (!response.success) {
     throw new Error(`Failed to get messages: ${response.error}`);
