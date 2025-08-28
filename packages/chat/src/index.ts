@@ -8,7 +8,7 @@
 "use client";
 
 // Re-export basic types
-export * from "./types.js";
+export * from "./types";
 
 // Simple chat hook for demonstration
 export const useChatDemo = () => {

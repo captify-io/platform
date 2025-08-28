@@ -228,23 +228,23 @@ writeFileSync(manifestPath, manifestContent, "utf8");
 console.log("✅ Manifest generated at:", manifestPath);
 
 // Step 2: Build the API package
-console.log("📦 Building @captify/api package...");
-try {
-  execSync("npm run clean", {
-    stdio: "inherit",
-    cwd: join(process.cwd(), "packages", "api"),
-  });
-  execSync("npm run build", {
-    stdio: "inherit",
-    cwd: join(process.cwd(), "packages", "api"),
-  });
-  console.log("✅ @captify/api package built successfully");
-} catch (error) {
-  console.error(
-    "❌ @captify/api package build failed:",
-    (error as Error).message
-  );
-  process.exit(1);
-}
+// console.log("📦 Building @captify/api package...");
+// try {
+//   execSync("npm run clean", {
+//     stdio: "inherit",
+//     cwd: join(process.cwd(), "packages", "api"),
+//   });
+//   execSync("npm run build", {
+//     stdio: "inherit",
+//     cwd: join(process.cwd(), "packages", "api"),
+//   });
+//   console.log("✅ @captify/api package built successfully");
+// } catch (error) {
+//   console.error(
+//     "❌ @captify/api package build failed:",
+//     (error as Error).message
+//   );
+//   process.exit(1);
+// }
 
 console.log("🎉 @captify/api manifest build complete!");

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Grid3X3, Star, StarIcon, X } from "lucide-react";
-import { DynamicIcon } from "lucide-react/dynamic";
+import { DynamicIcon } from "./ui/dynamic-icon";
 import { useRouter } from "next/navigation";
 import { CaptifyClient } from "../api/client";
 import { UserState, App } from "../types";

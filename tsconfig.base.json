@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["DOM", "ES2022"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler", // modern resolution, works with Next.js & Turbopack
     "baseUrl": ".",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -14,17 +14,12 @@
     "isolatedModules": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    "allowJs": false,
+
     "paths": {
-      "@/*": ["src/*"],
-      "@captify/api": ["packages/api/src"],
-      "@captify/identity": ["packages/identity/src"],
-      "@captify/client": ["packages/client/src"],
-      "@captify/chat": ["packages/chat/src"],
-      "@captify/veripicks": ["apps/veripicks/src"],
-      "@captify/applications": ["packages/applications/src"]
+      "@captify/*": ["packages/*/src"], // dynamic import for all packages
+      "@/*": ["apps/captify/src/*"] // default, overridden in each app
     }
   },
-  "exclude": ["node_modules", "dist", "**/*.js", "**/*.mjs", "**/*.cjs"],
+  "exclude": ["node_modules", "dist", ".next"],
   "include": []
 }

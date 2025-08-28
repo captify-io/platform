@@ -1,10 +1,11 @@
-import { defineConfig } from "tsup";
-import baseConfig from "../../tsup.config.base.js";
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  ...baseConfig,
-  // Keep single entry point
-  entry: ["src/index.ts"],
-  // Enable DTS generation for TypeScript declarations
+  entry: ['src/index.ts'],
+  outDir: 'dist',
+  format: ['cjs', 'esm'],
   dts: true,
+  sourcemap: true,
+  clean: true,
 });
+

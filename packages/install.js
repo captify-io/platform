@@ -52,6 +52,16 @@ async function main() {
     // 1. Read captify.json (we're in packages/ directory)
     const configPath = path.join(packageName, "captify.json");
     console.log(`🔍 Looking for config at: ${path.resolve(configPath)}`);
+
+    if (
+      !(await fs
+        .access(configPath)
+        .then(() => true)
+        .catch(() => false))
+    ) {
+      throw new Error(`captify.json not found at ${configPath}`);
+    }
+
     const configContent = await fs.readFile(configPath, "utf8");
     const config = JSON.parse(configContent);
 
@@ -61,12 +71,17 @@ async function main() {
     const typesPath = path.join(packageName, "src", "types.ts");
     let interfaces = [];
 
-    try {
+    if (
+      await fs
+        .access(typesPath)
+        .then(() => true)
+        .catch(() => false)
+    ) {
       const typesContent = await fs.readFile(typesPath, "utf8");
       interfaces = parseTypeScriptInterfaces(typesContent);
       console.log(`✅ Found ${interfaces.length} interfaces in types.ts`);
-    } catch (error) {
-      console.log(`⚠️  No types.ts found or couldn't parse interfaces`);
+    } else {
+      console.log(`⚠️  No types.ts found at ${typesPath}`);
     }
 
     // 3. Manage DynamoDB tables (create, update, cleanup)

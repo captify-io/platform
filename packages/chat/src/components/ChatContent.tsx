@@ -115,7 +115,12 @@ const detectLanguage = (content: string, className?: string): string => {
   }
 
   // JSON detection with error handling
-  if (/^\s*[\{\[]/.test(code) && /[\}\]]\s*$/.test(code)) {
+  if (
+    code &&
+    code.trim() !== "" &&
+    /^\s*[\{\[]/.test(code) &&
+    /[\}\]]\s*$/.test(code)
+  ) {
     try {
       JSON.parse(code);
       return "json";

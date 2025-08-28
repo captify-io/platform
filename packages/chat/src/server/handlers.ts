@@ -3,8 +3,8 @@
  * All server-side logic for chat operations
  */
 
-import { CaptifyApi } from "@captify/api";
-import type { ApiUserSession } from "@captify/api";
+import { CaptifyApi } from "../lib/api-client";
+import type { ApiUserSession } from "../lib/api-client";
 
 export const chatHandlers = {
   /**
@@ -37,8 +37,7 @@ export const chatHandlers = {
 
       // Create CaptifyApi instance and make request
       const captifyApi = new CaptifyApi();
-      const response = await captifyApi.request({
-        service: "chat",
+      const response = await captifyApi.chat({
         operation: "send",
         data: {
           message,
@@ -46,8 +45,7 @@ export const chatHandlers = {
           sessionId,
           agentId,
         },
-        userSession,
-      });
+      }, userSession);
 
       if (!response.success) {
         return new Response(JSON.stringify({ error: response.error }), {
@@ -110,15 +108,13 @@ export const chatHandlers = {
 
       // Create CaptifyApi instance and make request
       const captifyApi = new CaptifyApi();
-      const response = await captifyApi.request({
-        service: "chat",
+      const response = await captifyApi.chat({
         operation: "getHistory",
         data: {
           userId,
           sessionId,
         },
-        userSession,
-      });
+      }, userSession);
 
       if (!response.success) {
         return new Response(JSON.stringify({ error: response.error }), {
@@ -168,15 +164,13 @@ export const chatHandlers = {
 
       // Create CaptifyApi instance and make request
       const captifyApi = new CaptifyApi();
-      const response = await captifyApi.request({
-        service: "chat",
+      const response = await captifyApi.chat({
         operation: "deleteSession",
         data: {
           sessionId,
           userId,
         },
-        userSession,
-      });
+      }, userSession);
 
       if (!response.success) {
         return new Response(JSON.stringify({ error: response.error }), {

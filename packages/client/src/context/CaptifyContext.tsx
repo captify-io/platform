@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Session } from "next-auth";
+import { SessionProvider } from "next-auth/react";
 import { CaptifyClient } from "../api/client";
 import type { User, UserSession, App, ApplicationMenuItem } from "../types";
 
@@ -55,7 +56,18 @@ class NISTCrypto {
   }
 
   static async decrypt(encryptedData: string): Promise<any> {
-    if (typeof window === "undefined") return JSON.parse(encryptedData);
+    if (!encryptedData || encryptedData.trim() === "") {
+      return null;
+    }
+
+    if (typeof window === "undefined") {
+      try {
+        return JSON.parse(encryptedData);
+      } catch (error) {
+        console.warn("Failed to parse encrypted data on server:", error);
+        return null;
+      }
+    }
 
     try {
       const combined = new Uint8Array(
@@ -73,7 +85,14 @@ class NISTCrypto {
       );
       return JSON.parse(new TextDecoder().decode(decrypted));
     } catch {
-      return JSON.parse(encryptedData); // Fallback to plaintext in dev
+      try {
+        return encryptedData && encryptedData.trim() !== ""
+          ? JSON.parse(encryptedData)
+          : null;
+      } catch (parseError) {
+        console.warn("Failed to parse fallback data:", parseError);
+        return null;
+      }
     }
   }
 
@@ -928,7 +947,14 @@ export function CaptifyProvider({
 
       // Return decrypted data for immediate use (NIST-compliant secure access pattern)
       const decrypted = await NISTCrypto.decrypt(encrypted);
-      return JSON.parse(decrypted) as User;
+      try {
+        return decrypted && decrypted.trim() !== ""
+          ? (JSON.parse(decrypted) as User)
+          : null;
+      } catch (parseError) {
+        console.warn("Failed to parse decrypted user data:", parseError);
+        return null;
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -1144,9 +1170,11 @@ export function CaptifyProvider({
   );
 
   return (
-    <CaptifyContext.Provider value={contextValue}>
-      {children}
-    </CaptifyContext.Provider>
+    <SessionProvider>
+      <CaptifyContext.Provider value={contextValue}>
+        {children}
+      </CaptifyContext.Provider>
+    </SessionProvider>
   );
 }
 

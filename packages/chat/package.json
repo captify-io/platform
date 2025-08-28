@@ -2,15 +2,14 @@
   "name": "@captify/chat",
   "version": "1.0.0",
   "description": "Chat components, hooks, and services for Captify applications",
-  "type": "module",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.js"
     }
   },
   "sideEffects": false,

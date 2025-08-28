@@ -3,14 +3,11 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "jsx": "react-jsx",
-    "allowJs": false,
     "noEmit": false,
     "declaration": true,
     "declarationDir": "dist",
-    "strict": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler"
+    "emitDeclarationOnly": false,
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

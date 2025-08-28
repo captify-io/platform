@@ -61,7 +61,6 @@ export const captifyManifest = {
 
   // Package dependencies
   dependencies: {
-    "@captify/api": "^0.0.1",
     "@captify/client": "^1.0.0",
   },
 

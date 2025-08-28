@@ -1,12 +1,13 @@
 "use client";
-
-// Re-export all client-side packages from their folder index files
+// Re-enable components, API, and context exports
+export * from "./components/index";
 export * from "./api/index";
 export { CaptifyClient } from "./api/client";
-export * from "./components/index";
 export * from "./context/index";
-export * from "./hooks/index";
 
-// Common utilities (types are already exported by api folder)
-export * from "./lib/utils";
-export * from "./lib/logout";
+// Temporarily keep other exports commented out
+// export * from "./hooks/index";
+// export * from "./lib/utils";
+// export * from "./lib/logout";
+
+export const __client_min_bisect = true;
