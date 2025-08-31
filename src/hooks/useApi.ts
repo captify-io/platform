@@ -1,11 +1,11 @@
-/**
+﻿/**
  * React hooks for Captify API operations
  */
 "use client";
 
 import { useState, useCallback } from "react";
-import { CaptifyClient, type CaptifyResponse } from "../api/client";
-import { createApiClient } from "../api/utils";
+import { CaptifyClient, type CaptifyResponse } from "../lib/api/client";
+import { createApiClient } from "../lib/api/utils";
 
 interface UseApiState<T> {
   data: T | null;
@@ -90,7 +90,7 @@ export function useApi<T = any>(
  */
 export function useGetItem<T = any>(tableName: string) {
   return useApi<T>((client, key: Record<string, any>) =>
-    client.get({ table: tableName, key })
+    client.getItem({ table: tableName, key })
   );
 }
 
@@ -99,7 +99,7 @@ export function useGetItem<T = any>(tableName: string) {
  */
 export function usePutItem<T = any>(tableName: string) {
   return useApi<T>((client, item: Record<string, any>) =>
-    client.post({ table: tableName, item })
+    client.put({ table: tableName, data: item })
   );
 }
 
@@ -108,8 +108,20 @@ export function usePutItem<T = any>(tableName: string) {
  */
 export function useUpdateItem<T = any>(tableName: string) {
   return useApi<T>(
-    (client, key: Record<string, any>, item: Record<string, any>) =>
-      client.put({ table: tableName, key, item })
+    (
+      client,
+      key: Record<string, any>,
+      updateExpression: string,
+      expressionAttributeValues?: Record<string, any>,
+      expressionAttributeNames?: Record<string, any>
+    ) =>
+      client.update({
+        table: tableName,
+        key,
+        updateExpression,
+        expressionAttributeValues,
+        expressionAttributeNames,
+      })
   );
 }
 
@@ -133,39 +145,36 @@ export function useScanTable<T = any>(tableName: string) {
 
 /**
  * Hook for auth operations
+ * TODO: These hooks need to be implemented with proper auth endpoints
  */
 export function useAuth() {
-  const validateSession = useApi<{ valid: boolean }>(
-    (client, idToken: string) =>
-      client.post({
-        resource: "auth",
-        operation: "validate",
-        data: { idToken },
-      })
-  );
+  // const validateSession = useApi<{ valid: boolean }>(
+  //   (client, idToken: string) =>
+  //     client.post({
+  //       resource: "auth",
+  //       operation: "validate",
+  //       data: { idToken },
+  //     })
+  // );
 
-  const refreshSession = useApi<any>((client, idToken: string) =>
-    client.post({ resource: "auth", operation: "refresh", data: { idToken } })
-  );
+  // const refreshSession = useApi<any>((client, idToken: string) =>
+  //   client.post({ resource: "auth", operation: "refresh", data: { idToken } })
+  // );
 
-  const getAwsCredentials = useApi<{ credentials: any }>(
-    (client, idToken: string, identityPoolId: string) =>
-      client.post({
-        resource: "auth",
-        operation: "getAwsCredentials",
-        data: { idToken, identityPoolId },
-      })
-  );
+  // const getAwsCredentials = useApi<{ credentials: any }>(
+  //   (client, idToken: string, identityPoolId: string) =>
+  //     client.post({
+  //       resource: "auth",
+  //       operation: "getAwsCredentials",
+  //       data: { idToken, identityPoolId },
+  //     })
+  // );
 
   return {
-    validateSession: validateSession.execute,
-    refreshSession: refreshSession.execute,
-    getAwsCredentials: getAwsCredentials.execute,
-    loading:
-      validateSession.loading ||
-      refreshSession.loading ||
-      getAwsCredentials.loading,
-    error:
-      validateSession.error || refreshSession.error || getAwsCredentials.error,
+    // validateSession: validateSession.execute,
+    // refreshSession: refreshSession.execute,
+    // getAwsCredentials: getAwsCredentials.execute,
+    loading: false,
+    error: null,
   };
 }

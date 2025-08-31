@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { CaptifyClient } from "../api/client";
+import { CaptifyClient } from "../lib/api/client";
 import type { App } from "../types";
 
 interface UseAppDataReturn {
@@ -50,12 +50,11 @@ export function useAppData(slug: string): UseAppDataReturn {
         console.log("useAppData - created client, querying table");
 
         // Query the captify-core-App table by slug
-        const response = await client.get<App>({
+        const response = await client.get({
           table: "captify-core-App",
-          operation: "scan",
           params: {
-            FilterExpression: "slug = :slug",
-            ExpressionAttributeValues: {
+            filterExpression: "slug = :slug",
+            expressionAttributeValues: {
               ":slug": slug,
             },
           },

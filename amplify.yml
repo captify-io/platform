@@ -4,6 +4,14 @@ applications:
     env:
       variables:
         AMPLIFY_MONOREPO_APP_ROOT: "."
+        # Add NextAuth environment variables
+        NEXTAUTH_URL: $NEXTAUTH_URL
+        NEXTAUTH_SECRET: $NEXTAUTH_SECRET
+        # Cognito environment variables
+        COGNITO_CLIENT_ID: $COGNITO_CLIENT_ID
+        COGNITO_CLIENT_SECRET: $COGNITO_CLIENT_SECRET
+        COGNITO_USER_POOL_ID: $COGNITO_USER_POOL_ID
+        COGNITO_IDENTITY_POOL_ID: $COGNITO_IDENTITY_POOL_ID
     frontend:
       framework: nextjs
       phases:
@@ -16,14 +24,15 @@ applications:
             - pnpm -v
             - echo "Installing dependencies..."
             - pnpm install --no-frozen-lockfile
-            - echo "Verifying workspace packages after install..."
+            - echo "Verifying dependencies after install..."
             - pnpm list --depth=0
         build:
           commands:
-            - echo "Building all packages and Next.js application..."
-            - pnpm run build:packages:direct
-            - echo "Building Next.js with Amplify optimizations..."
-            - AMPLIFY=true pnpm run build:next
+            - echo "Building with Turbo..."
+            - echo "Running type check across all packages..."
+            - pnpm run type-check
+            - echo "Building all packages and Next.js app..."
+            - pnpm run build
       artifacts:
         baseDirectory: .next
         files:

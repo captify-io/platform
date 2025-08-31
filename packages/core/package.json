@@ -1,0 +1,55 @@
+{
+  "name": "@captify/core",
+  "version": "1.0.0",
+  "description": "Captify Core Services and Components",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.18 || >=20"
+  },
+  "main": "dist/app.js",
+  "module": "dist/app.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-server": "./dist/index.js",
+      "browser": "./dist/app.js",
+      "default": "./dist/app.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./services": {
+      "types": "./dist/services.d.ts",
+      "default": "./dist/services.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "install-package": "node -r ts-node/register installer.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0",
+    "next": ">=15.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1",
+    "tsup": "^8.0.0",
+    "typescript": "5.7.2"
+  }
+}
