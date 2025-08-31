@@ -5,6 +5,8 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "next dev --turbo",
+    "dev:watch": "concurrently \"pnpm run dev:packages\" \"pnpm run dev\" --names \"📦,⚡\" --prefix-colors \"blue,green\"",
+    "dev:packages": "pnpm --filter @captify/core run dev",
     "build": "next build",
     "build:debug": "cross-env NODE_OPTIONS=--trace-warnings next build",
     "build:amplify": "pnpm run build:packages && next build",
@@ -86,11 +88,14 @@
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
     "@types/uuid": "^10.0.0",
+    "chokidar": "^4.0.3",
+    "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.5.0",
     "execa": "^9.6.0",
     "tw-animate-css": "^1.0.1",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "ws": "^8.18.3"
   }
 }

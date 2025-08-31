@@ -12,33 +12,39 @@ const nextConfig = {
     domains: ["localhost"],
   },
 
-  // Turbopack configuration for development
-  turbopack: {
-    resolveExtensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
+  // Enable experimental features for better package watching
+  experimental: {
+    // Enable optimized package imports and watching
+    optimizePackageImports: ["@captify/core"],
   },
 
-  // Webpack configuration (only for production builds)
+  // Configure webpack for proper package watching
   webpack: (config, { isServer, dev }) => {
-    // Only apply webpack config for non-dev builds (when not using Turbopack)
-    if (!dev) {
+    if (dev && !isServer) {
+      // Configure file watching to include package dist folders
       config.watchOptions = {
         ...config.watchOptions,
-        ignored: ["**/packages/**", "**/node_modules/**"],
+        ignored: [
+          "**/node_modules/**",
+          "!**/packages/core/dist/**", // Watch the core package dist
+        ],
+        poll: 1000, // Use polling for reliable file watching on Windows
+        aggregateTimeout: 100, // Shorter timeout for faster rebuilds
       };
-      config.devtool = false;
-    }
 
-    // Add error logging plugin
-    config.plugins.push({
-      apply(compiler) {
-        compiler.hooks.done.tap("LogFirstErrors", (stats) => {
-          const s = stats.toJson({ errors: true });
-          if (s.errors?.length) {
-            console.error("WEBPACK ERROR 1:\n", s.errors[0]);
-          }
-        });
-      },
-    });
+      // Add package dist directory as a dependency to trigger rebuilds
+      const path = require("path");
+      const packageDistPath = path.resolve(process.cwd(), "packages/core/dist");
+      
+      config.plugins.push({
+        apply(compiler) {
+          compiler.hooks.afterCompile.tap("PackageWatcher", (compilation) => {
+            // Add the entire package dist directory as a dependency
+            compilation.contextDependencies.add(packageDistPath);
+          });
+        },
+      });
+    }
 
     return config;
   },

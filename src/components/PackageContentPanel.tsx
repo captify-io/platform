@@ -5,31 +5,31 @@
 
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 import { usePackageContext } from "../context/PackageContext";
 import { PackagePageRouter } from "./PackagePageRouter";
 
 interface PackageContentPanelProps {
   children?: React.ReactNode;
+  currentHash?: string;
 }
 
-export function PackageContentPanel({ children }: PackageContentPanelProps) {
+export function PackageContentPanel({
+  children,
+  currentHash,
+}: PackageContentPanelProps) {
   const { packageConfig, packageState } = usePackageContext();
+  const prevHashRef = useRef<string | undefined>(undefined);
+
+  // Track hash changes
+  useEffect(() => {
+    if (prevHashRef.current !== currentHash) {
+      prevHashRef.current = currentHash;
+    }
+  }, [currentHash]);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center px-4">
-          <h1 className="text-lg font-semibold">Content Area</h1>
-          {packageConfig && (
-            <div className="ml-auto text-sm text-muted-foreground">
-              {packageConfig.name} • {packageState.currentRoute}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Content Area */}
       <div className="flex-1 overflow-auto">
         <Suspense
@@ -42,7 +42,7 @@ export function PackageContentPanel({ children }: PackageContentPanelProps) {
             </div>
           }
         >
-          {children || <PackagePageRouter />}
+          <PackagePageRouter currentHash={currentHash} />
         </Suspense>
       </div>
     </div>

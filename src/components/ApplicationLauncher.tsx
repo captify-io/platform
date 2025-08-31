@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCaptify } from "../context/CaptifyContext";
+import { useAppNavigation } from "../hooks/useAppNavigation";
 import { apiClient } from "../lib/api/client";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -129,6 +130,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { session, favoriteApps, toggleFavorite } = useCaptify();
+  const { navigateToApp } = useAppNavigation();
   const router = useRouter();
 
   // Extract unique categories from applications with counts
@@ -233,9 +235,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   };
 
   const handleAppClick = (app: App) => {
-    const slug = (app as any).slug || app.appId;
-    const href = `/${slug}`;
-    router.push(href);
+    navigateToApp(app);
     setIsOpen(false);
   };
 

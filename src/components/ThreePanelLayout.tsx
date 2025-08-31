@@ -11,35 +11,14 @@ import { usePackageContext } from "../context/PackageContext";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";
 import { Button } from "./ui/button";
-import {
-  ChevronRight,
-  ChevronLeft,
-  Bot,
-  Shield,
-  Users,
-  Plug,
-  Settings,
-  FileText,
-  AlertTriangle,
-  GitBranch,
-  CheckCircle,
-  Key,
-  UserCheck,
-  Database,
-  Globe,
-  Webhook,
-  ChevronDown,
-  LayoutDashboard,
-  Building,
-  Activity,
-} from "lucide-react";
+import { ChevronRight, ChevronLeft, Bot, ChevronDown } from "lucide-react";
+import { DynamicIcon } from "./ui/dynamic-icon";
 import {
   SidebarProvider,
   Sidebar,
   SidebarInset,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
@@ -47,7 +26,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarTrigger,
   useSidebar,
 } from "./ui/sidebar";
 import {
@@ -64,44 +42,85 @@ interface ThreePanelLayoutProps {
 
 // Inner component that has access to SidebarProvider context
 function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
-  const { packageState, toggleAgentPanel, setAgentWidth } = usePackageContext();
+  const { packageState, toggleAgentPanel, setAgentWidth, packageConfig } =
+    usePackageContext();
   const [isResizingAgent, setIsResizingAgent] = useState(false);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const { toggleSidebar, state } = useSidebar();
   const [menuData, setMenuData] = useState<any>(null);
+  const [currentHash, setCurrentHash] = useState<string>(() => {
+    // Initialize with current hash from URL, fallback to "home"
+    if (typeof window !== "undefined") {
+      const initialHash = window.location.hash.slice(1) || "home";
+      return initialHash;
+    }
+    return "home";
+  });
   const router = useRouter();
+  // Monitor hash changes
+  useEffect(() => {
+    const updateHash = () => {
+      const hash = window.location.hash.slice(1) || "home";
+      // Update state with new hash (React will handle the comparison)
+      setCurrentHash((prevHash) => {
+        if (hash !== prevHash) {
+          return hash;
+        } else {
+          return prevHash;
+        }
+      });
+    };
 
-  // Icon mapping for menu items
-  const iconMap: { [key: string]: any } = {
-    Shield,
-    Users,
-    Plug,
-    Settings,
-    FileText,
-    AlertTriangle,
-    GitBranch,
-    CheckCircle,
-    Key,
-    UserCheck,
-    Database,
-    Globe,
-    Webhook,
-    ChevronDown,
-    // DynamoDB menu icons
-    "layout-dashboard": LayoutDashboard,
-    building: Building,
-    users: Users,
-    key: Key,
-    settings: Settings,
-    activity: Activity,
-    "file-text": FileText,
-  };
+    // Set initial hash
+    updateHash();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", updateHash);
+    window.addEventListener("popstate", updateHash);
+
+    return () => {
+      window.removeEventListener("hashchange", updateHash);
+      window.removeEventListener("popstate", updateHash);
+    };
+  }, []); // Empty dependency array is correct now since we use functional setState
+
+  // Track when currentHash state changes
+  useEffect(() => {}, [currentHash]);
 
   // Handle navigation
   const handleNavigation = (route: string) => {
-    // Navigate to the route specified in the menu item
-    router.push(route);
+    // Get the current app slug from packageConfig, fallback to "core"
+    const appSlug = packageConfig?.slug || "core";
+
+    // Extract the route ID from the route string
+    // Routes can be "/policies/ssp", "/access/users", etc.
+    // We need to convert them to route IDs for the PackagePageRouter
+    let routeId;
+
+    if (route === "/") {
+      routeId = "home";
+    } else {
+      routeId = route.substring(1).replace(/\//g, "-");
+    }
+
+    // Check if we're already on the correct path, if not navigate to it first
+    const currentPath = window.location.pathname;
+    const targetPath = `/${appSlug}`;
+
+    if (currentPath !== targetPath) {
+      router.push(`${targetPath}#${routeId}`);
+    } else {
+      // We're on the right page, just update the hash
+      window.location.hash = routeId;
+
+      // Manually trigger hashchange event since programmatic hash changes don't always fire it
+      const hashChangeEvent = new HashChangeEvent("hashchange", {
+        oldURL: window.location.href,
+        newURL: window.location.href,
+      });
+      window.dispatchEvent(hashChangeEvent);
+    }
   };
 
   // Load menu configuration from DynamoDB
@@ -111,12 +130,15 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       return;
     }
 
+    // Don't load menu until packageConfig is available
+    if (!packageConfig) {
+      return;
+    }
+
     const loadMenu = async () => {
       try {
-        // Get current package/app from context (defaulting to "core")
-        const currentApp = "core"; // This should come from context later
-        console.log(`Loading menu for app: ${currentApp} from DynamoDB`);
-
+        // Get the current app slug from packageConfig
+        const currentApp = packageConfig.slug;
         // Query DynamoDB for the app data using the slug-index
         const response = await fetch("/api/captify", {
           method: "POST",
@@ -143,7 +165,6 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
         }
 
         const result = await response.json();
-        console.log("DynamoDB response:", result);
 
         if (
           result.success &&
@@ -152,7 +173,6 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
           result.data.Items.length > 0
         ) {
           const appData = result.data.Items[0];
-          console.log("App data from DynamoDB:", appData);
 
           // Extract menu items from the app data
           if (appData.menu && Array.isArray(appData.menu)) {
@@ -160,38 +180,52 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
             const menuStructure = {
               title: appData.name || "Application",
               version: appData.version || "1.0.0",
-              sections: appData.menu.map((item: any) => ({
-                id: item.id,
-                title: item.label,
-                icon: item.icon,
-                route: item.href,
-                type: "page",
-                order: item.order,
-              })),
-            };
+              sections: appData.menu.map((item: any) => {
+                const section: any = {
+                  id: item.id,
+                  title: item.label,
+                  icon: item.icon,
+                  route: item.href,
+                  type: "page",
+                  order: item.order,
+                };
 
-            console.log("Transformed menu structure:", menuStructure);
+                // Check if this item has children (nested menu items)
+                if (
+                  item.children &&
+                  Array.isArray(item.children) &&
+                  item.children.length > 0
+                ) {
+                  section.items = item.children.map((child: any) => ({
+                    id: child.id,
+                    title: child.label,
+                    icon: child.icon,
+                    route: child.href,
+                    type: "page",
+                    order: child.order,
+                  }));
+                }
+
+                return section;
+              }),
+            };
             setMenuData(menuStructure);
           } else if (appData.menuStructure) {
             // Handle complex nested menu structure (like from packages)
-            console.log("Using complex menu structure:", appData.menuStructure);
             setMenuData(appData.menuStructure);
           } else {
-            console.error("No menu items found in app data");
             setMenuData(null);
           }
         } else {
-          console.error("No app found with slug:", currentApp);
           setMenuData(null);
         }
       } catch (error) {
-        console.error("Failed to load menu from DynamoDB:", error);
         setMenuData(null);
       }
     };
 
     loadMenu();
-  }, []);
+  }, [packageConfig]); // Use the entire packageConfig object, not just the slug
 
   // Handle sidebar resize drag
   const handleSidebarMouseDown = useCallback(
@@ -278,11 +312,10 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
                               <CollapsibleTrigger asChild>
                                 <SidebarMenuButton className="flex items-center justify-between w-full">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    {iconMap[section.icon] &&
-                                      React.createElement(
-                                        iconMap[section.icon],
-                                        { className: "h-4 w-4 flex-shrink-0" }
-                                      )}
+                                    <DynamicIcon
+                                      name={section.icon}
+                                      className="h-4 w-4 flex-shrink-0"
+                                    />
                                     <span className="truncate">
                                       {section.title}
                                     </span>
@@ -304,14 +337,10 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
                                         }
                                       >
                                         <div className="flex items-center gap-2 min-w-0">
-                                          {iconMap[item.icon] &&
-                                            React.createElement(
-                                              iconMap[item.icon],
-                                              {
-                                                className:
-                                                  "h-4 w-4 flex-shrink-0",
-                                              }
-                                            )}
+                                          <DynamicIcon
+                                            name={item.icon}
+                                            className="h-4 w-4 flex-shrink-0"
+                                          />
                                           <span className="truncate">
                                             {item.title}
                                           </span>
@@ -339,10 +368,10 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
                               className="flex items-center gap-2 w-full"
                             >
                               <div className="flex items-center gap-2 min-w-0">
-                                {iconMap[section.icon] &&
-                                  React.createElement(iconMap[section.icon], {
-                                    className: "h-4 w-4 flex-shrink-0",
-                                  })}
+                                <DynamicIcon
+                                  name={section.icon}
+                                  className="h-4 w-4 flex-shrink-0"
+                                />
                                 <span className="truncate">
                                   {section.title}
                                 </span>
@@ -358,7 +387,6 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
             ) : menuData === null ? (
               <div className="p-4 text-sm text-muted-foreground">
                 <div>Menu failed to load</div>
-                <div className="text-xs mt-1">Check console for details</div>
               </div>
             ) : (
               <div className="p-4 text-sm text-muted-foreground">
@@ -386,7 +414,9 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Content Panel with SidebarInset */}
         <SidebarInset className="flex-1 overflow-hidden relative">
-          <PackageContentPanel>{children}</PackageContentPanel>
+          <PackageContentPanel currentHash={currentHash}>
+            {children}
+          </PackageContentPanel>
         </SidebarInset>
 
         {/* Agent Panel */}

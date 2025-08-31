@@ -33,7 +33,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "cross-env NODE_ENV=development tsup --watch",
     "type-check": "npx tsc --noEmit",
     "clean": "rm -rf dist",
     "install-package": "node -r ts-node/register installer.ts"
@@ -45,11 +45,12 @@
     "@types/react-dom": "19.1.1"
   },
   "peerDependencies": {
+    "next": ">=15.0.0",
     "react": ">=19.0.0",
-    "react-dom": ">=19.0.0",
-    "next": ">=15.0.0"
+    "react-dom": ">=19.0.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "tsup": "^8.0.0",
     "typescript": "5.7.2"
   }

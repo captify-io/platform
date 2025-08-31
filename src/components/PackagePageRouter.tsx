@@ -11,8 +11,6 @@ import { usePackageContext } from "../context/PackageContext";
 // Dynamic package registry loader
 async function loadPackageRegistry(packageName: string) {
   try {
-    console.log(`Loading package registry for: ${packageName}`);
-
     // Only load from known packages to avoid webpack bundling issues
     let appModule;
     switch (packageName) {
@@ -20,7 +18,6 @@ async function loadPackageRegistry(packageName: string) {
         appModule = await import("@captify/core/app");
         break;
       default:
-        console.warn(`Package ${packageName} not supported yet`);
         return null;
     }
 
@@ -28,9 +25,6 @@ async function loadPackageRegistry(packageName: string) {
     const { pages, components } = appModule;
 
     if (pages || components) {
-      console.log(
-        `Successfully loaded component registry for package: ${packageName}`
-      );
       // Return a function that provides the component for specific routes
       return async (routeName: string) => {
         // Try pages first, then components
@@ -39,94 +33,91 @@ async function loadPackageRegistry(packageName: string) {
           const loadedModule = await pageLoader();
           return loadedModule.default || loadedModule;
         }
-        
-        const componentLoader = components?.[routeName as keyof typeof components];
+
+        const componentLoader =
+          components?.[routeName as keyof typeof components];
         if (componentLoader) {
           const loadedModule = await componentLoader();
           return loadedModule.default || loadedModule;
         }
-        
-        console.warn(`Route ${routeName} not found in package ${packageName}`);
+
         return null;
       };
     } else {
-      console.warn(`Package ${packageName} registry not found`);
       return null;
     }
   } catch (error) {
-    console.error(`Failed to load package registry for ${packageName}:`, error);
+    // Failed to load package registry for ${packageName}:`, error);
     return null;
   }
 }
 
-export function PackagePageRouter() {
+interface PackagePageRouterProps {
+  currentHash?: string;
+}
+
+export function PackagePageRouter({
+  currentHash: propCurrentHash,
+}: PackagePageRouterProps = {}) {
   const { packageConfig, packageState, setCurrentRoute } = usePackageContext();
-  const [currentHash, setCurrentHash] = useState<string>("home");
+  const [internalHash, setInternalHash] = useState<string>("home");
   const [PageComponent, setPageComponent] =
     useState<React.ComponentType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Debug info
-  console.log("PackagePageRouter render:", {
-    packageConfig: packageConfig?.slug,
-    currentHash,
-    packageStateRoute: packageState.currentRoute,
-    isLoading,
-    hasPageComponent: !!PageComponent,
-    loadError,
-  });
-
-  // Listen for hash changes
+  // Use prop currentHash if provided, otherwise use internal state
+  const currentHash = propCurrentHash || internalHash;
+  // Listen for hash changes (only if not using prop)
   useEffect(() => {
+    if (propCurrentHash) {
+      // Skip internal hash listening if prop is provided
+      return;
+    }
+
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1); // Remove the #
       const newPage = hash || "home"; // Default to 'home' if no hash
-      console.log("Hash changed:", {
-        hash,
-        newPage,
-        currentLocation: window.location.href,
-      });
-      setCurrentHash(newPage);
 
-      // Update package context
-      if (newPage !== packageState.currentRoute) {
-        console.log(
-          "Updating package context route from",
-          packageState.currentRoute,
-          "to",
-          newPage
-        );
-        setCurrentRoute(newPage);
-      }
+      setInternalHash((prevHash) => {
+        if (newPage !== prevHash) {
+          // Update package context
+          if (newPage !== packageState.currentRoute) {
+            setCurrentRoute(newPage);
+          }
+          return newPage;
+        } else {
+          return prevHash;
+        }
+      });
     };
 
-    // Set initial hash
-    console.log("Initial hash setup:", window.location.hash);
     handleHashChange();
 
     // Listen for hash changes
     window.addEventListener("hashchange", handleHashChange);
 
+    // Also listen for popstate in case of programmatic navigation
+    window.addEventListener("popstate", handleHashChange);
+
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("popstate", handleHashChange);
     };
-  }, [packageState.currentRoute, setCurrentRoute]);
+  }, [
+    packageState.currentRoute,
+    setCurrentRoute,
+    internalHash,
+    propCurrentHash,
+  ]);
 
   // Load page component when hash or package changes
   useEffect(() => {
-    console.log("Page loading effect triggered:", {
-      packageConfig: !!packageConfig,
-      currentHash,
-    });
-
     if (!packageConfig) {
-      console.log("No package config, skipping page load");
       return;
     }
 
     const loadPage = async () => {
-      console.log("Starting page load for:", currentHash);
       setIsLoading(true);
       setLoadError(null);
       setPageComponent(null);
@@ -141,25 +132,17 @@ export function PackagePageRouter() {
         }
 
         // Get the page component from the registry
-        console.log(`Getting page component for: ${currentHash}`);
         const component = await loadComponent(currentHash);
 
         if (component) {
-          console.log(
-            `Successfully loaded page component: ${packageName}/${currentHash}`
-          );
           setPageComponent(() => component);
         } else {
-          console.log(
-            `Page ${currentHash} not found in package ${packageName}`
-          );
           setLoadError(
             `Page "${currentHash}" not found in package "${packageName}"`
           );
           setPageComponent(null);
         }
       } catch (error) {
-        console.error(`Error loading page:`, error);
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         setLoadError(`Failed to load page "${currentHash}": ${errorMessage}`);
@@ -185,31 +168,11 @@ export function PackagePageRouter() {
     );
   }
 
-  // Debug panel (temporary)
-  const debugInfo = (
-    <div className="bg-yellow-50 border border-yellow-200 p-3 m-4 rounded-md text-xs">
-      <strong>Debug Info:</strong>
-      <br />
-      Package: {packageConfig?.slug}
-      <br />
-      Current Hash: {currentHash}
-      <br />
-      Package State Route: {packageState.currentRoute}
-      <br />
-      Is Loading: {isLoading.toString()}
-      <br />
-      Has Page Component: {(!!PageComponent).toString()}
-      <br />
-      Load Error: {loadError || "none"}
-      <br />
-      URL: {typeof window !== "undefined" ? window.location.href : "unknown"}
-    </div>
-  );
+  // Debug panel removed - navigation working properly
 
   if (isLoading) {
     return (
       <div>
-        {debugInfo}
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -227,7 +190,6 @@ export function PackagePageRouter() {
   if (PageComponent) {
     return (
       <div>
-        {debugInfo}
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-full">
@@ -244,7 +206,6 @@ export function PackagePageRouter() {
   // Show error state
   return (
     <div>
-      {debugInfo}
       <div className="flex items-center justify-center h-full p-6">
         <div className="text-center max-w-2xl">
           <div className="mb-4">
