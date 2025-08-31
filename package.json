@@ -13,7 +13,7 @@
     "build:packages": "pnpm --filter @captify/core run build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "pnpm exec tsc --noEmit",
     "type-check:packages": "pnpm --filter @captify/core run type-check",
     "deploy:check": "pnpm run type-check && pnpm run type-check:packages && pnpm run lint",
     "clean": "rm -rf .next dist && pnpm --filter @captify/core run clean",

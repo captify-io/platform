@@ -12,19 +12,27 @@ export default function MonitorPage() {
       <div className="grid gap-4">
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">Performance Metrics</h2>
-          <p className="text-gray-600">Real-time system performance monitoring and analytics.</p>
+          <p className="text-gray-600">
+            Real-time system performance monitoring and analytics.
+          </p>
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">Audit Logs</h2>
-          <p className="text-gray-600">System activity logs and audit trail management.</p>
+          <p className="text-gray-600">
+            System activity logs and audit trail management.
+          </p>
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">Alerts</h2>
-          <p className="text-gray-600">System alerts and notification management.</p>
+          <p className="text-gray-600">
+            System alerts and notification management.
+          </p>
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">Security Events</h2>
-          <p className="text-gray-600">Security event monitoring and incident tracking.</p>
+          <p className="text-gray-600">
+            Security event monitoring and incident tracking.
+          </p>
         </div>
       </div>
     </div>

@@ -1,0 +1,312 @@
+{
+  "L": [
+    {
+      "M": {
+        "icon": { "S": "layout-dashboard" },
+        "id": { "S": "core-0" },
+        "label": { "S": "Dashboard" },
+        "href": { "S": "/" },
+        "order": { "N": "0" }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "shield-check" },
+        "id": { "S": "core-1" },
+        "label": { "S": "Policies & SOPs" },
+        "href": { "S": "/policies" },
+        "order": { "N": "1" },
+        "children": {
+          "L": [
+            {
+              "M": {
+                "icon": { "S": "file-shield" },
+                "id": { "S": "core-1-1" },
+                "label": { "S": "System Security Plan" },
+                "href": { "S": "/policies/ssp" },
+                "order": { "N": "0" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "file-check" },
+                "id": { "S": "core-1-2" },
+                "label": { "S": "POA&Ms" },
+                "href": { "S": "/policies/poams" },
+                "order": { "N": "1" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "git-pull-request" },
+                "id": { "S": "core-1-3" },
+                "label": { "S": "Change Requests" },
+                "href": { "S": "/policies/change-requests" },
+                "order": { "N": "2" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "book-open" },
+                "id": { "S": "core-1-4" },
+                "label": { "S": "Standard Operating Procedures" },
+                "href": { "S": "/policies/sops" },
+                "order": { "N": "3" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "shield-alert" },
+                "id": { "S": "core-1-5" },
+                "label": { "S": "Risk Assessments" },
+                "href": { "S": "/policies/risk-assessments" },
+                "order": { "N": "4" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "clipboard-check" },
+                "id": { "S": "core-1-6" },
+                "label": { "S": "Compliance Monitoring" },
+                "href": { "S": "/policies/compliance" },
+                "order": { "N": "5" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "users" },
+        "id": { "S": "core-2" },
+        "label": { "S": "Access Management" },
+        "href": { "S": "/access" },
+        "order": { "N": "2" },
+        "children": {
+          "L": [
+            {
+              "M": {
+                "icon": { "S": "user" },
+                "id": { "S": "core-2-1" },
+                "label": { "S": "User Management" },
+                "href": { "S": "/access/users" },
+                "order": { "N": "0" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "shield" },
+                "id": { "S": "core-2-2" },
+                "label": { "S": "Role Management" },
+                "href": { "S": "/access/roles" },
+                "order": { "N": "1" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "key" },
+                "id": { "S": "core-2-3" },
+                "label": { "S": "Policy Management" },
+                "href": { "S": "/access/policies" },
+                "order": { "N": "2" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "user-check" },
+                "id": { "S": "core-2-4" },
+                "label": { "S": "Access Reviews" },
+                "href": { "S": "/access/reviews" },
+                "order": { "N": "3" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "clock" },
+                "id": { "S": "core-2-5" },
+                "label": { "S": "Provisioning Requests" },
+                "href": { "S": "/access/provisioning" },
+                "order": { "N": "4" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "database" },
+        "id": { "S": "core-3" },
+        "label": { "S": "Service Integrations" },
+        "href": { "S": "/services" },
+        "order": { "N": "3" },
+        "children": {
+          "L": [
+            {
+              "M": {
+                "icon": { "S": "database" },
+                "id": { "S": "core-3-1" },
+                "label": { "S": "DynamoDB" },
+                "href": { "S": "/services/dynamodb" },
+                "order": { "N": "0" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "network" },
+                "id": { "S": "core-3-2" },
+                "label": { "S": "Neptune" },
+                "href": { "S": "/services/neptune" },
+                "order": { "N": "1" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "hard-drive" },
+                "id": { "S": "core-3-3" },
+                "label": { "S": "S3" },
+                "href": { "S": "/services/s3" },
+                "order": { "N": "2" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "brain" },
+                "id": { "S": "core-3-4" },
+                "label": { "S": "Bedrock" },
+                "href": { "S": "/services/bedrock" },
+                "order": { "N": "3" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "bot" },
+                "id": { "S": "core-3-5" },
+                "label": { "S": "Agents" },
+                "href": { "S": "/services/agents" },
+                "order": { "N": "4" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "zap" },
+                "id": { "S": "core-3-6" },
+                "label": { "S": "Lambda" },
+                "href": { "S": "/services/lambda" },
+                "order": { "N": "5" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "building" },
+        "id": { "S": "core-4" },
+        "label": { "S": "Organizations" },
+        "href": { "S": "/organizations" },
+        "order": { "N": "4" }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "settings" },
+        "id": { "S": "core-5" },
+        "label": { "S": "Platform Settings" },
+        "href": { "S": "/settings" },
+        "order": { "N": "5" },
+        "children": {
+          "L": [
+            {
+              "M": {
+                "icon": { "S": "palette" },
+                "id": { "S": "core-5-1" },
+                "label": { "S": "Themes & Branding" },
+                "href": { "S": "/settings/themes" },
+                "order": { "N": "0" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "bell" },
+                "id": { "S": "core-5-2" },
+                "label": { "S": "Notifications" },
+                "href": { "S": "/settings/notifications" },
+                "order": { "N": "1" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "globe" },
+                "id": { "S": "core-5-3" },
+                "label": { "S": "Integrations" },
+                "href": { "S": "/settings/integrations" },
+                "order": { "N": "2" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "sliders" },
+                "id": { "S": "core-5-4" },
+                "label": { "S": "System Configuration" },
+                "href": { "S": "/settings/system" },
+                "order": { "N": "3" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "M": {
+        "icon": { "S": "activity" },
+        "id": { "S": "core-6" },
+        "label": { "S": "System Monitor" },
+        "href": { "S": "/monitor" },
+        "order": { "N": "6" },
+        "children": {
+          "L": [
+            {
+              "M": {
+                "icon": { "S": "bar-chart" },
+                "id": { "S": "core-6-1" },
+                "label": { "S": "Performance Metrics" },
+                "href": { "S": "/monitor/performance" },
+                "order": { "N": "0" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "file-text" },
+                "id": { "S": "core-6-2" },
+                "label": { "S": "Audit Logs" },
+                "href": { "S": "/monitor/audit" },
+                "order": { "N": "1" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "alert-triangle" },
+                "id": { "S": "core-6-3" },
+                "label": { "S": "Alerts" },
+                "href": { "S": "/monitor/alerts" },
+                "order": { "N": "2" }
+              }
+            },
+            {
+              "M": {
+                "icon": { "S": "shield-check" },
+                "id": { "S": "core-6-4" },
+                "label": { "S": "Security Events" },
+                "href": { "S": "/monitor/security" },
+                "order": { "N": "3" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -33,40 +33,40 @@ applications:
             - corepack enable
             - corepack prepare pnpm@$PNPM_VERSION --activate
             - pnpm -v
-            
+
             # Install dependencies for all packages
             - echo "Installing dependencies for monorepo..."
             - pnpm install --frozen-lockfile
-            
+
             # Verify dependencies
             - echo "Verifying workspace packages..."
             - pnpm list --depth=0
             - echo "Verifying core package dependencies..."
             - cd packages/core && pnpm list --depth=0 && cd ../..
-            
+
         build:
           commands:
             # Build packages first (@captify/core)
             - echo "Building @captify/core package..."
             - pnpm --filter @captify/core run build
             - echo "Core package build complete"
-            
+
             # Verify core package was built
             - echo "Verifying core package dist..."
             - ls -la packages/core/dist/
-            
+
             # Type check the entire project (from root where TypeScript is available)
             - echo "Running type check across all packages..."
             - pnpm run type-check
-            
+
             # Build the Next.js application
             - echo "Building Next.js application..."
             - pnpm run build
-            
+
             # Verify the build output
             - echo "Build complete! Verifying output..."
             - ls -la .next/
-            
+
       artifacts:
         baseDirectory: .next
         files:

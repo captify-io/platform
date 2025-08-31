@@ -12,15 +12,21 @@ export default function PoliciesPage() {
       <div className="grid gap-4">
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">System Security Plan</h2>
-          <p className="text-gray-600">Manage your organization's system security plan and documentation.</p>
+          <p className="text-gray-600">
+            Manage your organization's system security plan and documentation.
+          </p>
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">POA&Ms</h2>
-          <p className="text-gray-600">Plan of Action & Milestones tracking and management.</p>
+          <p className="text-gray-600">
+            Plan of Action & Milestones tracking and management.
+          </p>
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2">Change Requests</h2>
-          <p className="text-gray-600">Submit and track system change requests.</p>
+          <p className="text-gray-600">
+            Submit and track system change requests.
+          </p>
         </div>
       </div>
     </div>

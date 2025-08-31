@@ -35,7 +35,7 @@ const nextConfig = {
       // Add package dist directory as a dependency to trigger rebuilds
       const path = require("path");
       const packageDistPath = path.resolve(process.cwd(), "packages/core/dist");
-      
+
       config.plugins.push({
         apply(compiler) {
           compiler.hooks.afterCompile.tap("PackageWatcher", (compilation) => {

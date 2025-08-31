@@ -27,7 +27,9 @@ export default defineConfig([
     banner: {
       js: `"use strict";`,
     },
-    onSuccess: isDev ? "echo '📦 @captify/core rebuilt successfully!'" : undefined,
+    onSuccess: isDev
+      ? "echo '📦 @captify/core rebuilt successfully!'"
+      : undefined,
     // Use string array for watch patterns
     watch: isDev ? ["src/**/*.ts", "src/**/*.tsx"] : false,
   },

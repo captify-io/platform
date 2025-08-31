@@ -20,7 +20,7 @@ export function useAppNavigation() {
     (app: App) => {
       // Set current app in global context
       setCurrentApp(app);
-      
+
       // Navigate to the app's route
       const appRoute = `/${app.slug}`;
       router.push(appRoute);
