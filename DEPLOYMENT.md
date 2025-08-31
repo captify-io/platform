@@ -1,6 +1,24 @@
 # AWS Amplify Deployment Guide
 
-This document outlines the deployment process for the Captify platform to AWS Amplify.
+This document outlines the deployment2. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Setup Amplify deployment"
+   git push origin main
+   ```
+
+3. **Connect Repository in Amplify Console**
+   - Go to AWS Amplify Console
+   - Choose "Host web app"
+   - Connect your GitHub repository
+   - Select the `main` branch
+
+4. **Configure Build Settings**
+   - Amplify should auto-detect the `amplify.yml` file
+   - Verify the build configuration looks correct
+   - Add environment variables in App settings > Environment variables
+
+5. **Deploy**ptify platform to AWS Amplify.
 
 ## Project Structure
 
@@ -32,8 +50,15 @@ The Amplify build follows this sequence:
 
 3. **Build Application**
    - Type-check the entire workspace
-   - Build the Next.js application
+   - Build the Next.js application using `pnpm run build:amplify`
    - Verify final build outputs
+
+## Important Files for Deployment
+
+- `amplify.yml` - Build configuration for AWS Amplify
+- `pnpm-lock.yaml` - **MUST be committed** for reproducible builds
+- `pnpm-workspace.yaml` - Workspace configuration
+- `next.config.ts` - Next.js configuration with package transpilation
 
 ## Environment Variables
 
@@ -55,7 +80,14 @@ Configure these environment variables in your Amplify app settings:
 
 ## Deployment Steps
 
-1. **Push to GitHub**
+1. **Ensure Dependencies are Committed**
+   ```bash
+   # Make sure pnpm-lock.yaml is committed for reproducible builds
+   git add pnpm-lock.yaml .gitignore amplify.yml
+   git commit -m "Setup Amplify deployment with lockfile"
+   ```
+
+2. **Push to GitHub**
    ```bash
    git add .
    git commit -m "Setup Amplify deployment"
