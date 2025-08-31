@@ -5,20 +5,16 @@
  * hooks, and utilities that can run in the browser.
  */
 
-// Re-export types only to avoid pulling in React components in the main bundle
-export type { CoreAppProps } from "./CoreApp";
-
 // Export page registry for dynamic loading
 export const pages = {
-  home: () => import("./page"),
-  dashboard: () => import("./page"),
-  core: () => import("./CoreApp"),
+  core: () => import("./pages/Dashboard"),
+  dashboard: () => import("./pages/Dashboard"),
   // Main section pages
   policies: () => import("./pages/PoliciesPage"),
   access: () => import("./pages/AccessPage"),
   services: () => import("./pages/ServicesPage"),
-  organizations: () => import("./page"), // Using default page for now
-  settings: () => import("./page"), // Using default page for now
+  organizations: () => import("./pages/Dashboard"), // Using default page for now
+  settings: () => import("./pages/Dashboard"), // Using default page for now
   monitor: () => import("./pages/MonitorPage"),
   // Sub-page routes (using dash notation from navigation)
   "policies-ssp": () => import("./pages/PoliciesPage"), // Will show SSP section
@@ -38,10 +34,10 @@ export const pages = {
   "services-bedrock": () => import("./pages/ServicesPage"), // Will show Bedrock section
   "services-agents": () => import("./pages/ServicesPage"), // Will show Agents section
   "services-lambda": () => import("./pages/ServicesPage"), // Will show Lambda section
-  "settings-themes": () => import("./page"), // Using default page for now
-  "settings-notifications": () => import("./page"), // Using default page for now
-  "settings-integrations": () => import("./page"), // Using default page for now
-  "settings-system": () => import("./page"), // Using default page for now
+  "settings-themes": () => import("./pages/Dashboard"), // Using default page for now
+  "settings-notifications": () => import("./pages/Dashboard"), // Using default page for now
+  "settings-integrations": () => import("./pages/Dashboard"), // Using default page for now
+  "settings-system": () => import("./pages/Dashboard"), // Using default page for now
   "monitor-performance": () => import("./pages/MonitorPage"), // Will show Performance section
   "monitor-audit": () => import("./pages/MonitorPage"), // Will show Audit Logs section
   "monitor-alerts": () => import("./pages/MonitorPage"), // Will show Alerts section
@@ -50,8 +46,7 @@ export const pages = {
 
 // Export component registry
 export const components = {
-  CoreDashboardPage: () => import("./page"),
-  CoreApp: () => import("./CoreApp"),
+  CoreDashboardPage: () => import("./pages/Dashboard"),
 };
 
 // Export client-safe types
