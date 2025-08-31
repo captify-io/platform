@@ -48,7 +48,6 @@ applications:
           commands:
             # Build packages first (@captify/core)
             - echo "Building @captify/core package..."
-            - pnpm --filter @captify/core run type-check
             - pnpm --filter @captify/core run build
             - echo "Core package build complete"
             
@@ -56,7 +55,7 @@ applications:
             - echo "Verifying core package dist..."
             - ls -la packages/core/dist/
             
-            # Type check the entire project
+            # Type check the entire project (from root where TypeScript is available)
             - echo "Running type check across all packages..."
             - pnpm run type-check
             
