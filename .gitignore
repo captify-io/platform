@@ -65,17 +65,6 @@ pids
 *.seed
 *.pid.lock
 
-# AWS Amplify
-amplify/backend/amplify-meta.json
-amplify/backend/.temp
-amplify/\#current-cloud-backend
-amplify/.config/local-*
-amplify/backend/backend-config.json
-amplify/backend/tags.json
-amplify/logs
-amplify/mock-data
-amplify/mock-api-resources
-
 # Temporary folders
 tmp/
 temp/

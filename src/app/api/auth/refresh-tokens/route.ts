@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../[...nextauth]/auth";
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 // Token refresh function - same as in auth.ts
@@ -39,7 +38,7 @@ async function refreshCognitoTokens(refreshToken: string) {
 export async function POST(request: NextRequest) {
   try {
     // Get current session
-    const session = await getServerSession(authOptions as any);
+    const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

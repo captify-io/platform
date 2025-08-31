@@ -7,12 +7,15 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "build:debug": "cross-env NODE_OPTIONS=--trace-warnings next build",
-    "build:amplify": "next build",
+    "build:amplify": "pnpm run build:packages && next build",
+    "build:packages": "pnpm --filter @captify/core run build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "deploy:check": "npm run type-check && npm run lint",
-    "clean": "rm -rf .next dist"
+    "type-check:packages": "pnpm --filter @captify/core run type-check",
+    "deploy:check": "pnpm run type-check && pnpm run type-check:packages && pnpm run lint",
+    "clean": "rm -rf .next dist && pnpm --filter @captify/core run clean",
+    "clean:all": "pnpm run clean && rm -rf node_modules packages/*/node_modules"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity": "^3.876.0",
@@ -60,7 +63,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.542.0",
     "next": "15.5.0",
-    "next-auth": "^4.24.11",
+    "next-auth": "5.0.0-beta.29",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.6",
     "react": "19.1.1",

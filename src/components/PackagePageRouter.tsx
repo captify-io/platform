@@ -24,20 +24,33 @@ async function loadPackageRegistry(packageName: string) {
         return null;
     }
 
-    // Get the loadComponent function from the app module
-    const loadComponentFn = appModule.app?.loadComponent;
+    // Get the component and page registries from the app module
+    const { pages, components } = appModule;
 
-    if (loadComponentFn) {
+    if (pages || components) {
       console.log(
-        `Successfully loaded component loader for package: ${packageName}`
+        `Successfully loaded component registry for package: ${packageName}`
       );
       // Return a function that provides the component for specific routes
       return async (routeName: string) => {
-        // Use the package's loadComponent function to get the actual component
-        return await loadComponentFn(routeName);
+        // Try pages first, then components
+        const pageLoader = pages?.[routeName as keyof typeof pages];
+        if (pageLoader) {
+          const loadedModule = await pageLoader();
+          return loadedModule.default || loadedModule;
+        }
+        
+        const componentLoader = components?.[routeName as keyof typeof components];
+        if (componentLoader) {
+          const loadedModule = await componentLoader();
+          return loadedModule.default || loadedModule;
+        }
+        
+        console.warn(`Route ${routeName} not found in package ${packageName}`);
+        return null;
       };
     } else {
-      console.warn(`Package ${packageName} loadComponent function not found`);
+      console.warn(`Package ${packageName} registry not found`);
       return null;
     }
   } catch (error) {

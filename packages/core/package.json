@@ -35,6 +35,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
     "install-package": "node -r ts-node/register installer.ts"
   },
   "dependencies": {

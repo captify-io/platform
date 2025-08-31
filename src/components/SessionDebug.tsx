@@ -2,7 +2,7 @@
 
 import { useCaptify } from "@/context/CaptifyContext";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api/client";
 
 interface AwsCredentialsInfo {
@@ -26,13 +26,6 @@ export function SessionDebug() {
     setIsClient(true);
   }, []);
 
-  // Test AWS credentials when session changes
-  useEffect(() => {
-    if (session && isClient) {
-      testAwsCredentials();
-    }
-  }, [session, isClient]);
-
   // Auto-refresh the UI every 10 seconds to show live countdown
   useEffect(() => {
     const interval = setInterval(() => {
@@ -42,7 +35,7 @@ export function SessionDebug() {
     return () => clearInterval(interval);
   }, []);
 
-  const testAwsCredentials = async () => {
+  const testAwsCredentials = useCallback(async () => {
     if (!session) return;
 
     setTestingCredentials(true);
@@ -75,7 +68,14 @@ export function SessionDebug() {
     } finally {
       setTestingCredentials(false);
     }
-  };
+  }, [session]);
+
+  // Test AWS credentials when session changes
+  useEffect(() => {
+    if (session && isClient) {
+      testAwsCredentials();
+    }
+  }, [session, isClient, testAwsCredentials]);
 
   // Get AWS credentials status info
   const getAwsCredentialsInfo = () => {

@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
-import CognitoProvider from "next-auth/providers/cognito";
-import type { AuthOptions } from "next-auth";
+import Cognito from "next-auth/providers/cognito";
+import type { NextAuthConfig } from "next-auth";
 import { getSessionConfig } from "@/lib/session-config";
 
 // Get session configuration
@@ -40,29 +40,15 @@ async function refreshCognitoTokens(refreshToken: string) {
   };
 }
 
-// Extend NextAuth types
-declare module "next-auth" {
-  interface Session {
-    idToken?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    tokenExpiresAt?: number;
-  }
-
-  interface User {
-    id: string;
-  }
-}
-
-// Simple auth configuration
-export const authOptions: AuthOptions = {
+// Auth configuration
+export const authConfig = {
   session: {
     strategy: "jwt",
     maxAge: sessionConfig.nextAuthDuration,
     updateAge: sessionConfig.nextAuthUpdateAge,
   },
   providers: [
-    CognitoProvider({
+    Cognito({
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: `https://cognito-idp.us-east-1.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
@@ -77,7 +63,7 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile, trigger }: any) {
+    async jwt({ token, account, profile, trigger }) {
       // Initial sign-in: store all tokens with proper expiration
       if (account && profile) {
         console.log("🔐 Initial sign-in, storing tokens");
@@ -102,9 +88,9 @@ export const authOptions: AuthOptions = {
         token.accessToken = account.access_token;
         token.idToken = account.id_token;
         token.refreshToken = account.refresh_token;
-        token.sub = profile.sub;
-        token.email = profile.email;
-        token.name = profile.name;
+        token.sub = profile.sub || undefined;
+        token.email = profile.email || undefined;
+        token.name = profile.name || undefined;
         token.awsTokenExpiresAt = now + expiresIn; // Track AWS token expiration separately
 
         console.log(
@@ -130,7 +116,7 @@ export const authOptions: AuthOptions = {
       // Check if this is a session call (when /api/auth/session is accessed)
       // or if AWS tokens need refresh (refresh 5 minutes before expiry)
       const now = Math.floor(Date.now() / 1000);
-      const timeUntilExpiry = token.awsTokenExpiresAt - now;
+      const timeUntilExpiry = (token.awsTokenExpiresAt as number) - now;
       const shouldRefresh = timeUntilExpiry <= 300; // Refresh if expiring within 5 minutes
 
       if (shouldRefresh && token.refreshToken) {
@@ -167,17 +153,17 @@ export const authOptions: AuthOptions = {
       // Token is still valid, return as-is
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       // If there's a refresh error, force logout
       if (token.error === "RefreshTokenError") {
         throw new Error("Token refresh failed. Please log in again.");
       }
 
       if (token.idToken) {
-        session.idToken = token.idToken as string;
-        session.accessToken = token.accessToken as string;
-        session.refreshToken = token.refreshToken as string;
-        session.awsTokenExpiresAt = token.awsTokenExpiresAt; // AWS token expiration for quick checking
+        (session as any).idToken = token.idToken as string;
+        (session as any).accessToken = token.accessToken as string;
+        (session as any).refreshToken = token.refreshToken as string;
+        (session as any).awsTokenExpiresAt = token.awsTokenExpiresAt; // AWS token expiration for quick checking
       }
 
       if (session.user && token) {
@@ -188,7 +174,7 @@ export const authOptions: AuthOptions = {
 
       return session;
     },
-    async redirect({ url, baseUrl }: any) {
+    async redirect({ url, baseUrl }) {
       // Always redirect to home after authentication
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
@@ -196,12 +182,9 @@ export const authOptions: AuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === "development",
-};
+} satisfies NextAuthConfig;
 
-// Simple NextAuth handler
-const handler = NextAuth(authOptions);
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 
-export const nextAuthHandlers = {
-  GET: handler,
-  POST: handler,
-};
+// For backward compatibility, export authOptions-like object
+export const authOptions = authConfig;

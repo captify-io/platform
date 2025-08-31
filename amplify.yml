@@ -4,7 +4,11 @@ applications:
     env:
       variables:
         AMPLIFY_MONOREPO_APP_ROOT: "."
-        # Add NextAuth environment variables
+        # Node.js version
+        NODE_VERSION: "22.15.1"
+        # Package manager settings
+        PNPM_VERSION: "9.0.0"
+        # NextAuth environment variables
         NEXTAUTH_URL: $NEXTAUTH_URL
         NEXTAUTH_SECRET: $NEXTAUTH_SECRET
         # Cognito environment variables
@@ -12,33 +16,69 @@ applications:
         COGNITO_CLIENT_SECRET: $COGNITO_CLIENT_SECRET
         COGNITO_USER_POOL_ID: $COGNITO_USER_POOL_ID
         COGNITO_IDENTITY_POOL_ID: $COGNITO_IDENTITY_POOL_ID
+        # AWS region
+        AWS_REGION: $AWS_REGION
+        # Schema for database
+        SCHEMA: $SCHEMA
     frontend:
       framework: nextjs
       phases:
         preBuild:
           commands:
-            - nvm install 22.15.1
-            - nvm use 22.15.1
+            # Setup Node.js and pnpm
+            - echo "Setting up Node.js and pnpm..."
+            - nvm install $NODE_VERSION
+            - nvm use $NODE_VERSION
             - node -v && npm -v
-            - npm i -g pnpm@latest
+            - corepack enable
+            - corepack prepare pnpm@$PNPM_VERSION --activate
             - pnpm -v
-            - echo "Installing dependencies..."
-            - pnpm install --no-frozen-lockfile
-            - echo "Verifying dependencies after install..."
+            
+            # Install dependencies for all packages
+            - echo "Installing dependencies for monorepo..."
+            - pnpm install --frozen-lockfile
+            
+            # Verify dependencies
+            - echo "Verifying workspace packages..."
             - pnpm list --depth=0
+            - echo "Verifying core package dependencies..."
+            - cd packages/core && pnpm list --depth=0 && cd ../..
+            
         build:
           commands:
-            - echo "Building with Turbo..."
+            # Build packages first (@captify/core)
+            - echo "Building @captify/core package..."
+            - pnpm --filter @captify/core run type-check
+            - pnpm --filter @captify/core run build
+            - echo "Core package build complete"
+            
+            # Verify core package was built
+            - echo "Verifying core package dist..."
+            - ls -la packages/core/dist/
+            
+            # Type check the entire project
             - echo "Running type check across all packages..."
             - pnpm run type-check
-            - echo "Building all packages and Next.js app..."
+            
+            # Build the Next.js application
+            - echo "Building Next.js application..."
             - pnpm run build
+            
+            # Verify the build output
+            - echo "Build complete! Verifying output..."
+            - ls -la .next/
+            
       artifacts:
         baseDirectory: .next
         files:
           - "**/*"
       cache:
         paths:
+          # Next.js cache
           - .next/cache/**/*
+          # pnpm cache
           - node_modules/.pnpm/**/*
           - ~/.pnpm-store/**/*
+          # Package build cache
+          - packages/*/dist/**/*
+          - packages/*/node_modules/.cache/**/*

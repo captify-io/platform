@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/auth";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
@@ -46,7 +45,7 @@ async function handleRequest(request: NextRequest, method: string) {
 
       try {
         // Get session from NextAuth
-        const session = await getServerSession(authOptions);
+        const session = await auth();
 
         if (!session?.user) {
           return new Response(
