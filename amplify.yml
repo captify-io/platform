@@ -8,6 +8,10 @@ applications:
         NODE_VERSION: "22.15.1"
         # Package manager settings
         PNPM_VERSION: "9.0.0"
+        # Next.js build optimization
+        NEXT_TELEMETRY_DISABLED: "1"
+        # TypeScript path mapping for Amplify
+        TS_NODE_BASEURL: "."
         # NextAuth environment variables
         NEXTAUTH_URL: $NEXTAUTH_URL
         NEXTAUTH_SECRET: $NEXTAUTH_SECRET
@@ -57,10 +61,13 @@ applications:
 
             # Type check the entire project (from root where TypeScript is available)
             - echo "Running type check across all packages..."
+            - export NODE_OPTIONS="--max-old-space-size=4096"
             - pnpm run type-check
 
             # Build the Next.js application
             - echo "Building Next.js application..."
+            - echo "Current directory: $(pwd)"
+            - echo "TypeScript config baseUrl: $(cat tsconfig.json | grep baseUrl)"
             - pnpm run build
 
             # Verify the build output

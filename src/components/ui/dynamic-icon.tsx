@@ -1,5 +1,5 @@
 import { LucideIcon, icons } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
 // Type for all available icon names from lucide-react
 export type IconName = keyof typeof icons;
