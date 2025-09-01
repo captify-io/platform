@@ -5,7 +5,7 @@ interface CaptifyLayoutProps {
   params: Promise<{ captify: string }>;
 }
 
-export default async function CaptifyLayout({
+export default async function CaptifyPageLayout({
   children,
   params,
 }: CaptifyLayoutProps) {

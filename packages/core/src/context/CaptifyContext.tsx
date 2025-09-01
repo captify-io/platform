@@ -9,7 +9,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { SessionProvider, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { Session } from "next-auth";
 import { apiClient } from "../lib";
@@ -50,6 +50,7 @@ export interface AppContextType {
 export interface CaptifyContextType {
   // Authentication State (NextAuth)
   session: Session | null;
+  sessionStatus: "loading" | "authenticated" | "unauthenticated";
   isAuthenticated: boolean;
 
   // User Preferences (DynamoDB)
@@ -85,14 +86,17 @@ interface CaptifyProviderProps {
   initialPackage?: string;
 }
 
-export function CaptifyProvider({ children, initialPackage }: CaptifyProviderProps) {
+export function CaptifyProvider({
+  children,
+  initialPackage,
+}: CaptifyProviderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
   // Extract package name from URL path (e.g., "/core" -> "core")
   const currentPackageFromUrl = useMemo(() => {
-    if (pathname && pathname !== '/') {
-      const segments = pathname.split('/').filter(Boolean);
+    if (pathname && pathname !== "/") {
+      const segments = pathname.split("/").filter(Boolean);
       return segments[0] || null; // First segment is the package name
     }
     return null;
@@ -181,7 +185,7 @@ export function CaptifyProvider({ children, initialPackage }: CaptifyProviderPro
             IndexName: "userId-index",
             KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: {
-              ":userId": userId
+              ":userId": userId,
             },
             Limit: 1,
           },
@@ -295,7 +299,7 @@ export function CaptifyProvider({ children, initialPackage }: CaptifyProviderPro
             IndexName: "userId-index",
             KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: {
-              ":userId": userId
+              ":userId": userId,
             },
             Limit: 1,
           },
@@ -445,108 +449,122 @@ export function CaptifyProvider({ children, initialPackage }: CaptifyProviderPro
   );
 
   // Package functionality (from PackageContext)
-  const loadPackageConfig = useCallback(async (packageName: string) => {
-    // Prevent loading the same package multiple times
-    if (packageLoading || packageState.currentPackage === packageName) {
-      console.log(`🚫 Skipping loadPackageConfig for ${packageName} - already loading or loaded`);
-      return;
-    }
-
-    console.log(`🔄 Loading package config for ${packageName}...`);
-    try {
-      setPackageLoading(true);
-      setPackageState((prev) => ({ ...prev, currentPackage: packageName }));
-
-      // Load app config from DynamoDB
-      const appResponse = await apiClient.run({
-        service: "dynamo",
-        operation: "scan",
-        table: "App",
-        data: {
-          FilterExpression: "slug = :slug",
-          ExpressionAttributeValues: {
-            ":slug": packageName
-          },
-          Limit: 1
-        },
-      });
-
-      if (!appResponse.success || !appResponse.data?.Items || appResponse.data.Items.length === 0) {
-        // Create default configuration if not found
-        const defaultConfig: PackageConfig = {
-          id: packageName as `${string}-${string}-${string}-${string}-${string}`,
-          name: packageName.charAt(0).toUpperCase() + packageName.slice(1),
-          slug: packageName,
-          app: packageName,
-          fields: {},
-          description: `Default configuration for ${packageName}`,
-          ownerId: "system",
-          version: "1.0.0",
-          category: "other",
-          status: "active",
-          visibility: "internal",
-          icon: "package",
-          menu: [],
-          identityPoolId: "",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          createdBy: "system",
-          updatedBy: "system",
-          menuItems: [],
-          defaultRoute: "home",
-          agentConfig: {
-            agentId: "",
-            agentAliasId: "",
-            capabilities: [],
-          },
-        };
-
-        setPackageConfig(defaultConfig);
-        setPackageLoading(false);
+  const loadPackageConfig = useCallback(
+    async (packageName: string) => {
+      // Prevent loading the same package multiple times
+      if (packageLoading || packageState.currentPackage === packageName) {
+        console.log(
+          `🚫 Skipping loadPackageConfig for ${packageName} - already loading or loaded`
+        );
         return;
       }
 
-      const app = appResponse.data.Items[0];
+      console.log(`🔄 Loading package config for ${packageName}...`);
+      try {
+        setPackageLoading(true);
+        setPackageState((prev) => ({ ...prev, currentPackage: packageName }));
 
-      // Menu data is already included in the app record
-      const menuItems: PackageMenuItem[] = app.menu || [];
+        // Load app config from DynamoDB
+        const appResponse = await apiClient.run({
+          service: "dynamo",
+          operation: "scan",
+          table: "App",
+          data: {
+            FilterExpression: "slug = :slug",
+            ExpressionAttributeValues: {
+              ":slug": packageName,
+            },
+            Limit: 1,
+          },
+        });
 
-      // Combine into package config
-      const config: PackageConfig = {
-        ...app,
-        menuItems,
-        defaultRoute: app.defaultRoute || "home",
-        agentConfig: {
-          agentId: app.agentId || "",
-          agentAliasId: app.agentAliasId || "",
-          capabilities: app.capabilities || [],
-        },
-      };
+        if (
+          !appResponse.success ||
+          !appResponse.data?.Items ||
+          appResponse.data.Items.length === 0
+        ) {
+          // Create default configuration if not found
+          const defaultConfig: PackageConfig = {
+            id: packageName as `${string}-${string}-${string}-${string}-${string}`,
+            name: packageName.charAt(0).toUpperCase() + packageName.slice(1),
+            slug: packageName,
+            app: packageName,
+            fields: {},
+            description: `Default configuration for ${packageName}`,
+            ownerId: "system",
+            version: "1.0.0",
+            category: "other",
+            status: "active",
+            visibility: "internal",
+            icon: "package",
+            menu: [],
+            identityPoolId: "",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdBy: "system",
+            updatedBy: "system",
+            menuItems: [],
+            defaultRoute: "home",
+            agentConfig: {
+              agentId: "",
+              agentAliasId: "",
+              capabilities: [],
+            },
+          };
 
-      setPackageConfig(config);
+          setPackageConfig(defaultConfig);
+          setPackageLoading(false);
+          return;
+        }
 
-      // Set initial route from URL hash or default
-      const hashRoute = window.location.hash.replace("#", "");
-      if (hashRoute && menuItems.some((item) => item.route === hashRoute)) {
-        setPackageState((prev) => ({ ...prev, currentRoute: hashRoute }));
-      } else {
-        setPackageState((prev) => ({
-          ...prev,
-          currentRoute: config.defaultRoute,
-        }));
+        const app = appResponse.data.Items[0];
+
+        // Menu data is already included in the app record
+        const menuItems: PackageMenuItem[] = app.menu || [];
+
+        // Combine into package config
+        const config: PackageConfig = {
+          ...app,
+          menuItems,
+          defaultRoute: app.defaultRoute || "home",
+          agentConfig: {
+            agentId: app.agentId || "",
+            agentAliasId: app.agentAliasId || "",
+            capabilities: app.capabilities || [],
+          },
+        };
+
+        setPackageConfig(config);
+
+        // Set initial route from URL hash or default
+        const hashRoute = window.location.hash.replace("#", "");
+        if (hashRoute && menuItems.some((item) => item.route === hashRoute)) {
+          setPackageState((prev) => ({ ...prev, currentRoute: hashRoute }));
+        } else {
+          setPackageState((prev) => ({
+            ...prev,
+            currentRoute: config.defaultRoute,
+          }));
+        }
+        console.log(`✅ Package config loaded successfully for ${packageName}`);
+      } catch (error) {
+        console.error(
+          `❌ Failed to load package config for ${packageName}:`,
+          error
+        );
+      } finally {
+        setPackageLoading(false);
       }
-      console.log(`✅ Package config loaded successfully for ${packageName}`);
-    } catch (error) {
-      console.error(`❌ Failed to load package config for ${packageName}:`, error);
-    } finally {
-      setPackageLoading(false);
-    }
-  }, [packageLoading, packageState.currentPackage]);
+    },
+    [packageLoading, packageState.currentPackage]
+  );
 
   // Auto-load package when target package changes
   useEffect(() => {
     if (targetPackage && targetPackage !== packageState.currentPackage) {
-      console.log(`🔄 Auto-loading package config for ${targetPackage} (from URL: ${pathname})`);
+      console.log(
+        `🔄 Auto-loading package config for ${targetPackage} (from URL: ${pathname})`
+      );
       loadPackageConfig(targetPackage);
     }
   }, [targetPackage, packageState.currentPackage, loadPackageConfig, pathname]);
@@ -625,6 +643,7 @@ export function CaptifyProvider({ children, initialPackage }: CaptifyProviderPro
   const contextValue: CaptifyContextType = useMemo(
     () => ({
       session,
+      sessionStatus: status,
       isAuthenticated,
       userPreferences,
       preferencesLoading,
@@ -668,16 +687,15 @@ export function CaptifyProvider({ children, initialPackage }: CaptifyProviderPro
   );
 
   return (
-    <SessionProvider>
-      <CaptifyContext.Provider value={contextValue}>
-        {children}
-      </CaptifyContext.Provider>
-    </SessionProvider>
+    <CaptifyContext.Provider value={contextValue}>
+      {children}
+    </CaptifyContext.Provider>
   );
 }
 
 export function useCaptify(): CaptifyContextType {
   const context = useContext(CaptifyContext);
+  console.log("🔍 useCaptify context:", context);
   if (context === undefined) {
     throw new Error("useCaptify must be used within a CaptifyProvider");
   }

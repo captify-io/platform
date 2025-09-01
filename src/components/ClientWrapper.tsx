@@ -1,16 +1,11 @@
 "use client";
+
 import dynamic from "next/dynamic";
-import { SessionProvider } from "next-auth/react";
-// import { Inter } from "next/font/google";
-import "./globals.css";
 
 // Dynamically import CaptifyLayout with SSR disabled
 const CaptifyLayout = dynamic(
-  () =>
-    import("@captify/core/components").then((mod) => ({
-      default: mod.CaptifyLayout,
-    })),
-  {
+  () => import("@captify/core/components").then((mod) => ({ default: mod.CaptifyLayout })),
+  { 
     ssr: false,
     loading: () => (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -19,23 +14,14 @@ const CaptifyLayout = dynamic(
           <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
-    ),
+    )
   }
 );
 
-// Client component - remove metadata export
-export default function RootLayout({
-  children,
-}: {
+interface ClientWrapperProps {
   children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className="">
-        <SessionProvider>
-          <CaptifyLayout>{children}</CaptifyLayout>
-        </SessionProvider>
-      </body>
-    </html>
-  );
+}
+
+export function ClientWrapper({ children }: ClientWrapperProps) {
+  return <CaptifyLayout>{children}</CaptifyLayout>;
 }

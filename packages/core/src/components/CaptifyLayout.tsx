@@ -7,13 +7,14 @@ import { CaptifyProvider, useCaptify } from "../context/CaptifyContext";
 import { TopNavigation } from "./navigation/TopNavigation";
 import { SmartBreadcrumb } from "./navigation/SmartBreadcrumb";
 import { SignInForm } from "./SignInForm";
+import { ApplicationLauncher } from "./ApplicationLauncher";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
 }
 
 function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
-  const { session, isAuthenticated } = useCaptify();
+  const { session, sessionStatus, isAuthenticated } = useCaptify();
   const pathname = usePathname();
 
   // Define public pages that don't require authentication
@@ -22,11 +23,13 @@ function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
 
   // For public pages, render without authentication check
   if (isPublicPage) {
+    console.log("📄 Rendering public page:", pathname);
     return <>{children}</>;
   }
 
-  // Show loading while checking authentication
-  if (session === null && !isAuthenticated) {
+  // Show loading while session is being determined
+  if (sessionStatus === "loading") {
+    console.log("⏳ Session loading...");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -37,15 +40,16 @@ function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If user is unauthenticated, show the signin page content directly (no redirect)
-  if (!isAuthenticated) {
+  // If user is unauthenticated, show the signin form
+  if (sessionStatus === "unauthenticated" || !isAuthenticated) {
+    console.log("🔒 User not authenticated, showing signin form");
     return <SignInForm callbackUrl={pathname} />;
   }
 
   // User is authenticated, show the full app with navigation
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <TopNavigation />
+      <TopNavigation applicationLauncher={<ApplicationLauncher />} />
       <SmartBreadcrumb />
       <div className="flex-1 overflow-hidden">{children}</div>
     </div>
@@ -55,7 +59,7 @@ function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
 export function CaptifyLayout({ children }: CaptifyLayoutProps) {
   return (
     <div suppressHydrationWarning>
-      <SessionProvider>
+      <CaptifyProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -63,11 +67,9 @@ export function CaptifyLayout({ children }: CaptifyLayoutProps) {
           disableTransitionOnChange={false}
           storageKey="captify-theme"
         >
-          <CaptifyProvider>
-            <AuthenticatedLayoutInner>{children}</AuthenticatedLayoutInner>
-          </CaptifyProvider>
+          <AuthenticatedLayoutInner>{children}</AuthenticatedLayoutInner>
         </ThemeProvider>
-      </SessionProvider>
+      </CaptifyProvider>
     </div>
   );
 }
