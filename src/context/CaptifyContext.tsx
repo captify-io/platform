@@ -12,7 +12,7 @@ import React, {
 import { SessionProvider, useSession } from "next-auth/react";
 import { Session } from "next-auth";
 import { apiClient } from "../lib/api/client";
-import { App } from "../types";
+import { App } from "@captify/core";
 
 // Simple user preferences interface
 export interface UserPreferences {

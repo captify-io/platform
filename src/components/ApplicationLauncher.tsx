@@ -17,7 +17,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
-import { App, APP_CATEGORY_LABELS } from "../types";
+import { App } from "@captify/core";
+import { APP_CATEGORY_LABELS } from "../types";
 import { DynamicIcon } from "./ui/dynamic-icon";
 import { useDebug } from "@/hooks";
 import { Search, Grid3X3, Star, Package } from "lucide-react";
@@ -99,7 +100,7 @@ function AppCard({
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleFavorite(app.appId);
+              onToggleFavorite(app.id);
             }}
             className={`ml-2 h-10 w-10 p-0 transition-all duration-200 self-start ${
               isFavorite
@@ -160,10 +161,10 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
 
   // Separate favorites and regular apps
   const favoriteAppsFiltered = filteredApplications.filter((app) =>
-    favoriteApps.includes(app.appId)
+    favoriteApps.includes(app.id)
   );
   const regularAppsFiltered = filteredApplications.filter(
-    (app) => !favoriteApps.includes(app.appId)
+    (app) => !favoriteApps.includes(app.id)
   );
 
   if (isDebugMode) {
@@ -404,7 +405,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
                         <div className="space-y-1">
                           {favoriteAppsFiltered.map((app: App) => (
                             <AppCard
-                              key={app.appId}
+                              key={app.id || app.slug || `fav-${app.name}`}
                               app={app}
                               isFavorite={true}
                               onToggleFavorite={handleToggleFavorite}
@@ -432,7 +433,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
                         <div className="space-y-1">
                           {regularAppsFiltered.map((app: App) => (
                             <AppCard
-                              key={app.appId}
+                              key={app.id || app.slug || `reg-${app.name}`}
                               app={app}
                               isFavorite={false}
                               onToggleFavorite={handleToggleFavorite}

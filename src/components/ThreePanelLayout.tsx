@@ -130,7 +130,8 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
     if (packageConfig?.slug && typeof window !== "undefined") {
       fetchAppData(packageConfig.slug);
     }
-  }, [packageConfig?.slug, fetchAppData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packageConfig?.slug]); // Remove fetchAppData from dependencies to prevent infinite loop
 
   // Update appData when API data changes
   useEffect(() => {

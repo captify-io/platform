@@ -69,15 +69,21 @@ export function PackageProvider({
         );
 
         const defaultConfig: PackageConfig = {
-          appId:
+          id:
             packageName as `${string}-${string}-${string}-${string}-${string}`,
           name: packageName.charAt(0).toUpperCase() + packageName.slice(1),
           slug: packageName,
+          app: packageName, // Which app/package this belongs to
+          fields: {}, // Extensible JSON object
           description: `Default configuration for ${packageName}`,
+          ownerId: "system", // Required from Core
           version: "1.0.0",
           category: "other" as AppCategory,
           status: "active",
           visibility: "internal",
+          icon: "package", // Default icon
+          menu: [], // Empty menu array
+          identityPoolId: "", // Will need to be set properly
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           createdBy: "system",

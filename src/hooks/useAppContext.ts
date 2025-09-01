@@ -1,5 +1,5 @@
 import { useCaptify } from "../context/CaptifyContext";
-import { App } from "../types";
+import { App } from "@captify/core";
 
 /**
  * Hook to access current app context and configuration

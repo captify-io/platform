@@ -71,7 +71,8 @@ export interface App extends Core {
     }>;
   }>;
   agentId?: string; // AWS Bedrock Agent ID if applicable
-  agentAliasId?: string; // AWS Bedrock Agent Alias ID if applicable
+  agentAliasId?: string; // AWS Bedrock Agent Alias ID if applicable,
+  identityPoolId: string;
 }
 
 // ===== ORGANIZATION & TENANT MANAGEMENT =====

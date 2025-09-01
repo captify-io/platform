@@ -3,7 +3,7 @@
  * Extends existing App interface for package-specific needs
  */
 
-import { App } from "../types";
+import { App } from "@captify/core";
 
 // Menu item configuration for packages
 export interface PackageMenuItem {

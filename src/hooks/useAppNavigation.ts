@@ -6,7 +6,7 @@
 import { useCallback } from "react";
 import { useCaptify } from "../context/CaptifyContext";
 import { useRouter } from "next/navigation";
-import { App } from "../types";
+import { App } from "@captify/core";
 
 export function useAppNavigation() {
   const { setCurrentApp, getCurrentAppConfig } = useCaptify();
