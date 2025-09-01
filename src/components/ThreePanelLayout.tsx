@@ -6,7 +6,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import { usePackageContext } from "../context/PackageContext";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";

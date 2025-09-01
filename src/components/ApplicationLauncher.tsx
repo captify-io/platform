@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCaptify } from "../context/CaptifyContext";
 import { useAppNavigation } from "../hooks/useAppNavigation";
-import { apiClient } from "@/lib/api/client";
+import { apiClient } from "../lib/api/client";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
