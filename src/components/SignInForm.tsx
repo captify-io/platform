@@ -110,13 +110,19 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
     deleteCookie("cognito_login_hint");
   };
 
+  // Handle contact us - redirect to helpdesk module
+  const handleContactUs = () => {
+    // TODO: Integrate with core module helpdesk
+    // For now, we'll use a placeholder action
+    alert("Redirecting to helpdesk module...");
+    // This should eventually navigate to: /core/helpdesk or similar
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!emailSaved || !acknowledged) {
-      if (!emailSaved) {
-        alert("Please validate your email address first");
-      }
+    if (!emailSaved) {
+      alert("Please validate your email address first");
       return;
     }
 
@@ -135,99 +141,136 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Captify Platform Access
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Secure Government Environment
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
-            <p className="text-sm text-destructive">
-              {error === "AccessDenied" &&
-                "Access denied. Please contact your administrator."}
-              {error === "Configuration" &&
-                "There is a problem with the server configuration."}
-              {error === "Verification" &&
-                "The verification token has expired or is invalid."}
-              {error &&
-                !["AccessDenied", "Configuration", "Verification"].includes(
-                  error
-                ) &&
-                "An error occurred during authentication."}
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="w-full h-full" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
+      
+      <div className="relative w-full max-w-md">
+        {/* Main card */}
+        <div className="bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-8 sm:p-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+              Captify Platform
+            </h1>
           </div>
-        )}
 
-        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-          <div className="flex items-start">
-            <svg
-              className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <div>
-              <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                Controlled Government Environment
-              </h3>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                You are accessing a U.S. Government information system. This
-                system is for authorized use only. Users have no reasonable
-                expectation of privacy regarding any communication or data
-                transiting or stored on this information system.
-              </p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                By accessing this system, you acknowledge that you understand
-                and consent to these terms.
-              </p>
+          {error && (
+            <div className="mb-6 p-4 bg-red-900/30 border border-red-700/50 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-red-200">
+                  {error === "AccessDenied" &&
+                    "Access denied. Please contact your administrator."}
+                  {error === "Configuration" &&
+                    "There is a problem with the server configuration."}
+                  {error === "Verification" &&
+                    "The verification token has expired or is invalid."}
+                  {error &&
+                    !["AccessDenied", "Configuration", "Verification"].includes(
+                      error
+                    ) &&
+                    "An error occurred during authentication."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Government notice */}
+          <div className="mb-8 p-4 bg-amber-900/20 border border-amber-700/30 rounded-xl backdrop-blur-sm">
+            <div className="flex items-start">
+              <svg
+                className="h-5 w-5 text-amber-400 mt-0.5 mr-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-amber-200 mb-2">
+                  Authorized Use Only
+                </h3>
+                <p className="text-xs text-amber-100/80 leading-relaxed">
+                  U.S. Government system for authorized users only. No expectation of privacy. 
+                  By accessing this system, you consent to monitoring and agree to these terms.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-foreground mb-2"
-            >
-              Email Address
-            </label>
-            <div className="relative">
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={handleEmailChange}
-                placeholder="Enter your government email address"
-                className="w-full px-3 py-2 pr-20 border border-input bg-background rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                required
-                disabled={isLoading}
-              />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                {email && (
-                  <>
-                    {emailSaved ? (
-                      <button
-                        type="button"
-                        onClick={handleClearEmail}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-                        title="Clear email"
-                      >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-slate-200 mb-3"
+              >
+                Email Address
+              </label>
+              <div className="relative">
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  placeholder="Enter your government email address"
+                  className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
+                  required
+                  disabled={isLoading}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                  {email && (
+                    <>
+                      {emailSaved ? (
+                        <button
+                          type="button"
+                          onClick={handleClearEmail}
+                          className="p-1.5 hover:bg-slate-600 rounded-lg transition-colors"
+                          title="Clear email"
+                        >
+                          <svg
+                            className="h-4 w-4 text-red-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      ) : emailValid ? (
                         <svg
-                          className="h-4 w-4 text-red-500"
+                          className="h-5 w-5 text-green-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      ) : emailValid === false ? (
+                        <svg
+                          className="h-5 w-5 text-red-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -239,89 +282,59 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
                             d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
-                      </button>
-                    ) : emailValid ? (
-                      <svg
-                        className="h-4 w-4 text-green-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : emailValid === false ? (
-                      <svg
-                        className="h-4 w-4 text-red-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    ) : null}
-                  </>
-                )}
+                      ) : null}
+                    </>
+                  )}
+                </div>
               </div>
+              {emailSaved && (
+                <div className="flex items-center mt-3 text-green-400">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-xs">Email validated and saved</p>
+                </div>
+              )}
+              {emailValid === false && email && (
+                <div className="flex items-center mt-3 text-red-400">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs">Please enter a valid email with an approved domain</p>
+                </div>
+              )}
             </div>
-            {emailSaved && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                ✓ Email validated and saved
-              </p>
-            )}
-            {emailValid === false && email && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                Please enter a valid email with an approved domain (.com, .mil,
-                .gov, .ai, .net, .org, .us)
-              </p>
-            )}
+
+            <button
+              type="submit"
+              disabled={!emailSaved || isLoading}
+              className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                emailSaved && !isLoading
+                  ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/25 focus:ring-green-500"
+                  : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/25 focus:ring-blue-500"
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                  Connecting to Secure Portal...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Secure Authentication
+                </div>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-xs text-slate-400">
+              Need assistance? <button onClick={handleContactUs} className="text-blue-400 hover:text-blue-300 underline transition-colors">Contact Us</button>
+            </p>
           </div>
-
-          <div className="flex items-start">
-            <input
-              id="acknowledge"
-              type="checkbox"
-              checked={acknowledged}
-              onChange={(e) => setAcknowledged(e.target.checked)}
-              className="mt-1 mr-3 h-4 w-4 text-primary focus:ring-primary border-input rounded"
-              required
-              disabled={isLoading}
-            />
-            <label htmlFor="acknowledge" className="text-sm text-foreground">
-              I acknowledge that I am accessing a controlled government
-              environment and agree to the terms stated above.
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!emailSaved || !acknowledged || isLoading}
-            className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                Connecting to Secure Portal...
-              </div>
-            ) : (
-              "Proceed to Secure Authentication"
-            )}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            Need help? Contact your system administrator.
-          </p>
         </div>
       </div>
     </div>
