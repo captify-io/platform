@@ -3,25 +3,26 @@
 import { useSearchParams } from "next/navigation";
 import { SessionDebug } from "@captify/core/components";
 import { useDebug } from "@captify/core/hooks";
-import { useSession } from "next-auth/react";
+import { useCaptify } from "@captify/core/context";
 import { useCallback } from "react";
 
 export default function HomePage() {
   const searchParams = useSearchParams();
   const isDebugMode = useDebug(searchParams);
-  const { data: session, status, update } = useSession();
+  const { session, isAuthenticated } = useCaptify();
 
   const updateSession = useCallback(async () => {
-    await update();
-  }, [update]);
+    // Session updates are handled by CaptifyContext
+    window.location.reload();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       {isDebugMode && (
         <SessionDebug
           session={session}
-          isAuthenticated={status === "authenticated"}
-          status={status}
+          isAuthenticated={isAuthenticated}
+          status={isAuthenticated ? "authenticated" : "unauthenticated"}
           updateSession={updateSession}
         />
       )}

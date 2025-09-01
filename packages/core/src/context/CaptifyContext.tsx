@@ -10,6 +10,7 @@ import React, {
   ReactNode,
 } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Session } from "next-auth";
 import { apiClient } from "../lib";
 import { App, UserState, PackageConfig, PackageMenuItem } from "../types";
@@ -81,20 +82,36 @@ const CaptifyContext = createContext<CaptifyContextType | undefined>(undefined);
 
 interface CaptifyProviderProps {
   children: ReactNode;
+  initialPackage?: string;
 }
 
-export function CaptifyProvider({ children }: CaptifyProviderProps) {
+export function CaptifyProvider({ children, initialPackage }: CaptifyProviderProps) {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+
+  // Extract package name from URL path (e.g., "/core" -> "core")
+  const currentPackageFromUrl = useMemo(() => {
+    if (pathname && pathname !== '/') {
+      const segments = pathname.split('/').filter(Boolean);
+      return segments[0] || null; // First segment is the package name
+    }
+    return null;
+  }, [pathname]);
+
+  // Use URL package or fallback to initialPackage prop
+  const targetPackage = currentPackageFromUrl || initialPackage;
 
   // User preferences state
   const [userPreferences, setUserPreferences] =
     useState<UserPreferences | null>(null);
   const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   // App context state
   const [currentApp, setCurrentApp] = useState<App | undefined>(undefined);
   const [availableApps, setAvailableApps] = useState<App[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [appsLoaded, setAppsLoaded] = useState(false);
 
   // Package state (from PackageContext)
   const [packageConfig, setPackageConfig] = useState<PackageConfig | null>(
@@ -108,6 +125,12 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
     agentWidth: 320,
   });
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+
+  // Reset loaded flags when user changes
+  useEffect(() => {
+    setPreferencesLoaded(false);
+    setAppsLoaded(false);
+  }, [session?.user?.id]);
 
   // Derived values
   const isAuthenticated = useMemo(() => !!session, [session]);
@@ -134,9 +157,16 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
     async function fetchUserPreferences() {
       if (!session?.user || !(session.user as any)?.id) {
         setUserPreferences(null);
+        setPreferencesLoaded(false);
         return;
       }
 
+      // Prevent multiple calls for the same user
+      if (preferencesLoaded || preferencesLoading) {
+        return;
+      }
+
+      console.log("🔄 Loading user preferences...");
       setPreferencesLoading(true);
       try {
         const userId = (session.user as any).id;
@@ -148,9 +178,12 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
           app: "core",
           table: "UserState",
           data: {
-            index: "userId-index",
-            values: [{ userId: userId }],
-            limit: 1,
+            IndexName: "userId-index",
+            KeyConditionExpression: "userId = :userId",
+            ExpressionAttributeValues: {
+              ":userId": userId
+            },
+            Limit: 1,
           },
         });
 
@@ -171,14 +204,17 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
             timezone: "UTC",
           });
         }
+        setPreferencesLoaded(true);
+        console.log("✅ User preferences loaded successfully");
       } catch (error) {
-        console.error("Error fetching user preferences:", error);
+        console.error("❌ Error fetching user preferences:", error);
         setUserPreferences({
           favoriteApps: [],
           theme: "auto",
           language: "en",
           timezone: "UTC",
         });
+        setPreferencesLoaded(true); // Mark as loaded even on error to prevent retries
       } finally {
         setPreferencesLoading(false);
       }
@@ -187,16 +223,23 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
     if (session) {
       fetchUserPreferences();
     }
-  }, [session]);
+  }, [session?.user?.id, preferencesLoaded, preferencesLoading]); // More specific dependencies
 
   // Fetch available apps
   useEffect(() => {
     async function fetchAvailableApps() {
       if (!session?.user) {
         setAvailableApps([]);
+        setAppsLoaded(false);
         return;
       }
 
+      // Prevent multiple calls
+      if (appsLoaded || appsLoading) {
+        return;
+      }
+
+      console.log("🔄 Loading available apps...");
       setAppsLoading(true);
       try {
         const response = await apiClient.run({
@@ -214,9 +257,12 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
         } else {
           setAvailableApps([]);
         }
+        setAppsLoaded(true);
+        console.log("✅ Available apps loaded successfully");
       } catch (error) {
-        console.error("Error fetching available apps:", error);
+        console.error("❌ Error fetching available apps:", error);
         setAvailableApps([]);
+        setAppsLoaded(true); // Mark as loaded even on error to prevent retries
       } finally {
         setAppsLoading(false);
       }
@@ -225,7 +271,7 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
     if (session) {
       fetchAvailableApps();
     }
-  }, [session]);
+  }, [session?.user?.id, appsLoaded, appsLoading]); // More specific dependencies
 
   // Update user preferences
   const updatePreferences = useCallback(
@@ -246,9 +292,12 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
           app: "core",
           table: "UserState",
           data: {
-            index: "userId-index",
-            values: [{ userId: userId }],
-            limit: 1,
+            IndexName: "userId-index",
+            KeyConditionExpression: "userId = :userId",
+            ExpressionAttributeValues: {
+              ":userId": userId
+            },
+            Limit: 1,
           },
         });
 
@@ -397,6 +446,13 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
 
   // Package functionality (from PackageContext)
   const loadPackageConfig = useCallback(async (packageName: string) => {
+    // Prevent loading the same package multiple times
+    if (packageLoading || packageState.currentPackage === packageName) {
+      console.log(`🚫 Skipping loadPackageConfig for ${packageName} - already loading or loaded`);
+      return;
+    }
+
+    console.log(`🔄 Loading package config for ${packageName}...`);
     try {
       setPackageLoading(true);
       setPackageState((prev) => ({ ...prev, currentPackage: packageName }));
@@ -404,14 +460,18 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
       // Load app config from DynamoDB
       const appResponse = await apiClient.run({
         service: "dynamo",
-        operation: "get",
+        operation: "scan",
         table: "App",
         data: {
-          key: { slug: packageName },
+          FilterExpression: "slug = :slug",
+          ExpressionAttributeValues: {
+            ":slug": packageName
+          },
+          Limit: 1
         },
       });
 
-      if (!appResponse.success || !appResponse.data) {
+      if (!appResponse.success || !appResponse.data?.Items || appResponse.data.Items.length === 0) {
         // Create default configuration if not found
         const defaultConfig: PackageConfig = {
           id: packageName as `${string}-${string}-${string}-${string}-${string}`,
@@ -446,24 +506,10 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
         return;
       }
 
-      const app = appResponse.data;
+      const app = appResponse.data.Items[0];
 
-      // Load menu items from DynamoDB
-      const menuResponse = await apiClient.run({
-        service: "dynamo",
-        operation: "query",
-        table: "menu-items",
-        data: {
-          keyConditionExpression: "packageName = :packageName",
-          expressionAttributeValues: {
-            ":packageName": packageName,
-          },
-        },
-      });
-
-      const menuItems: PackageMenuItem[] = menuResponse.success
-        ? menuResponse.data?.items || []
-        : [];
+      // Menu data is already included in the app record
+      const menuItems: PackageMenuItem[] = app.menu || [];
 
       // Combine into package config
       const config: PackageConfig = {
@@ -489,12 +535,21 @@ export function CaptifyProvider({ children }: CaptifyProviderProps) {
           currentRoute: config.defaultRoute,
         }));
       }
+      console.log(`✅ Package config loaded successfully for ${packageName}`);
     } catch (error) {
-      console.error("Failed to load package config:", error);
+      console.error(`❌ Failed to load package config for ${packageName}:`, error);
     } finally {
       setPackageLoading(false);
     }
-  }, []);
+  }, [packageLoading, packageState.currentPackage]);
+
+  // Auto-load package when target package changes
+  useEffect(() => {
+    if (targetPackage && targetPackage !== packageState.currentPackage) {
+      console.log(`🔄 Auto-loading package config for ${targetPackage} (from URL: ${pathname})`);
+      loadPackageConfig(targetPackage);
+    }
+  }, [targetPackage, packageState.currentPackage, loadPackageConfig, pathname]);
 
   // Navigation functions
   const setCurrentRoute = useCallback((route: string) => {

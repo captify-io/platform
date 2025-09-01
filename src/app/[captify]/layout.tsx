@@ -1,5 +1,4 @@
 ﻿import { ThreePanelLayout } from "@captify/core/components";
-import { CaptifyProvider } from "@captify/core/context";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
@@ -12,10 +11,11 @@ export default async function CaptifyLayout({
 }: CaptifyLayoutProps) {
   const { captify } = await params;
 
+  // Pass the package name through a data attribute so the context can pick it up
   return (
-    <CaptifyProvider>
+    <div data-package={captify} className="h-full">
       <ThreePanelLayout>{children}</ThreePanelLayout>
-    </CaptifyProvider>
+    </div>
   );
 }
 

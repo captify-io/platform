@@ -1,26 +1,13 @@
 ﻿"use client";
 
-import { useEffect } from "react";
-import { useCaptify } from "@captify/core/context";
+import { ApplicationLauncher } from "@captify/core/components";
 
 interface CaptifyAppPageProps {
   params: Promise<{ captify: string }>;
 }
 
 export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
-  const { loadPackageConfig } = useCaptify();
-
-  useEffect(() => {
-    async function loadPackage() {
-      const { captify: slug } = await params;
-      if (slug) {
-        loadPackageConfig(slug);
-      }
-    }
-    loadPackage();
-  }, [params, loadPackageConfig]);
-
-  // The actual package content is rendered by the layout's ThreePanelLayout
-  // This page component handles loading the package configuration
-  return null;
+  // Package loading is now handled by the layout's CaptifyProvider
+  // This component just renders the ApplicationLauncher
+  return <ApplicationLauncher />;
 }

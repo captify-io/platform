@@ -2,9 +2,8 @@
 
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
-import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { CaptifyProvider } from "../context/CaptifyContext";
+import { CaptifyProvider, useCaptify } from "../context/CaptifyContext";
 import { TopNavigation } from "./navigation/TopNavigation";
 import { SmartBreadcrumb } from "./navigation/SmartBreadcrumb";
 import { SignInForm } from "./SignInForm";
@@ -13,12 +12,8 @@ interface CaptifyLayoutProps {
   children: React.ReactNode;
 }
 
-function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  return <AuthenticatedLayoutInner>{children}</AuthenticatedLayoutInner>;
-}
-
 function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
+  const { session, isAuthenticated } = useCaptify();
   const pathname = usePathname();
 
   // Define public pages that don't require authentication
@@ -31,7 +26,7 @@ function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   // Show loading while checking authentication
-  if (status === "loading") {
+  if (session === null && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -43,19 +38,17 @@ function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   // If user is unauthenticated, show the signin page content directly (no redirect)
-  if (status === "unauthenticated") {
+  if (!isAuthenticated) {
     return <SignInForm callbackUrl={pathname} />;
   }
 
   // User is authenticated, show the full app with navigation
   return (
-    <CaptifyProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
-        <TopNavigation />
-        <SmartBreadcrumb />
-        <div className="flex-1 overflow-hidden">{children}</div>
-      </div>
-    </CaptifyProvider>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <TopNavigation />
+      <SmartBreadcrumb />
+      <div className="flex-1 overflow-hidden">{children}</div>
+    </div>
   );
 }
 
@@ -70,7 +63,9 @@ export function CaptifyLayout({ children }: CaptifyLayoutProps) {
           disableTransitionOnChange={false}
           storageKey="captify-theme"
         >
-          <AuthenticatedLayout>{children}</AuthenticatedLayout>
+          <CaptifyProvider>
+            <AuthenticatedLayoutInner>{children}</AuthenticatedLayoutInner>
+          </CaptifyProvider>
         </ThemeProvider>
       </SessionProvider>
     </div>

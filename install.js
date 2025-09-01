@@ -42,11 +42,41 @@ class CaptifyPackageInstaller {
    */
   parseTypesForTables(typesFilePath) {
     if (!existsSync(typesFilePath)) {
-      console.log(`⚠️  No types.ts file found at ${typesFilePath}`);
+      console.log(`⚠️  No types file found at ${typesFilePath}`);
       return [];
     }
 
+    const tables = [];
+    
+    // Check if this is an index file with re-exports
     const content = readFileSync(typesFilePath, "utf8");
+    const isIndexFile = content.includes('export * from') || content.includes('export { ');
+    
+    if (isIndexFile) {
+      // This is an index file, read all .ts files in the types directory
+      const typesDir = dirname(typesFilePath);
+      const typeFiles = readdirSync(typesDir)
+        .filter(file => file.endsWith('.ts') && file !== 'index.ts')
+        .map(file => join(typesDir, file));
+      
+      for (const typeFile of typeFiles) {
+        const fileTables = this.parseInterfacesFromFile(typeFile);
+        tables.push(...fileTables);
+      }
+    } else {
+      // This is a single types file
+      const fileTables = this.parseInterfacesFromFile(typesFilePath);
+      tables.push(...fileTables);
+    }
+
+    return tables;
+  }
+
+  /**
+   * Parse interfaces from a single TypeScript file
+   */
+  parseInterfacesFromFile(filePath) {
+    const content = readFileSync(filePath, "utf8");
     const tables = [];
 
     // Regex to match interface definitions that extend Core
@@ -694,7 +724,13 @@ class CaptifyPackageInstaller {
 
     try {
       // 1. Parse types and create/update tables
-      const typesPath = join(packagePath, "src", "types.ts");
+      let typesPath = join(packagePath, "src", "types.ts");
+      
+      // Check for types directory structure
+      if (!existsSync(typesPath)) {
+        typesPath = join(packagePath, "src", "types", "index.ts");
+      }
+      
       const tables = this.parseTypesForTables(typesPath);
 
       console.log(`📋 Found ${tables.length} table definitions`);
@@ -754,7 +790,13 @@ class CaptifyPackageInstaller {
 
     try {
       // 1. Parse types to get table definitions
-      const typesPath = join(packagePath, "src", "types.ts");
+      let typesPath = join(packagePath, "src", "types.ts");
+      
+      // Check for types directory structure
+      if (!existsSync(typesPath)) {
+        typesPath = join(packagePath, "src", "types", "index.ts");
+      }
+      
       const tables = this.parseTypesForTables(typesPath);
 
       console.log(`📋 Found ${tables.length} table definitions`);
