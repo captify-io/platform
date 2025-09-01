@@ -69,8 +69,7 @@ export function PackageProvider({
         );
 
         const defaultConfig: PackageConfig = {
-          id:
-            packageName as `${string}-${string}-${string}-${string}-${string}`,
+          id: packageName as `${string}-${string}-${string}-${string}-${string}`,
           name: packageName.charAt(0).toUpperCase() + packageName.slice(1),
           slug: packageName,
           app: packageName, // Which app/package this belongs to

@@ -135,11 +135,14 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const router = useRouter();
 
   // Extract unique categories from applications with counts
-  const categoryStats = applications.reduce((acc: Record<string, number>, app: App) => {
-    const category = (app as any).category || "other";
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const categoryStats = applications.reduce(
+    (acc: Record<string, number>, app: App) => {
+      const category = (app as any).category || "other";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const categories = Object.keys(categoryStats);
 
