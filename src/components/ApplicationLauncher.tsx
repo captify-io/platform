@@ -98,7 +98,7 @@ function AppCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation();
               onToggleFavorite(app.id);
             }}
@@ -135,7 +135,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const router = useRouter();
 
   // Extract unique categories from applications with counts
-  const categoryStats = applications.reduce((acc, app) => {
+  const categoryStats = applications.reduce((acc: Record<string, number>, app: App) => {
     const category = (app as any).category || "other";
     acc[category] = (acc[category] || 0) + 1;
     return acc;
@@ -144,7 +144,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const categories = Object.keys(categoryStats);
 
   // Filter applications based on selected categories and search
-  const filteredApplications = applications.filter((app) => {
+  const filteredApplications = applications.filter((app: App) => {
     const matchesCategory =
       selectedCategories.length === 0 ||
       selectedCategories.includes((app as any).category || "other");
