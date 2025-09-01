@@ -151,34 +151,6 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
       </div>
       
       <div className="relative w-full max-w-md">
-        {/* Authorized Use Warning - Above the login card */}
-        <div className="mb-6 p-4 bg-amber-900/20 border border-amber-700/30 rounded-xl backdrop-blur-sm">
-          <div className="flex items-start">
-            <svg
-              className="h-5 w-5 text-amber-400 mt-0.5 mr-3 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <div>
-              <h3 className="text-sm font-semibold text-amber-200 mb-2">
-                Authorized Use Only
-              </h3>
-              <p className="text-xs text-amber-100/80 leading-relaxed">
-                U.S. Government system for authorized users only. No expectation of privacy. 
-                By accessing this system, you consent to monitoring and agree to these terms.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Main card */}
         <div className="bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-8 sm:p-10">
           {/* Header */}
@@ -212,20 +184,42 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Authorized Use Warning - Engraved style */}
+            <div className="mb-4 p-4 bg-slate-900/80 border border-slate-600/30 rounded-lg shadow-inner">
+              <div className="flex items-start">
+                <svg
+                  className="h-4 w-4 text-amber-500/70 mt-0.5 mr-3 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+                <div>
+                  <h3 className="text-xs font-semibold text-amber-300/80 mb-1">
+                    Authorized Use Only
+                  </h3>
+                  <p className="text-xs text-slate-400/90 leading-relaxed">
+                    U.S. Government system for authorized users only. No expectation of privacy. 
+                    By accessing this system, you consent to monitoring and agree to these terms.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-200 mb-3"
-              >
-                Email Address
-              </label>
               <div className="relative">
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={handleEmailChange}
-                  placeholder="Enter your government email address"
+                  placeholder="Enter your work email address"
                   className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
                   required
                   disabled={isLoading}

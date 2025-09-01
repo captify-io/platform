@@ -99,6 +99,7 @@
     "chokidar": "^4.0.3",
     "concurrently": "^9.2.1",
     "cross-env": "^7.0.3",
+    "esbuild": "^0.25.9",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.5.0",
     "execa": "^9.6.0",
