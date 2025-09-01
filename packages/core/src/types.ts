@@ -126,6 +126,52 @@ export interface User extends Core {
   lastLoginAt?: string;
 }
 
+export interface UserState extends Core {
+  userId: string; // Reference to User.userId (AWS Cognito User ID)
+  orgId: string; // Reference to Organization
+  preferences: {
+    theme: "light" | "dark" | "auto";
+    language: string;
+    timezone: string;
+    notifications: {
+      email: boolean;
+      inApp: boolean;
+      security: boolean;
+      marketing: boolean;
+    };
+    dashboard: {
+      layout: "grid" | "list" | "compact";
+      widgets: string[];
+      defaultView: string;
+    };
+    accessibility: {
+      highContrast: boolean;
+      fontSize: "small" | "medium" | "large";
+      reduceMotion: boolean;
+    };
+  };
+  favorites: {
+    applications: string[]; // Array of App IDs
+    pages: string[]; // Array of page/route identifiers
+    searches: string[]; // Array of saved search queries
+    reports: string[]; // Array of report IDs
+  };
+  recentActivity: {
+    applications: Array<{
+      appId: string;
+      lastAccessed: string;
+      accessCount: number;
+    }>;
+    pages: Array<{
+      pageId: string;
+      lastAccessed: string;
+      accessCount: number;
+    }>;
+  };
+  customSettings: Record<string, any>; // Extensible for app-specific user settings
+  lastSyncAt: string; // Last time preferences were synchronized
+}
+
 export interface Role extends Core {
   orgId: string;
   permissions: string[]; // Array of permission identifiers
@@ -526,4 +572,71 @@ export interface ApiUserSession {
   idToken: string;
   refreshToken?: string;
   expiresAt: number;
+}
+
+// ===== PACKAGE CONFIGURATION TYPES =====
+// Package-specific configuration and state management
+
+// Menu item configuration for packages
+export interface PackageMenuItem {
+  id: string;
+  label: string;
+  icon?: string;
+  route: string; // The hash route: "home", "users", etc.
+  children?: PackageMenuItem[];
+  permissions?: string[];
+}
+
+// Agent configuration per package
+export interface PackageAgentConfig {
+  agentId: string;
+  agentAliasId: string;
+  capabilities: string[];
+  systemPrompt?: string;
+}
+
+// Package-specific configuration that extends App
+export interface PackageConfig extends App {
+  // Menu configuration stored in DynamoDB
+  menuItems: PackageMenuItem[];
+
+  // Default route when package loads
+  defaultRoute: string;
+
+  // Agent configuration for this package
+  agentConfig: PackageAgentConfig;
+
+  // Layout preferences
+  layout?: {
+    menuCollapsed?: boolean;
+    menuWidth?: number;
+    agentPanelOpen?: boolean;
+  };
+}
+
+// Package state management
+export interface PackageState {
+  currentPackage: string;
+  currentRoute: string; // Current hash route within package
+  agentPanelOpen: boolean;
+  agentWidth: number;
+}
+
+// Context for package-level state
+export interface PackageContextType {
+  // Current package info
+  packageConfig: PackageConfig | null;
+  packageLoading: boolean;
+
+  // Navigation state
+  packageState: PackageState;
+  setCurrentRoute: (route: string) => void;
+
+  // Panel controls
+  toggleAgentPanel: () => void;
+  setAgentWidth: (width: number) => void;
+
+  // Agent state
+  chatHistory: any[]; // Use existing chat types
+  sendMessage: (message: string) => Promise<void>;
 }

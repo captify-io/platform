@@ -1,16 +1,26 @@
-﻿interface CaptifyAppPageProps {
+﻿"use client";
+
+import { useEffect } from "react";
+import { useCaptify } from "@captify/core/context";
+
+interface CaptifyAppPageProps {
   params: Promise<{ captify: string }>;
 }
 
-export default async function CaptifyAppPage({ params }: CaptifyAppPageProps) {
-  const { captify: slug } = await params;
+export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
+  const { loadPackageConfig } = useCaptify();
 
-  // The actual package content is rendered by the layout's PackageRenderer
-  // This page component can be empty or contain additional content
+  useEffect(() => {
+    async function loadPackage() {
+      const { captify: slug } = await params;
+      if (slug) {
+        loadPackageConfig(slug);
+      }
+    }
+    loadPackage();
+  }, [params, loadPackageConfig]);
+
+  // The actual package content is rendered by the layout's ThreePanelLayout
+  // This page component handles loading the package configuration
   return null;
-}
-
-export async function generateStaticParams() {
-  // Return empty array for now - no dynamic routes generated
-  return [];
 }

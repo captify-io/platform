@@ -55,13 +55,21 @@ export const authConfig = {
       authorization: {
         url: "https://account.anautics.ai/login",
         params: {
-          scope: "openid email profile", // Cognito issues refresh tokens by default, no offline_access needed
+          scope: "openid email profile",
           response_type: "code",
+          // Add redirect_uri explicitly for development
+          ...(process.env.NODE_ENV === 'development' && {
+            redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`
+          })
         },
       },
       checks: ["nonce", "pkce", "state"],
     }),
   ],
+  // Add trustHost for development
+  ...(process.env.NODE_ENV === 'development' && {
+    trustHost: true,
+  }),
   callbacks: {
     async jwt({ token, account, profile, trigger }) {
       // Initial sign-in: store all tokens with proper expiration

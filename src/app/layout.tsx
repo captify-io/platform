@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { CaptifyLayout } from "../components/CaptifyLayout";
+// import { Inter } from "next/font/google";
+import { CaptifyLayout } from "@captify/core/components";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Captify Platform",
@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="">{/* {inter.className} */}
         <CaptifyLayout>{children}</CaptifyLayout>
       </body>
     </html>

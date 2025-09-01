@@ -1,5 +1,5 @@
-﻿import { PackageProvider } from "../../context/PackageContext";
-import { ThreePanelLayout } from "../../components/ThreePanelLayout";
+﻿import { ThreePanelLayout } from "@captify/core/components";
+import { CaptifyProvider } from "@captify/core/context";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
@@ -13,9 +13,9 @@ export default async function CaptifyLayout({
   const { captify } = await params;
 
   return (
-    <PackageProvider packageName={captify}>
+    <CaptifyProvider>
       <ThreePanelLayout>{children}</ThreePanelLayout>
-    </PackageProvider>
+    </CaptifyProvider>
   );
 }
 

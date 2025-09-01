@@ -29,7 +29,9 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/api/auth/[...nextauth]/lib/aws-credentials.ts"
+    "src/app/api/auth/[...nextauth]/lib/aws-credentials.ts",
+    "packages/core/src/components/navigation/SmartBreadcrumb.tsx",
+    "packages/core/src/components/navigation/TopNavigation.tsx"
   ],
   "exclude": ["node_modules", "packages"]
 }

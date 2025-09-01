@@ -7,7 +7,11 @@ export default defineConfig([
     entry: {
       app: "src/app/index.ts",
       services: "src/services/index.ts",
-      index: "src/index.ts",
+      components: "src/components/index.ts",
+      context: "src/context/index.ts",
+      hooks: "src/hooks/index.ts",
+      api: "src/lib/index.ts",
+      ui: "src/components/ui/index.ts",
     },
     format: ["esm"], // Next 15 prefers ESM
     dts: true, // types for each entry
@@ -15,8 +19,8 @@ export default defineConfig([
     sourcemap: isDev, // only in development for faster builds
     clean: true,
     target: "es2022",
-    minify: !isDev, // disable minification in development for faster builds
-    treeshake: !isDev, // disable treeshaking in development for faster builds
+    minify: false, // disable minification to preserve "use client" directives
+    treeshake: false, // disable treeshaking to preserve "use client" directives
     external: [
       "react",
       "react-dom",
@@ -24,12 +28,11 @@ export default defineConfig([
       "react/jsx-dev-runtime",
       "@aws-sdk/*",
     ],
+    // Add banner to preserve "use client" directives
     banner: {
-      js: `"use strict";`,
+      js: '"use client";',
     },
-    onSuccess: isDev
-      ? "echo '📦 @captify/core rebuilt successfully!'"
-      : undefined,
+    onSuccess: isDev ? "echo '@captify/core rebuilt successfully!'" : undefined,
     // Use string array for watch patterns
     watch: isDev ? ["src/**/*.ts", "src/**/*.tsx"] : false,
   },

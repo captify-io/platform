@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
-import path from "node:path";
-import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
-import type { NextConfig } from "next";
+
 const nextConfig = {
   // Enable React strict mode for highlighting potential problems
   reactStrictMode: true,
@@ -38,12 +36,7 @@ const nextConfig = {
       // Add package dist directory as a dependency to trigger rebuilds
       const path = require("path");
       const packageDistPath = path.resolve(process.cwd(), "packages/core/dist");
-      config.resolve.plugins = [
-        ...(config.resolve.plugins || []),
-        new TsconfigPathsPlugin({
-          configFile: path.resolve(__dirname, "tsconfig.json"),
-        }),
-      ];
+      config.resolve.alias["@"] = path.resolve(__dirname, "src");
       config.plugins.push({
         apply(compiler) {
           compiler.hooks.afterCompile.tap("PackageWatcher", (compilation) => {
