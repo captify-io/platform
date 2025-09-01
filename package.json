@@ -104,5 +104,10 @@
     "eslint-config-next": "15.5.0",
     "execa": "^9.6.0",
     "ws": "^8.18.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.25.9"
+    }
   }
 }
