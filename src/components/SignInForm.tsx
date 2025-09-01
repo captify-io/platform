@@ -151,12 +151,40 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
       </div>
       
       <div className="relative w-full max-w-md">
+        {/* Authorized Use Warning - Above the login card */}
+        <div className="mb-6 p-4 bg-amber-900/20 border border-amber-700/30 rounded-xl backdrop-blur-sm">
+          <div className="flex items-start">
+            <svg
+              className="h-5 w-5 text-amber-400 mt-0.5 mr-3 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-200 mb-2">
+                Authorized Use Only
+              </h3>
+              <p className="text-xs text-amber-100/80 leading-relaxed">
+                U.S. Government system for authorized users only. No expectation of privacy. 
+                By accessing this system, you consent to monitoring and agree to these terms.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Main card */}
         <div className="bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-8 sm:p-10">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Captify Platform
+          <div className="text-center mb-6">
+            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-wide mb-2" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+              Captify.io
             </h1>
           </div>
 
@@ -182,34 +210,6 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
               </div>
             </div>
           )}
-
-          {/* Government notice */}
-          <div className="mb-8 p-4 bg-amber-900/20 border border-amber-700/30 rounded-xl backdrop-blur-sm">
-            <div className="flex items-start">
-              <svg
-                className="h-5 w-5 text-amber-400 mt-0.5 mr-3 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-              <div>
-                <h3 className="text-sm font-semibold text-amber-200 mb-2">
-                  Authorized Use Only
-                </h3>
-                <p className="text-xs text-amber-100/80 leading-relaxed">
-                  U.S. Government system for authorized users only. No expectation of privacy. 
-                  By accessing this system, you consent to monitoring and agree to these terms.
-                </p>
-              </div>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -305,15 +305,16 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={!emailSaved || isLoading}
-              className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                emailSaved && !isLoading
-                  ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/25 focus:ring-green-500"
-                  : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/25 focus:ring-blue-500"
-              }`}
-            >
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={!emailSaved || isLoading}
+                className={`py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                  emailSaved && !isLoading
+                    ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg shadow-green-500/25 focus:ring-green-500"
+                    : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/25 focus:ring-blue-500"
+                }`}
+              >
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
@@ -328,6 +329,7 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
                 </div>
               )}
             </button>
+            </div>
           </form>
 
           <div className="mt-8 text-center">
