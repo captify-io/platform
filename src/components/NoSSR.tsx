@@ -1,5 +1,7 @@
-import dynamic from 'next/dynamic';
-import { ReactNode } from 'react';
+"use client";
+
+import dynamic from "next/dynamic";
+import { ReactNode } from "react";
 
 interface NoSSRProps {
   children: ReactNode;

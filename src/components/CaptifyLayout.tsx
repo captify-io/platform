@@ -15,6 +15,14 @@ interface CaptifyLayoutProps {
 }
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <NoSSR>
+      <AuthenticatedLayoutInner>{children}</AuthenticatedLayoutInner>
+    </NoSSR>
+  );
+}
+
+function AuthenticatedLayoutInner({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
@@ -67,9 +75,7 @@ export function CaptifyLayout({ children }: CaptifyLayoutProps) {
           disableTransitionOnChange={false}
           storageKey="captify-theme"
         >
-          <NoSSR>
-            <AuthenticatedLayout>{children}</AuthenticatedLayout>
-          </NoSSR>
+          <AuthenticatedLayout>{children}</AuthenticatedLayout>
         </ThemeProvider>
       </SessionProvider>
     </div>

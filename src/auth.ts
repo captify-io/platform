@@ -181,7 +181,7 @@ export const authConfig = {
       return baseUrl; // Default to home page
     },
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: false, // Disable debug warnings including cookie chunking messages
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
