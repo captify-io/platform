@@ -6,12 +6,10 @@ import {
   existsSync,
   readdirSync,
   statSync,
-  mkdtempSync,
 } from "fs";
 import { join, dirname, relative, basename } from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
-import { tmpdir } from "os";
 
 // Simple UUID generator
 const uuidv4 = () =>
@@ -32,13 +30,13 @@ const __dirname = dirname(__filename);
  */
 class CaptifyPackageInstaller {
   constructor() {
-    this.packagesDir = join(__dirname, "packages");
+    this.packagesDir = join(__dirname, "..");
     this.region = process.env.AWS_REGION || "us-east-1";
     this.tablePrefix = "captify";
   }
 
   /**
-   * Parse TypeScript types to find interfaces that extend Core
+   * Parse TypeScript types to find interfaces with id/ID and UUID fields
    */
   parseTypesForTables(typesFilePath) {
     if (!existsSync(typesFilePath)) {
@@ -49,35 +47,46 @@ class CaptifyPackageInstaller {
     const content = readFileSync(typesFilePath, "utf8");
     const tables = [];
 
-    // Regex to match interface definitions that extend Core
-    const interfaceRegex =
-      /export\s+interface\s+(\w+)\s+extends\s+Core\s*\{([^}]+)\}/g;
+    // Regex to match interface definitions
+    const interfaceRegex = /export\s+interface\s+(\w+)\s*\{([^}]+)\}/g;
     let match;
 
     while ((match = interfaceRegex.exec(content)) !== null) {
       const interfaceName = match[1];
       const body = match[2];
 
-      // Skip the Core interface itself (it's just the base interface)
-      if (interfaceName === "Core") {
-        continue;
+      // Check if first property is id/ID with string type and has UUID mentioned
+      const lines = body
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line);
+      if (lines.length === 0) continue;
+
+      const firstProperty = lines[0];
+
+      // Check for id/ID as first property
+      const hasIdProperty = /^(id|ID):\s*string/.test(firstProperty);
+
+      // Check if interface body contains UUID reference or if name suggests it's a table entity
+      const hasUuidReference =
+        body.includes("UUID") ||
+        body.includes("uuid") ||
+        interfaceName.endsWith("Entity") ||
+        (hasIdProperty && lines.length > 2); // Simple heuristic
+
+      if (hasIdProperty && hasUuidReference) {
+        // Parse the interface properties to create table schema
+        const attributes = this.parseInterfaceProperties(body);
+
+        tables.push({
+          name: interfaceName,
+          tableName: `${
+            this.tablePrefix
+          }-${this.getPackageSlug()}-${interfaceName}`,
+          attributes,
+          keySchema: [{ AttributeName: "id", KeyType: "HASH" }], // Primary key
+        });
       }
-
-      // Parse the interface properties for DynamoDB table creation (just keys)
-      const attributes = this.parseInterfaceProperties(body);
-
-      // Parse all interface properties for TableMetadata
-      const allAttributes = this.parseAllInterfaceProperties(body);
-
-      tables.push({
-        name: interfaceName,
-        tableName: `${
-          this.tablePrefix
-        }-${this.getPackageSlug()}-${interfaceName}`,
-        attributes, // For DynamoDB table creation
-        allAttributes, // For TableMetadata
-        keySchema: [{ AttributeName: "id", KeyType: "HASH" }], // Primary key
-      });
     }
 
     return tables;
@@ -85,23 +94,8 @@ class CaptifyPackageInstaller {
 
   /**
    * Parse interface properties to create DynamoDB attributes
-   * Since all our interfaces extend Core, they all have an 'id' field as primary key
-   * DynamoDB only needs AttributeDefinitions for key attributes
    */
   parseInterfaceProperties(interfaceBody) {
-    // For tables extending Core, we only need the 'id' attribute for the primary key
-    return [
-      {
-        AttributeName: "id",
-        AttributeType: "S", // String type for UUID
-      },
-    ];
-  }
-
-  /**
-   * Parse all interface properties for TableMetadata (captures all fields)
-   */
-  parseAllInterfaceProperties(interfaceBody) {
     const attributes = [];
     const lines = interfaceBody
       .split("\n")
@@ -109,34 +103,24 @@ class CaptifyPackageInstaller {
       .filter((line) => line && !line.startsWith("//"));
 
     for (const line of lines) {
-      // Parse property: type format, excluding nested objects and complex types
-      const propertyMatch = line.match(/^(\w+)(\?)?:\s*(.+);?\s*$/);
+      // Parse property: type format
+      const propertyMatch = line.match(/^(\w+)(\?)?:\s*(.+);?$/);
       if (propertyMatch) {
         const [, name, optional, type] = propertyMatch;
 
-        // Skip nested object definitions (lines with { )
-        if (type.includes("{")) {
-          continue;
-        }
-
         let attributeType = "S"; // String default
-        let required = !optional; // Required if not optional
 
         // Map TypeScript types to DynamoDB types
-        if (type.includes("number")) {
-          attributeType = "N";
-        } else if (type.includes("boolean")) {
-          attributeType = "BOOL";
-        } else if (type.includes("[]") || type.includes("Array")) {
+        if (type.includes("number")) attributeType = "N";
+        else if (type.includes("boolean")) attributeType = "BOOL";
+        else if (type.includes("[]") || type.includes("Array"))
           attributeType = "L";
-        } else if (type.includes("Record<") || type.includes("object")) {
+        else if (type.includes("{") || type.includes("object"))
           attributeType = "M";
-        }
 
         attributes.push({
-          name,
-          type: attributeType,
-          required,
+          AttributeName: name,
+          AttributeType: attributeType,
         });
       }
     }
@@ -343,7 +327,7 @@ class CaptifyPackageInstaller {
         console.log(`📋 Creating table ${tableConfig.tableName}...`);
       }
 
-      // Create table configuration
+      // Create table
       const createTableCommand = {
         TableName: tableConfig.tableName,
         KeySchema: tableConfig.keySchema,
@@ -355,36 +339,17 @@ class CaptifyPackageInstaller {
         BillingMode: "PAY_PER_REQUEST",
       };
 
-      // Create temporary file for the JSON
-      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
-      const tempFile = join(tempDir, "create-table.json");
-
-      writeFileSync(tempFile, JSON.stringify(createTableCommand, null, 2));
-
-      const command = `aws dynamodb create-table --cli-input-json file://${tempFile.replace(
-        /\\/g,
-        "/"
-      )} --region ${this.region}`;
+      const command = `aws dynamodb create-table --cli-input-json '${JSON.stringify(
+        createTableCommand
+      )}' --region ${this.region}`;
       execSync(command);
 
       console.log(`✅ Created table ${tableConfig.tableName}`);
-
-      // Clean up temp file
-      try {
-        const fs = await import("fs");
-        fs.unlinkSync(tempFile);
-        fs.rmdirSync(tempDir);
-      } catch (cleanupError) {
-        // Ignore cleanup errors
-      }
 
       // Wait for table to be active
       console.log(`⏳ Waiting for table to be active...`);
       const waitCommand = `aws dynamodb wait table-exists --table-name ${tableConfig.tableName} --region ${this.region}`;
       execSync(waitCommand);
-
-      // Save TableMetadata record
-      await this.saveTableMetadata(tableConfig);
     } catch (error) {
       console.error(
         `❌ Error creating table ${tableConfig.tableName}: ${error.message}`
@@ -401,8 +366,7 @@ class CaptifyPackageInstaller {
     const tablesToDelete = existingTables.filter(
       (name) =>
         name.startsWith(`${this.tablePrefix}-${this.getPackageSlug()}-`) &&
-        !currentTableNames.includes(name) &&
-        !name.endsWith("-App") // Don't delete the main App table
+        !currentTableNames.includes(name)
     );
 
     for (const tableName of tablesToDelete) {
@@ -441,53 +405,29 @@ class CaptifyPackageInstaller {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
       const appConfig = {
-        id: uuidv4(), // Core interface requires 'id', not 'appId'
-        slug: packageName,
+        appId: uuidv4(),
         name: packageJson.description || packageJson.name || packageName,
-        app: packageName, // Which app/package this entity belongs to
-        fields: {}, // Extensible JSON object for app-specific data
+        slug: packageName,
         description: packageJson.description || `${packageName} package`,
-        ownerId: "system", // System-owned entity
-        createdAt: new Date().toISOString(),
-        createdBy: "installer",
-        updatedAt: new Date().toISOString(),
-        updatedBy: "installer",
-        // App-specific fields
-        version: packageJson.version || "1.0.0",
-        status: "active",
         category: this.getCategory(packageName),
-        visibility: "internal",
+        version: packageJson.version || "1.0.0",
         icon: this.getIconForPage(packageName),
+        status: "active",
+        visibility: "internal",
+        createdBy: "installer",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         menu,
-        agentId: null,
-        agentAliasId: null,
       };
 
       // Convert to DynamoDB format
       const dynamoItem = this.toDynamoDBFormat(appConfig);
 
-      // Create temporary file for the item JSON
-      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
-      const tempFile = join(tempDir, "put-item.json");
-
-      writeFileSync(tempFile, JSON.stringify(dynamoItem, null, 2));
-
       // Put item in table
-      const putCommand = `aws dynamodb put-item --table-name ${
-        this.tablePrefix
-      }-core-App --item file://${tempFile.replace(/\\/g, "/")} --region ${
-        this.region
-      }`;
+      const putCommand = `aws dynamodb put-item --table-name captify-core-App --item '${JSON.stringify(
+        dynamoItem
+      )}' --region ${this.region}`;
       execSync(putCommand);
-
-      // Clean up temp file
-      try {
-        const fs = await import("fs");
-        fs.unlinkSync(tempFile);
-        fs.rmdirSync(tempDir);
-      } catch (cleanupError) {
-        // Ignore cleanup errors
-      }
 
       console.log(`✅ Updated app configuration for ${packageName}`);
 
@@ -495,128 +435,6 @@ class CaptifyPackageInstaller {
     } catch (error) {
       console.error(`❌ Error updating app configuration: ${error.message}`);
       throw error;
-    }
-  }
-
-  /**
-   * Save TableMetadata record for tracking tables created by the installer
-   * Updates existing record if slug matches, otherwise creates new record
-   */
-  async saveTableMetadata(tableConfig) {
-    try {
-      const slug = `${this.getPackageSlug()}-${tableConfig.name.toLowerCase()}`;
-
-      // First, try to get existing record by slug using scan
-      let existingRecord = null;
-      try {
-        // Create temporary file for expression attribute values
-        const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
-        const expressionFile = join(tempDir, "expression-values.json");
-
-        const expressionValues = {
-          ":slug": { S: slug },
-        };
-
-        writeFileSync(
-          expressionFile,
-          JSON.stringify(expressionValues, null, 2)
-        );
-
-        const scanCommand = `aws dynamodb scan --table-name ${
-          this.tablePrefix
-        }-core-TableMetadata --filter-expression "slug = :slug" --expression-attribute-values file://${expressionFile.replace(
-          /\\/g,
-          "/"
-        )} --region ${this.region}`;
-        const scanResult = execSync(scanCommand, { encoding: "utf8" });
-        const scanData = JSON.parse(scanResult);
-
-        if (scanData.Items && scanData.Items.length > 0) {
-          existingRecord = scanData.Items[0];
-        }
-
-        // Clean up temp file
-        try {
-          const fs = await import("fs");
-          fs.unlinkSync(expressionFile);
-          fs.rmdirSync(tempDir);
-        } catch (cleanupError) {
-          // Ignore cleanup errors
-        }
-      } catch (scanError) {
-        console.log(
-          `⚠️  Could not check for existing record, will create new one`
-        );
-      }
-
-      // Prepare metadata
-      const now = new Date().toISOString();
-      const metadata = {
-        id: existingRecord ? existingRecord.id.S : uuidv4(), // Keep existing ID or create new
-        slug,
-        name: `${tableConfig.name} Table`,
-        app: this.getPackageSlug(),
-        fields: {},
-        description: `Table for ${tableConfig.name} entities`,
-        ownerId: "system",
-        createdAt: existingRecord ? existingRecord.createdAt.S : now, // Keep original creation time
-        createdBy: existingRecord ? existingRecord.createdBy.S : "installer",
-        updatedAt: now, // Always update the timestamp
-        updatedBy: "installer",
-        // TableMetadata-specific fields
-        typeName: tableConfig.name,
-        keySchema: {
-          hashKey: "id", // All our tables use 'id' as primary key
-        },
-        attributes:
-          tableConfig.allAttributes ||
-          tableConfig.attributes.map((attr) => ({
-            name: attr.AttributeName,
-            type: attr.AttributeType,
-            required: true,
-          })),
-        status: "active",
-      };
-
-      // Convert to DynamoDB format
-      const dynamoItem = this.toDynamoDBFormat(metadata);
-
-      // Create temporary file for the item JSON
-      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
-      const tempFile = join(tempDir, "table-metadata.json");
-
-      writeFileSync(tempFile, JSON.stringify(dynamoItem, null, 2));
-
-      // Put item in TableMetadata table (this will overwrite if same id)
-      const putCommand = `aws dynamodb put-item --table-name ${
-        this.tablePrefix
-      }-core-TableMetadata --item file://${tempFile.replace(
-        /\\/g,
-        "/"
-      )} --region ${this.region}`;
-      execSync(putCommand);
-
-      if (existingRecord) {
-        console.log(
-          `  ✅ Updated existing TableMetadata for ${tableConfig.name}`
-        );
-      } else {
-        console.log(`  ✅ Created new TableMetadata for ${tableConfig.name}`);
-      }
-
-      // Clean up temp file
-      try {
-        const fs = await import("fs");
-        fs.unlinkSync(tempFile);
-        fs.rmdirSync(tempDir);
-      } catch (cleanupError) {
-        // Ignore cleanup errors
-      }
-    } catch (error) {
-      console.error(
-        `⚠️  Warning: Could not save TableMetadata for ${tableConfig.tableName}: ${error.message}`
-      );
-      // Don't throw error - TableMetadata is optional
     }
   }
 
@@ -739,62 +557,6 @@ class CaptifyPackageInstaller {
   }
 
   /**
-   * Update TableMetadata for all existing tables in a package
-   */
-  async updateTableMetadata(packageName) {
-    this.currentPackage = packageName;
-
-    console.log(`🔄 Updating TableMetadata for package: ${packageName}`);
-
-    const packagePath = join(this.packagesDir, packageName);
-
-    if (!existsSync(packagePath)) {
-      throw new Error(`Package directory not found: ${packagePath}`);
-    }
-
-    try {
-      // 1. Parse types to get table definitions
-      const typesPath = join(packagePath, "src", "types.ts");
-      const tables = this.parseTypesForTables(typesPath);
-
-      console.log(`📋 Found ${tables.length} table definitions`);
-
-      // 2. Get existing tables to verify they exist
-      const existingTables = this.getExistingTables();
-
-      let updatedCount = 0;
-
-      // 3. Update/create TableMetadata for each table
-      for (const table of tables) {
-        const tableExists = existingTables.includes(table.tableName);
-
-        if (tableExists) {
-          console.log(`📝 Updating TableMetadata for ${table.tableName}...`);
-          await this.saveTableMetadata(table);
-          updatedCount++;
-        } else {
-          console.log(
-            `⚠️  Table ${table.tableName} does not exist, skipping...`
-          );
-        }
-      }
-
-      console.log(`✅ Updated TableMetadata for ${updatedCount} tables`);
-
-      return {
-        packageName,
-        tablesProcessed: tables.length,
-        metadataUpdated: updatedCount,
-      };
-    } catch (error) {
-      console.error(
-        `❌ Failed to update TableMetadata for ${packageName}: ${error.message}`
-      );
-      throw error;
-    }
-  }
-
-  /**
    * List available packages
    */
   listPackages() {
@@ -858,7 +620,6 @@ if (isMainModule) {
   const installer = new CaptifyPackageInstaller();
   const command = process.argv[2];
   const packageName = process.argv[3];
-  const flags = process.argv.slice(4);
 
   console.log(`🔧 Running command: ${command}`);
 
@@ -870,38 +631,20 @@ if (isMainModule) {
     case "install":
       if (!packageName) {
         console.error("❌ Please provide a package name");
-        console.log(
-          "Usage: node install.js install <package-name> [--TableMetadata]"
-        );
+        console.log("Usage: node install.js install <package-name>");
         installer.listPackages();
         process.exit(1);
       }
 
-      // Check if --TableMetadata flag is present
-      if (flags.includes("--TableMetadata")) {
-        installer
-          .updateTableMetadata(packageName)
-          .then((result) => {
-            console.log(`\n🎉 TableMetadata update complete!`);
-            console.log(
-              `📊 Processed ${result.tablesProcessed} tables, updated ${result.metadataUpdated} metadata entries`
-            );
-          })
-          .catch((error) => {
-            console.error(`\n❌ TableMetadata update failed: ${error.message}`);
-            process.exit(1);
-          });
-      } else {
-        installer
-          .installPackage(packageName)
-          .then(() => {
-            console.log(`\n🎉 Installation complete!`);
-          })
-          .catch((error) => {
-            console.error(`\n❌ Installation failed: ${error.message}`);
-            process.exit(1);
-          });
-      }
+      installer
+        .installPackage(packageName)
+        .then(() => {
+          console.log(`\n🎉 Installation complete!`);
+        })
+        .catch((error) => {
+          console.error(`\n❌ Installation failed: ${error.message}`);
+          process.exit(1);
+        });
       break;
 
     default:
@@ -909,14 +652,12 @@ if (isMainModule) {
 🚀 Captify Package Installer
 
 Usage:
-  node install.js list                              - List available packages
-  node install.js install <package-name>           - Install package
-  node install.js install <package-name> --TableMetadata - Update TableMetadata for existing tables
+  node install.js list                    - List available packages
+  node install.js install <package-name> - Install package
 
 Examples:
   node install.js list
   node install.js install core
-  node install.js install core --TableMetadata
       `);
   }
 }

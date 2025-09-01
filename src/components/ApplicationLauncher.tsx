@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useCaptify } from "@/context/CaptifyContext";
 import { useAppNavigation } from "@/hooks/useAppNavigation";
 import { apiClient } from "@/lib/api/client";
@@ -53,20 +54,20 @@ function AppCard({
 
   return (
     <div
-      className="group relative flex items-center space-x-4 p-4 hover:bg-accent/50 cursor-pointer transition-all duration-200 rounded-lg border border-transparent hover:border-border/50"
+      className="group relative flex items-center space-x-2 p-1.5 hover:bg-accent/50 cursor-pointer transition-all duration-200 rounded-md border border-transparent hover:border-border/50"
       onClick={() => onAppClick(app)}
     >
       {/* App Icon */}
       <div className="relative">
-        <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-border group-hover:border-blue-500/30 transition-all duration-200">
+        <div className="w-8 h-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-border group-hover:border-blue-500/30 transition-all duration-200">
           <DynamicIcon
             name={(app as any).icon || "package"}
-            className="h-7 w-7 text-blue-600 group-hover:text-blue-700 transition-colors"
+            className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors"
           />
         </div>
         {isFavorite && (
-          <div className="absolute -top-1 -right-1 flex items-center justify-center">
-            <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 drop-shadow-sm" />
+          <div className="absolute -top-0.5 -right-0.5 flex items-center justify-center">
+            <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 drop-shadow-sm" />
           </div>
         )}
       </div>
@@ -75,15 +76,15 @@ function AppCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between">
           <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+            <h4 className="font-medium text-xs text-foreground group-hover:text-primary transition-colors truncate">
               {app.name}
             </h4>
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0">
               {(app as any).description ||
                 "Application description not available"}
             </p>
-            <div className="flex items-center mt-2">
-              <Badge variant="secondary" className="text-xs">
+            <div className="flex items-center mt-0.5">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0">
                 {APP_CATEGORY_LABELS[
                   (app as any).category as keyof typeof APP_CATEGORY_LABELS
                 ] ||
@@ -102,7 +103,7 @@ function AppCard({
               e.stopPropagation();
               onToggleFavorite(app.id);
             }}
-            className={`ml-2 h-10 w-10 p-0 transition-all duration-200 self-start ${
+            className={`ml-1 h-6 w-6 p-0 transition-all duration-200 self-start ${
               isFavorite
                 ? "text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
                 : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
@@ -110,7 +111,7 @@ function AppCard({
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Star
-              className={`h-5 w-5 ${
+              className={`h-3 w-3 ${
                 isFavorite ? "fill-current" : ""
               } transition-all duration-200`}
             />
@@ -129,10 +130,16 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   const { session, favoriteApps, toggleFavorite } = useCaptify();
   const { navigateToApp } = useAppNavigation();
   const router = useRouter();
+
+  // Ensure component only renders on client-side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Extract unique categories from applications with counts
   const categoryStats = applications.reduce(
@@ -251,6 +258,21 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
     );
   };
 
+  // Render loading state while mounting to prevent SSR issues
+  if (!isMounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`text-white hover:bg-gray-800 hover:text-white p-2 ${
+          className || ""
+        }`}
+      >
+        <Grid3X3 className="w-4 h-4" />
+      </Button>
+    );
+  }
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -267,25 +289,20 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
 
       <SheetContent
         side="left"
-        className="w-[400px] sm:w-[500px] p-0 overflow-hidden"
+        className="w-[400px] sm:w-[500px] p-0 overflow-hidden z-[250]"
       >
         {/* Use a fragment and move all content into a separate component or prop if required by your UI library */}
         <>
           <div className="flex flex-col h-full">
             {/* Header */}
-            <SheetHeader className="p-6 pb-4 border-b bg-gradient-to-r from-blue-500/5 to-purple-600/10">
+            <SheetHeader className="p-4 pb-3 border-b bg-gradient-to-r from-blue-500/5 to-purple-600/10">
               <SheetTitle className="flex items-center gap-2 text-xl">
                 <DynamicIcon name="package" className="h-6 w-6 text-blue-600" />
                 Applications
               </SheetTitle>
-              <SheetDescription>
-                Launch any application from your workspace
-              </SheetDescription>
-            </SheetHeader>
-
-            {/* Search */}
-            <div className="p-4 border-b">
-              <div className="relative">
+              
+              {/* Search moved under Applications */}
+              <div className="relative mt-3">
                 <DynamicIcon
                   name="search"
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500"
@@ -297,11 +314,11 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
                   className="pl-10"
                 />
               </div>
-            </div>
+            </SheetHeader>
 
-            {/* Categories Filter */}
+            {/* Categories Filter - moved up since search is now in header */}
             {applications.length > 0 && (
-              <div className="p-4 border-b bg-slate-50 dark:bg-slate-900/50">
+              <div className="p-3 border-b bg-slate-50 dark:bg-slate-900/50">
                 <div className="flex flex-wrap gap-2">
                   <Badge
                     variant={
@@ -341,7 +358,7 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
 
             {/* Applications List */}
             <ScrollArea className="flex-1">
-              <div className="p-4">
+              <div className="p-2">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
@@ -392,20 +409,20 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     {/* Favorites Section */}
                     {favoriteAppsFiltered.length > 0 && (
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <DynamicIcon
                             name="star"
                             className="h-4 w-4 text-yellow-500 fill-yellow-500"
                           />
-                          <h4 className="font-semibold text-sm text-foreground">
+                          <h4 className="font-medium text-sm text-foreground">
                             Favorites
                           </h4>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {favoriteAppsFiltered.map((app: App) => (
                             <AppCard
                               key={app.id || app.slug || `fav-${app.name}`}
@@ -423,17 +440,17 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
                     {regularAppsFiltered.length > 0 && (
                       <div>
                         {favoriteAppsFiltered.length > 0 && (
-                          <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
                             <DynamicIcon
                               name="package"
                               className="h-4 w-4 text-blue-500"
                             />
-                            <h4 className="font-semibold text-sm text-foreground">
+                            <h4 className="font-medium text-sm text-foreground">
                               All Applications
                             </h4>
                           </div>
                         )}
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {regularAppsFiltered.map((app: App) => (
                             <AppCard
                               key={app.id || app.slug || `reg-${app.name}`}

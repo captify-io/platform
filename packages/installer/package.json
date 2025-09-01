@@ -1,0 +1,32 @@
+{
+  "name": "@captify/installer",
+  "version": "1.0.0",
+  "description": "Captify App Installation and Deployment Tool",
+  "type": "module",
+  "main": "scripts/installer.js",
+  "bin": {
+    "captify-install": "scripts/installer.js"
+  },
+  "scripts": {
+    "install-app": "node scripts/installer.js install",
+    "deploy-app": "node scripts/installer.js deploy",
+    "list-templates": "node scripts/installer.js list",
+    "backup-apps": "node scripts/installer.js backup",
+    "remove-app": "node scripts/installer.js remove"
+  },
+  "dependencies": {
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0"
+  },
+  "keywords": [
+    "captify",
+    "aws",
+    "dynamodb",
+    "installer",
+    "deployment"
+  ],
+  "author": "Captify Team",
+  "license": "MIT"
+}

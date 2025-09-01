@@ -5,15 +5,7 @@ import { signIn } from "next-auth/react";
 
 // Email validation constants (moved outside component to avoid re-creation)
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const APPROVED_DOMAINS = [
-  ".com",
-  ".mil",
-  ".gov",
-  ".ai",
-  ".net",
-  ".org",
-  ".us",
-];
+const APPROVED_DOMAINS = [".com", ".mil", ".gov", ".ai", ".net", ".org", ".us"];
 
 interface SignInFormProps {
   callbackUrl?: string;
@@ -35,9 +27,12 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
   }, []);
 
   // Comprehensive email validation
-  const isEmailValid = useCallback((email: string): boolean => {
-    return EMAIL_REGEX.test(email) && hasApprovedDomain(email);
-  }, [hasApprovedDomain]);
+  const isEmailValid = useCallback(
+    (email: string): boolean => {
+      return EMAIL_REGEX.test(email) && hasApprovedDomain(email);
+    },
+    [hasApprovedDomain]
+  );
 
   // Load email from cookie on component mount
   useEffect(() => {
@@ -144,18 +139,26 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="w-full h-full" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px'
-        }}></div>
+        <div
+          className="w-full h-full"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: "60px 60px",
+          }}
+        ></div>
       </div>
-      
+
       <div className="relative w-full max-w-md">
         {/* Main card */}
         <div className="bg-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-8 sm:p-10">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-wide mb-2" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+            <h1
+              className="text-3xl sm:text-4xl font-black text-white tracking-wide mb-2"
+              style={{
+                fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+              }}
+            >
               Captify.io
             </h1>
           </div>
@@ -163,8 +166,18 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
           {error && (
             <div className="mb-6 p-4 bg-red-900/30 border border-red-700/50 rounded-xl backdrop-blur-sm">
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-red-400 mr-3 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <p className="text-sm text-red-200">
                   {error === "AccessDenied" &&
@@ -205,13 +218,14 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
                     Authorized Use Only
                   </h3>
                   <p className="text-xs text-slate-400/90 leading-relaxed">
-                    U.S. Government system for authorized users only. No expectation of privacy. 
-                    By accessing this system, you consent to monitoring and agree to these terms.
+                    U.S. Government system for authorized users only. No
+                    expectation of privacy. By accessing this system, you
+                    consent to monitoring and agree to these terms.
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div>
               <div className="relative">
                 <input
@@ -283,18 +297,40 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
               </div>
               {emailSaved && (
                 <div className="flex items-center mt-3 text-green-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   <p className="text-xs">Email validated and saved</p>
                 </div>
               )}
               {emailValid === false && email && (
                 <div className="flex items-center mt-3 text-red-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
-                  <p className="text-xs">Please enter a valid email with an approved domain</p>
+                  <p className="text-xs">
+                    Please enter a valid email with an approved domain
+                  </p>
                 </div>
               )}
             </div>
@@ -309,26 +345,42 @@ export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
                     : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/25 focus:ring-blue-500"
                 }`}
               >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                  Connecting to Secure Portal...
-                </div>
-              ) : (
-                <div className="flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Secure Authentication
-                </div>
-              )}
-            </button>
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                    Connecting to Secure Portal...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    Secure Authentication
+                  </div>
+                )}
+              </button>
             </div>
           </form>
 
           <div className="mt-8 text-center">
             <p className="text-xs text-slate-400">
-              Need assistance? <button onClick={handleContactUs} className="text-blue-400 hover:text-blue-300 underline transition-colors">Contact Us</button>
+              Need assistance?{" "}
+              <button
+                onClick={handleContactUs}
+                className="text-blue-400 hover:text-blue-300 underline transition-colors"
+              >
+                Contact Us
+              </button>
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { Session } from "next-auth";
 import { handleCognitoLogout } from "@/lib/logout";
 import { useCaptify } from "../../context/CaptifyContext";
@@ -26,7 +27,23 @@ import {
 } from "../ui/dropdown-menu";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { GlobalSearch } from "../search/index";
-import { ApplicationLauncher } from "../ApplicationLauncher";
+
+// Dynamic import to prevent SSR issues with ApplicationLauncher
+const ApplicationLauncher = dynamic(
+  () => import("../ApplicationLauncher").then((mod) => ({ default: mod.ApplicationLauncher })),
+  {
+    ssr: false,
+    loading: () => (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-white hover:bg-gray-800 hover:text-white p-2"
+      >
+        <div className="w-4 h-4 animate-pulse bg-gray-600 rounded" />
+      </Button>
+    ),
+  }
+);
 
 interface TopNavigationProps {
   onSearchFocus?: () => void;
