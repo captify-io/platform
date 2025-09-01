@@ -13,7 +13,7 @@ import React, {
   useCallback,
 } from "react";
 import { useCaptify } from "./CaptifyContext";
-import { apiClient } from "../lib/api/client";
+import { apiClient } from "@/lib/api/client";
 import {
   PackageConfig,
   PackageState,

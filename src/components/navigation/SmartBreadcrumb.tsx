@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCaptify } from "../../context/CaptifyContext";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Breadcrumb,
   BreadcrumbList,

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { Session } from "next-auth";
-import { handleCognitoLogout } from "../../lib/logout";
+import { handleCognitoLogout } from "@/lib/logout";
 import { useCaptify } from "../../context/CaptifyContext";
 import {
   Bell,
