@@ -61,11 +61,7 @@ applications:
             - echo "Verifying core package dist..."
             - ls -la packages/core/dist/
 
-            # Type check the entire project (from root where TypeScript is available)
-            - echo "Running type check across all packages..."
-            - pnpm run type-check
-
-            # Build the Next.js application
+            # Build the Next.js application (includes type checking)
             - echo "Building Next.js application..."
             - pnpm run build
 
