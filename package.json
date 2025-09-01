@@ -2,6 +2,7 @@
   "name": "captify-platform",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "next dev --turbo",
@@ -17,7 +18,11 @@
     "type-check:packages": "pnpm --filter @captify/core run type-check",
     "deploy:check": "pnpm run type-check && pnpm run type-check:packages && pnpm run lint",
     "clean": "rm -rf .next dist && pnpm --filter @captify/core run clean",
-    "clean:all": "pnpm run clean && rm -rf node_modules packages/*/node_modules"
+    "clean:all": "pnpm run clean && rm -rf node_modules packages/*/node_modules",
+    "install:list": "node install.js list",
+    "install:package": "node install.js install",
+    "install:core": "node install.js install core",
+    "install:core-metadata": "node install.js install core --TableMetadata"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity": "^3.876.0",

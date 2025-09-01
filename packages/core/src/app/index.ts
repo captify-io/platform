@@ -7,7 +7,7 @@
 
 // Export page registry for dynamic loading
 export const pages = {
-  core: () => import("./pages/Dashboard"),
+  home: () => import("./pages/Dashboard"),
   dashboard: () => import("./pages/Dashboard"),
   // Main section pages
   policies: () => import("./pages/PoliciesPage"),
@@ -50,4 +50,4 @@ export const components = {
 };
 
 // Export client-safe types
-export type { CoreUser, CoreResponse } from "../types";
+export * from "../types";

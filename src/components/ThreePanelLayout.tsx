@@ -34,10 +34,33 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { useRouter } from "next/navigation";
+import { useApi } from "../hooks/useApi";
 
 interface ThreePanelLayoutProps {
   children?: React.ReactNode;
   className?: string;
+}
+
+interface MenuItem {
+  icon: string;
+  id: string;
+  label: string;
+  href: string;
+  order: number;
+  children?: MenuItem[];
+}
+
+interface AppData {
+  app: string;
+  menu: MenuItem[];
+  version: string;
+  icon: string;
+  status: string;
+  visibility: string;
+  slug: string;
+  name: string;
+  description: string;
+  id: string;
 }
 
 // Inner component that has access to SidebarProvider context
@@ -48,7 +71,7 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const { toggleSidebar, state } = useSidebar();
-  const [menuData, setMenuData] = useState<any>(null);
+  const [appData, setAppData] = useState<AppData | null>(null);
   const [currentHash, setCurrentHash] = useState<string>(() => {
     // Initialize with current hash from URL, fallback to "home"
     if (typeof window !== "undefined") {
@@ -58,6 +81,20 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
     return "home";
   });
   const router = useRouter();
+
+  // API hook for fetching app data
+  const { data: apiData, loading, error, execute: fetchAppData } = useApi(
+    async (client, appSlug: string) => {
+      return client.get({
+        table: "App",
+        FilterExpression: "slug = :slug",
+        ExpressionAttributeValues: {
+          ":slug": appSlug,
+        },
+      });
+    }
+  );
+
   // Monitor hash changes
   useEffect(() => {
     const updateHash = () => {
@@ -87,6 +124,23 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
 
   // Track when currentHash state changes
   useEffect(() => {}, [currentHash]);
+
+  // Load app data when packageConfig changes
+  useEffect(() => {
+    if (packageConfig?.slug && typeof window !== "undefined") {
+      fetchAppData(packageConfig.slug);
+    }
+  }, [packageConfig?.slug, fetchAppData]);
+
+  // Update appData when API data changes
+  useEffect(() => {
+    if (apiData && apiData.Items && apiData.Items.length > 0) {
+      const app = apiData.Items[0] as AppData;
+      setAppData(app);
+    } else {
+      setAppData(null);
+    }
+  }, [apiData]);
 
   // Handle navigation
   const handleNavigation = (route: string) => {
@@ -122,110 +176,6 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       window.dispatchEvent(hashChangeEvent);
     }
   };
-
-  // Load menu configuration from DynamoDB
-  useEffect(() => {
-    // Skip during SSR/build time
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    // Don't load menu until packageConfig is available
-    if (!packageConfig) {
-      return;
-    }
-
-    const loadMenu = async () => {
-      try {
-        // Get the current app slug from packageConfig
-        const currentApp = packageConfig.slug;
-        // Query DynamoDB for the app data using the slug-index
-        const response = await fetch("/api/captify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-app": "core", // Required header for the API
-          },
-          body: JSON.stringify({
-            service: "dynamo",
-            operation: "query",
-            table: "App",
-            data: {
-              IndexName: "slug-index",
-              KeyConditionExpression: "slug = :slug",
-              ExpressionAttributeValues: {
-                ":slug": currentApp,
-              },
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (
-          result.success &&
-          result.data &&
-          result.data.Items &&
-          result.data.Items.length > 0
-        ) {
-          const appData = result.data.Items[0];
-
-          // Extract menu items from the app data
-          if (appData.menu && Array.isArray(appData.menu)) {
-            // Transform DynamoDB menu format to our expected format
-            const menuStructure = {
-              title: appData.name || "Application",
-              version: appData.version || "1.0.0",
-              sections: appData.menu.map((item: any) => {
-                const section: any = {
-                  id: item.id,
-                  title: item.label,
-                  icon: item.icon,
-                  route: item.href,
-                  type: "page",
-                  order: item.order,
-                };
-
-                // Check if this item has children (nested menu items)
-                if (
-                  item.children &&
-                  Array.isArray(item.children) &&
-                  item.children.length > 0
-                ) {
-                  section.items = item.children.map((child: any) => ({
-                    id: child.id,
-                    title: child.label,
-                    icon: child.icon,
-                    route: child.href,
-                    type: "page",
-                    order: child.order,
-                  }));
-                }
-
-                return section;
-              }),
-            };
-            setMenuData(menuStructure);
-          } else if (appData.menuStructure) {
-            // Handle complex nested menu structure (like from packages)
-            setMenuData(appData.menuStructure);
-          } else {
-            setMenuData(null);
-          }
-        } else {
-          setMenuData(null);
-        }
-      } catch (error) {
-        setMenuData(null);
-      }
-    };
-
-    loadMenu();
-  }, [packageConfig]); // Use the entire packageConfig object, not just the slug
 
   // Handle sidebar resize drag
   const handleSidebarMouseDown = useCallback(
@@ -291,106 +241,106 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
           style={{ width: state === "collapsed" ? 0 : sidebarWidth }}
         >
           <SidebarContent className="px-2 py-4 overflow-hidden flex min-h-0 flex-1 flex-col gap-2">
-            {menuData && menuData.sections ? (
+            {loading ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Loading menu...
+              </div>
+            ) : error ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Error loading menu: {error}
+              </div>
+            ) : appData && appData.menu ? (
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {menuData.sections.map((section: any) => {
-                      // Check if section has items (collapsible) or is a direct button
-                      const hasItems =
-                        section.items && section.items.length > 0;
+                    {appData.menu
+                      .sort((a, b) => a.order - b.order)
+                      .map((menuItem) => {
+                        // Check if menu item has children (collapsible) or is a direct button
+                        const hasChildren =
+                          menuItem.children && menuItem.children.length > 0;
 
-                      if (hasItems) {
-                        // Complex structure: Collapsible section with sub-items
-                        return (
-                          <Collapsible
-                            key={section.id}
-                            defaultOpen={true}
-                            className="group/collapsible"
-                          >
-                            <SidebarMenuItem>
-                              <CollapsibleTrigger asChild>
-                                <SidebarMenuButton className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <DynamicIcon
-                                      name={section.icon}
-                                      className="h-4 w-4 flex-shrink-0"
-                                    />
-                                    <span className="truncate">
-                                      {section.title}
-                                    </span>
-                                  </div>
-                                  <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                                </SidebarMenuButton>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <SidebarMenuSub>
-                                  {section.items.map((item: any) => (
-                                    <SidebarMenuSubItem key={item.id}>
-                                      <SidebarMenuSubButton
-                                        onClick={() =>
-                                          handleNavigation(
-                                            item.route ||
-                                              item.href ||
-                                              `#${item.id}`
-                                          )
-                                        }
-                                      >
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <DynamicIcon
-                                            name={item.icon}
-                                            className="h-4 w-4 flex-shrink-0"
-                                          />
-                                          <span className="truncate">
-                                            {item.title}
-                                          </span>
-                                        </div>
-                                      </SidebarMenuSubButton>
-                                    </SidebarMenuSubItem>
-                                  ))}
-                                </SidebarMenuSub>
-                              </CollapsibleContent>
-                            </SidebarMenuItem>
-                          </Collapsible>
-                        );
-                      } else {
-                        // Simple structure: Direct button for sections without items
-                        return (
-                          <SidebarMenuItem key={section.id}>
-                            <SidebarMenuButton
-                              onClick={() =>
-                                handleNavigation(
-                                  section.route ||
-                                    section.href ||
-                                    `#${section.id}`
-                                )
-                              }
-                              className="flex items-center gap-2 w-full"
+                        if (hasChildren) {
+                          // Complex structure: Collapsible section with sub-items
+                          return (
+                            <Collapsible
+                              key={menuItem.id}
+                              defaultOpen={true}
+                              className="group/collapsible"
                             >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <DynamicIcon
-                                  name={section.icon}
-                                  className="h-4 w-4 flex-shrink-0"
-                                />
-                                <span className="truncate">
-                                  {section.title}
-                                </span>
-                              </div>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      }
-                    })}
+                              <SidebarMenuItem>
+                                <CollapsibleTrigger asChild>
+                                  <SidebarMenuButton className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <DynamicIcon
+                                        name={menuItem.icon}
+                                        className="h-4 w-4 flex-shrink-0"
+                                      />
+                                      <span className="truncate">
+                                        {menuItem.label}
+                                      </span>
+                                    </div>
+                                    <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                                  </SidebarMenuButton>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <SidebarMenuSub>
+                                    {menuItem.children!
+                                      .sort((a, b) => a.order - b.order)
+                                      .map((child) => (
+                                        <SidebarMenuSubItem key={child.id}>
+                                          <SidebarMenuSubButton
+                                            onClick={() =>
+                                              handleNavigation(child.href)
+                                            }
+                                          >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                              <DynamicIcon
+                                                name={child.icon}
+                                                className="h-4 w-4 flex-shrink-0"
+                                              />
+                                              <span className="truncate">
+                                                {child.label}
+                                              </span>
+                                            </div>
+                                          </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                      ))}
+                                  </SidebarMenuSub>
+                                </CollapsibleContent>
+                              </SidebarMenuItem>
+                            </Collapsible>
+                          );
+                        } else {
+                          // Simple structure: Direct button for menu items without children
+                          return (
+                            <SidebarMenuItem key={menuItem.id}>
+                              <SidebarMenuButton
+                                onClick={() =>
+                                  handleNavigation(menuItem.href)
+                                }
+                                className="flex items-center gap-2 w-full"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <DynamicIcon
+                                    name={menuItem.icon}
+                                    className="h-4 w-4 flex-shrink-0"
+                                  />
+                                  <span className="truncate">
+                                    {menuItem.label}
+                                  </span>
+                                </div>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        }
+                      })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
-            ) : menuData === null ? (
-              <div className="p-4 text-sm text-muted-foreground">
-                <div>Menu failed to load</div>
-              </div>
             ) : (
               <div className="p-4 text-sm text-muted-foreground">
-                Loading menu...
+                No menu data available
               </div>
             )}
           </SidebarContent>

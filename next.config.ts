@@ -48,6 +48,14 @@ const nextConfig = {
 
     return config;
   },
+
+  // Configure turbopack for proper package watching (equivalent to webpack config above)
+  turbopack: {
+    resolveAlias: {
+      // Ensure proper resolution of workspace packages
+      "@captify/core": "./packages/core/dist",
+    },
+  },
 };
 
 export default nextConfig;
