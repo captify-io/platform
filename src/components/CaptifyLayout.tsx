@@ -8,6 +8,7 @@ import { CaptifyProvider } from "../context/CaptifyContext";
 import { TopNavigation } from "./navigation/TopNavigation";
 import { SmartBreadcrumb } from "./navigation/SmartBreadcrumb";
 import { SignInForm } from "./SignInForm";
+import NoSSR from "./NoSSR";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface CaptifyLayoutProps {
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+
   // Define public pages that don't require authentication
   const publicPages = ["/auth/signout", "/auth/error", "/api/auth/signin"];
   const isPublicPage = pathname ? publicPages.includes(pathname) : false;
@@ -56,16 +58,20 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
 export function CaptifyLayout({ children }: CaptifyLayoutProps) {
   return (
-    <SessionProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange={false}
-        storageKey="captify-theme"
-      >
-        <AuthenticatedLayout>{children}</AuthenticatedLayout>
-      </ThemeProvider>
-    </SessionProvider>
+    <div suppressHydrationWarning>
+      <SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+          storageKey="captify-theme"
+        >
+          <NoSSR>
+            <AuthenticatedLayout>{children}</AuthenticatedLayout>
+          </NoSSR>
+        </ThemeProvider>
+      </SessionProvider>
+    </div>
   );
 }
