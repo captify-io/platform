@@ -3,7 +3,7 @@
 import { useCaptify } from "@/context/CaptifyContext";
 import { useSession } from "next-auth/react";
 import React, { useState, useEffect, useCallback } from "react";
-import { apiClient } from "../lib/api/client";
+import { apiClient } from "@/lib/api/client";
 
 interface AwsCredentialsInfo {
   hasCredentials: boolean;

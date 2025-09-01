@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
 import { Session } from "next-auth";
-import { apiClient } from "../lib/api/client";
+import { apiClient } from "@/lib/api/client";
 import { App } from "@captify/core";
 
 // Simple user preferences interface

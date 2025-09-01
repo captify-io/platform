@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Cognito from "next-auth/providers/cognito";
 import type { NextAuthConfig } from "next-auth";
-import { getSessionConfig } from "./lib/session-config";
+import { getSessionConfig } from "./app/api/auth/[...nextauth]/lib/session-config";
 
 // Get session configuration
 const sessionConfig = getSessionConfig();

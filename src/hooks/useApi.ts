@@ -4,8 +4,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CaptifyClient, type CaptifyResponse } from "../lib/api/client";
-import { createApiClient } from "../lib/api/utils";
+import { CaptifyClient, type CaptifyResponse } from "@/lib/api/client";
+import { createApiClient } from "@/lib/api/utils";
 
 interface UseApiState<T> {
   data: T | null;

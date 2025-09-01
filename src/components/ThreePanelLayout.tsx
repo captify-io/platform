@@ -6,7 +6,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { cn } from "../lib/utils";
+import { cn } from "@/lib/utils";
 import { usePackageContext } from "../context/PackageContext";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";
@@ -34,7 +34,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { useRouter } from "next/navigation";
-import { useApi } from "../hooks/useApi";
+import { useApi } from "@/hooks/useApi";
 
 interface ThreePanelLayoutProps {
   children?: React.ReactNode;
@@ -83,17 +83,20 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
   const router = useRouter();
 
   // API hook for fetching app data
-  const { data: apiData, loading, error, execute: fetchAppData } = useApi(
-    async (client, appSlug: string) => {
-      return client.get({
-        table: "App",
-        FilterExpression: "slug = :slug",
-        ExpressionAttributeValues: {
-          ":slug": appSlug,
-        },
-      });
-    }
-  );
+  const {
+    data: apiData,
+    loading,
+    error,
+    execute: fetchAppData,
+  } = useApi(async (client, appSlug: string) => {
+    return client.get({
+      table: "App",
+      FilterExpression: "slug = :slug",
+      ExpressionAttributeValues: {
+        ":slug": appSlug,
+      },
+    });
+  });
 
   // Monitor hash changes
   useEffect(() => {
@@ -286,8 +289,10 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                   <SidebarMenuSub>
-                                    {menuItem.children!
-                                      .sort((a, b) => a.order - b.order)
+                                    {menuItem
+                                      .children!.sort(
+                                        (a, b) => a.order - b.order
+                                      )
                                       .map((child) => (
                                         <SidebarMenuSubItem key={child.id}>
                                           <SidebarMenuSubButton
@@ -317,9 +322,7 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
                           return (
                             <SidebarMenuItem key={menuItem.id}>
                               <SidebarMenuButton
-                                onClick={() =>
-                                  handleNavigation(menuItem.href)
-                                }
+                                onClick={() => handleNavigation(menuItem.href)}
                                 className="flex items-center gap-2 w-full"
                               >
                                 <div className="flex items-center gap-2 min-w-0">
