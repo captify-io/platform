@@ -12,6 +12,7 @@ export interface Core {
   slug: string; // URL-friendly identifier (unique within app)
   name: string; // Human-readable name
   app: string; // Which app/package this entity belongs to (e.g., 'core', 'veripicks')
+  order: string; // Sort order for GSI queries (e.g., '0', '1', '2')
   fields: Record<string, any>; // Extensible JSON object for app-specific data
   description: string; // Human-readable description
   ownerId: string; // UUID of the user who owns this entity

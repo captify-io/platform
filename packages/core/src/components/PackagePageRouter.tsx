@@ -6,7 +6,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useCaptify } from "../context/CaptifyContext";
+import { PackagePageRouterProps } from "../types/package";
 
 // Dynamic package registry loader
 async function loadPackageRegistry(packageName: string) {
@@ -16,6 +16,9 @@ async function loadPackageRegistry(packageName: string) {
     switch (packageName) {
       case "core":
         appModule = await import("../app");
+        break;
+      case "mi":
+        appModule = await import("@captify/mi/app");
         break;
       default:
         return null;
@@ -28,14 +31,15 @@ async function loadPackageRegistry(packageName: string) {
       // Return a function that provides the component for specific routes
       return async (routeName: string) => {
         // Try pages first, then components
-        const pageLoader = pages?.[routeName as keyof typeof pages];
+        const pageLoader = pages?.[routeName as keyof typeof pages] as any;
         if (pageLoader) {
           const loadedModule = await pageLoader();
           return loadedModule.default || loadedModule;
         }
 
-        const componentLoader =
-          components?.[routeName as keyof typeof components];
+        const componentLoader = components?.[
+          routeName as keyof typeof components
+        ] as any;
         if (componentLoader) {
           const loadedModule = await componentLoader();
           return loadedModule.default || loadedModule;
@@ -52,14 +56,11 @@ async function loadPackageRegistry(packageName: string) {
   }
 }
 
-interface PackagePageRouterProps {
-  currentHash?: string;
-}
-
 export function PackagePageRouter({
   currentHash: propCurrentHash,
+  packageSlug,
+  packageName,
 }: PackagePageRouterProps = {}) {
-  const { packageConfig, packageState, setCurrentRoute } = useCaptify();
   const [internalHash, setInternalHash] = useState<string>("home");
   const [PageComponent, setPageComponent] =
     useState<React.ComponentType | null>(null);
@@ -81,10 +82,6 @@ export function PackagePageRouter({
 
       setInternalHash((prevHash) => {
         if (newPage !== prevHash) {
-          // Update package context
-          if (newPage !== packageState.currentRoute) {
-            setCurrentRoute(newPage);
-          }
           return newPage;
         } else {
           return prevHash;
@@ -104,16 +101,11 @@ export function PackagePageRouter({
       window.removeEventListener("hashchange", handleHashChange);
       window.removeEventListener("popstate", handleHashChange);
     };
-  }, [
-    packageState.currentRoute,
-    setCurrentRoute,
-    internalHash,
-    propCurrentHash,
-  ]);
+  }, [internalHash, propCurrentHash]);
 
   // Load page component when hash or package changes
   useEffect(() => {
-    if (!packageConfig) {
+    if (!packageSlug) {
       return;
     }
 
@@ -124,11 +116,10 @@ export function PackagePageRouter({
 
       try {
         // Load the package registry
-        const packageName = packageConfig.slug;
-        const loadComponent = await loadPackageRegistry(packageName);
+        const loadComponent = await loadPackageRegistry(packageSlug);
 
         if (!loadComponent) {
-          throw new Error(`Package ${packageName} registry not found`);
+          throw new Error(`Package ${packageSlug} registry not found`);
         }
 
         // Get the page component from the registry
@@ -153,9 +144,9 @@ export function PackagePageRouter({
     };
 
     loadPage();
-  }, [currentHash, packageConfig]);
+  }, [currentHash, packageSlug]);
 
-  if (!packageConfig) {
+  if (!packageSlug) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -178,7 +169,7 @@ export function PackagePageRouter({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <h3 className="text-lg font-medium mb-2">Loading Page</h3>
             <p className="text-muted-foreground">
-              Loading {currentHash} from {packageConfig?.slug}...
+              Loading {currentHash} from {packageSlug}...
             </p>
           </div>
         </div>
@@ -215,7 +206,7 @@ export function PackagePageRouter({
             <h2 className="text-2xl font-bold mb-2">Page Not Found</h2>
             <p className="text-muted-foreground mb-4">
               The page "{currentHash}" could not be found in package "
-              {packageConfig.slug}".
+              {packageSlug}".
             </p>
           </div>
 
@@ -229,8 +220,7 @@ export function PackagePageRouter({
             <p className="font-medium mb-2">Expected structure:</p>
             <ul className="list-disc list-inside space-y-1 text-left">
               <li>
-                @captify/{packageConfig.slug} should export app.loadComponent
-                function
+                @captify/{packageSlug} should export app.loadComponent function
               </li>
               <li>
                 app.loadComponent("{currentHash}") should return a React

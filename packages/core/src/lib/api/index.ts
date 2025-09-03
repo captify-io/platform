@@ -1,3 +1,4 @@
+"use client";
 import type { Session } from "next-auth";
 
 export interface CaptifyResponse<T = any> {

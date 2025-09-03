@@ -54,10 +54,27 @@ export const APP_CATEGORY_LABELS: Record<AppCategory, string> = {
   analytics: "Analytics",
   communication: "Communication",
   finance: "Finance",
-  hr: "Human Resources",
+  hr: "HR",
   marketing: "Marketing",
   sales: "Sales",
   support: "Support",
   development: "Development",
   other: "Other",
 };
+
+// Navigation and UI types
+export interface ApplicationMenuItem {
+  app_id: string;
+  menu_item_id: string;
+  label: string;
+  icon: string;
+  href: string;
+  order: number;
+  parent_id?: string;
+  required_permissions?: string[];
+  visible_when?: "always" | "admin" | "owner" | "custom";
+  custom_visibility_rule?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}

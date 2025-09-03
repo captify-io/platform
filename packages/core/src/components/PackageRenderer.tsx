@@ -1,6 +1,7 @@
 /**
  * React components for package rendering
  */
+"use client";
 
 import { ComponentType, lazy, Suspense } from "react";
 

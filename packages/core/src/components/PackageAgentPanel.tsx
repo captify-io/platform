@@ -7,21 +7,23 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cn } from "../lib";
-import { useCaptify } from "../context/CaptifyContext";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { X, Send, Settings, Bot } from "lucide-react";
+import {
+  ChatMessage,
+  PackageInfo,
+  PackageAgentPanelProps,
+} from "../types/package";
 
-export function PackageAgentPanel() {
-  const {
-    packageConfig,
-    packageState,
-    chatHistory,
-    sendMessage,
-    toggleAgentPanel,
-  } = useCaptify();
+export function PackageAgentPanel({
+  packageInfo,
+  captifyContext,
+}: PackageAgentPanelProps) {
+  const { session } = captifyContext;
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -31,6 +33,40 @@ export function PackageAgentPanel() {
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory]);
+
+  // Local sendMessage implementation
+  const sendMessage = async (message: string) => {
+    if (!packageInfo?.agentConfig) {
+      console.warn("No agent config available");
+      return;
+    }
+
+    // Add user message to history
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: message,
+      timestamp: new Date(),
+    };
+
+    setChatHistory((prev) => [...prev, userMessage]);
+
+    try {
+      // TODO: Implement actual agent communication
+      // For now, just add a mock response
+      setTimeout(() => {
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `I received your message: "${message}". This is a placeholder response since agent integration needs to be implemented.`,
+          timestamp: new Date(),
+        };
+        setChatHistory((prev) => [...prev, assistantMessage]);
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -63,9 +99,9 @@ export function PackageAgentPanel() {
           <Bot className="h-5 w-5 text-primary" />
           <div>
             <h3 className="font-semibold">AI Assistant</h3>
-            {packageConfig?.agentConfig && (
+            {packageInfo?.agentConfig && (
               <p className="text-xs text-muted-foreground">
-                {packageConfig.name} Agent
+                {packageInfo.name} Agent
               </p>
             )}
           </div>
@@ -84,7 +120,7 @@ export function PackageAgentPanel() {
           <div className="text-center text-muted-foreground py-8">
             <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-sm">
-              Hi! I'm your {packageConfig?.name || "package"} assistant.
+              Hi! I'm your {packageInfo?.name || "package"} assistant.
               <br />
               How can I help you today?
             </p>

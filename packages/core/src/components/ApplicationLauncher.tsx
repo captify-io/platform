@@ -2,9 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic";
-import { useCaptify } from "../context/CaptifyContext";
-import { useAppNavigation } from "../hooks/useAppNavigation";
 import { apiClient } from "../lib/api";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -13,19 +10,24 @@ import { Input } from "./ui/input";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
+import { DynamicIcon } from "./ui";
 import { App } from "../types";
 import { APP_CATEGORY_LABELS } from "../types/app";
-import { DynamicIcon } from "./ui/dynamic-icon";
 import { useDebug } from "../hooks";
-import { Search, Grid3X3, Star, Package } from "lucide-react";
+import { Grid3X3, Star } from "lucide-react";
+import type { Session } from "next-auth";
+import type { CaptifyContextType } from "../context/CaptifyContext";
 
 interface ApplicationLauncherProps {
+  captifyContext: CaptifyContextType;
   className?: string;
+  session: Session | null;
+  favoriteApps: string[];
+  toggleFavorite: (appId: string) => void;
 }
 
 // Professional App Card Component
@@ -123,7 +125,13 @@ function AppCard({
   );
 }
 
-export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
+export function ApplicationLauncher({
+  captifyContext,
+  className,
+  session,
+  favoriteApps,
+  toggleFavorite,
+}: ApplicationLauncherProps) {
   const searchParams = useSearchParams();
   const isDebugMode = useDebug(searchParams);
   const [isOpen, setIsOpen] = useState(false);
@@ -134,9 +142,20 @@ export function ApplicationLauncher({ className }: ApplicationLauncherProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
-  const { session, favoriteApps, toggleFavorite } = useCaptify();
-  const { navigateToApp } = useAppNavigation();
   const router = useRouter();
+
+  // Create local navigation function using passed context
+  const navigateToApp = useCallback(
+    (app: App) => {
+      // Set current app in global context
+      captifyContext.setCurrentApp(app);
+
+      // Navigate to the app's route
+      const appRoute = `/${app.slug}`;
+      router.push(appRoute);
+    },
+    [captifyContext.setCurrentApp, router]
+  );
 
   // Ensure component only renders on client-side
   useEffect(() => {

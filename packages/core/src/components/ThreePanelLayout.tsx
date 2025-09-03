@@ -7,12 +7,11 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { cn } from "../lib";
-import { useCaptify } from "../context/CaptifyContext";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";
 import { Button } from "./ui/button";
 import { ChevronRight, ChevronLeft, Bot, ChevronDown } from "lucide-react";
-import { DynamicIcon } from "./ui/dynamic-icon";
+import { DynamicIcon } from "./ui";
 import {
   SidebarProvider,
   Sidebar,
@@ -33,43 +32,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "../hooks/useApi";
-
-interface ThreePanelLayoutProps {
-  children?: React.ReactNode;
-  className?: string;
-}
-
-interface MenuItem {
-  icon: string;
-  id: string;
-  label: string;
-  href: string;
-  order: number;
-  children?: MenuItem[];
-}
-
-interface AppData {
-  app: string;
-  menu: MenuItem[];
-  version: string;
-  icon: string;
-  status: string;
-  visibility: string;
-  slug: string;
-  name: string;
-  description: string;
-  id: string;
-}
+import { MenuItem, AppData, ThreePanelLayoutProps } from "../types/package";
 
 // Inner component that has access to SidebarProvider context
-function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
-  const { packageState, toggleAgentPanel, setAgentWidth, packageConfig } =
-    useCaptify();
+const ThreePanelContent = React.memo(function ThreePanelContent({
+  captifyContext,
+  children,
+  className,
+}: ThreePanelLayoutProps) {
+  const { toggleAgentPanel, setAgentWidth } = captifyContext; // Removed packageConfig and packageState
   const [isResizingAgent, setIsResizingAgent] = useState(false);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false);
+  const [agentWidth, setLocalAgentWidth] = useState(320);
   const { toggleSidebar, state } = useSidebar();
   const [appData, setAppData] = useState<AppData | null>(null);
   const [currentHash, setCurrentHash] = useState<string>(() => {
@@ -81,8 +59,18 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
     return "home";
   });
   const router = useRouter();
+  const pathname = usePathname();
 
-  // API hook for fetching app data
+  // Extract package slug from URL
+  const packageSlug = pathname ? pathname.split("/").filter(Boolean)[0] : null;
+
+  // Local agent panel functions
+  const handleToggleAgentPanel = () => {
+    setAgentPanelOpen(!agentPanelOpen);
+    toggleAgentPanel(); // Also call context function for compatibility
+  };
+
+  // API hook for fetching app data - use query with slug-order-index
   const {
     data: apiData,
     loading,
@@ -91,11 +79,16 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
   } = useApi(async (client, appSlug: string) => {
     return client.run({
       service: "dynamo",
-      operation: "scan",
+      operation: "query",
       app: "core",
       table: "App",
       data: {
-        filters: [{ attribute: "slug", value: appSlug }],
+        IndexName: "slug-order-index",
+        KeyConditionExpression: "slug = :slug",
+        ExpressionAttributeValues: {
+          ":slug": appSlug,
+        },
+        Limit: 1,
       },
     });
   });
@@ -130,13 +123,13 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
   // Track when currentHash state changes
   useEffect(() => {}, [currentHash]);
 
-  // Load app data when packageConfig changes
+  // Load app data when packageSlug changes
   useEffect(() => {
-    if (packageConfig?.slug && typeof window !== "undefined") {
-      fetchAppData(packageConfig.slug);
+    if (packageSlug && typeof window !== "undefined") {
+      fetchAppData(packageSlug);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packageConfig?.slug]); // Remove fetchAppData from dependencies to prevent infinite loop
+  }, [packageSlug]); // Use packageSlug instead of packageConfig.slug
 
   // Update appData when API data changes
   useEffect(() => {
@@ -150,8 +143,8 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
 
   // Handle navigation
   const handleNavigation = (route: string) => {
-    // Get the current app slug from packageConfig, fallback to "core"
-    const appSlug = packageConfig?.slug || "core";
+    // Use the packageSlug from URL, with fallback to "core"
+    const appSlug = packageSlug || "core";
 
     // Extract the route ID from the route string
     // Routes can be "/policies/ssp", "/access/users", etc.
@@ -217,12 +210,13 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       setIsResizingAgent(true);
 
       const startX = e.clientX;
-      const startWidth = packageState.agentWidth || 320;
+      const startWidth = agentWidth || 320;
 
       const handleMouseMove = (e: MouseEvent) => {
         const deltaX = startX - e.clientX;
         const newWidth = Math.max(250, Math.min(600, startWidth + deltaX));
-        setAgentWidth(newWidth);
+        setLocalAgentWidth(newWidth);
+        setAgentWidth(newWidth); // Also update the context for other components
       };
 
       const handleMouseUp = () => {
@@ -234,7 +228,7 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [packageState.agentWidth, setAgentWidth]
+    [agentWidth, setAgentWidth]
   );
 
   return (
@@ -370,7 +364,11 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Content Panel with SidebarInset */}
         <SidebarInset className="flex-1 overflow-hidden relative">
-          <PackageContentPanel currentHash={currentHash}>
+          <PackageContentPanel
+            currentHash={currentHash}
+            packageSlug={packageSlug || undefined}
+            packageName={appData?.name}
+          >
             {children}
           </PackageContentPanel>
         </SidebarInset>
@@ -379,15 +377,13 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
         <div
           className={cn(
             "flex-shrink-0 transition-all duration-300 bg-background relative border-l",
-            !packageState.agentPanelOpen && "w-0"
+            !agentPanelOpen && "w-0"
           )}
           style={{
-            width: packageState.agentPanelOpen
-              ? packageState.agentWidth || 320
-              : 0,
+            width: agentPanelOpen ? agentWidth || 320 : 0,
           }}
         >
-          {packageState.agentPanelOpen && (
+          {agentPanelOpen && (
             <div className="flex h-full">
               {/* Agent Resize Handle */}
               <div
@@ -399,7 +395,22 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
               />
 
               <div className="flex-1 overflow-hidden">
-                <PackageAgentPanel />
+                <PackageAgentPanel
+                  packageInfo={
+                    appData
+                      ? {
+                          name: appData.name,
+                          slug: appData.slug,
+                          agentConfig: {
+                            agentId: appData.agentId || "",
+                            agentAliasId: appData.agentAliasId || "",
+                            capabilities: [],
+                          },
+                        }
+                      : undefined
+                  }
+                  captifyContext={captifyContext}
+                />
               </div>
             </div>
           )}
@@ -436,14 +447,12 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
         variant="outline"
         size="sm"
         className="fixed top-1/2 transform -translate-y-1/2 h-12 w-12 p-0 rounded-full shadow-lg bg-background border-2 border-border hover:bg-accent z-[200]"
-        onClick={toggleAgentPanel}
+        onClick={handleToggleAgentPanel}
         style={{
-          right: packageState.agentPanelOpen
-            ? `${(packageState.agentWidth || 320) - 24}px`
-            : "16px",
+          right: agentPanelOpen ? `${(agentWidth || 320) - 24}px` : "16px",
         }}
       >
-        {packageState.agentPanelOpen ? (
+        {agentPanelOpen ? (
           <ChevronRight className="h-6 w-6" />
         ) : (
           <Bot className="h-6 w-6" />
@@ -451,15 +460,18 @@ function ThreePanelContent({ children, className }: ThreePanelLayoutProps) {
       </Button>
     </div>
   );
-}
+});
 
 export function ThreePanelLayout({
+  captifyContext,
   children,
   className,
 }: ThreePanelLayoutProps) {
   return (
     <SidebarProvider>
-      <ThreePanelContent className={className}>{children}</ThreePanelContent>
+      <ThreePanelContent captifyContext={captifyContext} className={className}>
+        {children}
+      </ThreePanelContent>
     </SidebarProvider>
   );
 }

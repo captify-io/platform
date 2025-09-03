@@ -47,18 +47,19 @@ class CaptifyPackageInstaller {
     }
 
     const tables = [];
-    
+
     // Check if this is an index file with re-exports
     const content = readFileSync(typesFilePath, "utf8");
-    const isIndexFile = content.includes('export * from') || content.includes('export { ');
-    
+    const isIndexFile =
+      content.includes("export * from") || content.includes("export { ");
+
     if (isIndexFile) {
       // This is an index file, read all .ts files in the types directory
       const typesDir = dirname(typesFilePath);
       const typeFiles = readdirSync(typesDir)
-        .filter(file => file.endsWith('.ts') && file !== 'index.ts')
-        .map(file => join(typesDir, file));
-      
+        .filter((file) => file.endsWith(".ts") && file !== "index.ts")
+        .map((file) => join(typesDir, file));
+
       for (const typeFile of typeFiles) {
         const fileTables = this.parseInterfacesFromFile(typeFile);
         tables.push(...fileTables);
@@ -475,6 +476,7 @@ class CaptifyPackageInstaller {
         slug: packageName,
         name: packageJson.description || packageJson.name || packageName,
         app: packageName, // Which app/package this entity belongs to
+        order: this.getAppOrder(packageName), // Sort order for GSI queries
         fields: {}, // Extensible JSON object for app-specific data
         description: packageJson.description || `${packageName} package`,
         ownerId: "system", // System-owned entity
@@ -709,6 +711,24 @@ class CaptifyPackageInstaller {
   }
 
   /**
+   * Get app order based on package name for GSI sorting
+   */
+  getAppOrder(packageName) {
+    const orderMap = {
+      core: "0",
+      auth: "1",
+      admin: "2",
+      api: "3",
+      ui: "4",
+      mi: "5",
+      veripicks: "6",
+    };
+
+    // If package not in map, use timestamp-based order to ensure uniqueness
+    return orderMap[packageName] || Date.now().toString();
+  }
+
+  /**
    * Install package
    */
   async installPackage(packageName) {
@@ -725,12 +745,12 @@ class CaptifyPackageInstaller {
     try {
       // 1. Parse types and create/update tables
       let typesPath = join(packagePath, "src", "types.ts");
-      
+
       // Check for types directory structure
       if (!existsSync(typesPath)) {
         typesPath = join(packagePath, "src", "types", "index.ts");
       }
-      
+
       const tables = this.parseTypesForTables(typesPath);
 
       console.log(`📋 Found ${tables.length} table definitions`);
@@ -791,12 +811,12 @@ class CaptifyPackageInstaller {
     try {
       // 1. Parse types to get table definitions
       let typesPath = join(packagePath, "src", "types.ts");
-      
+
       // Check for types directory structure
       if (!existsSync(typesPath)) {
         typesPath = join(packagePath, "src", "types", "index.ts");
       }
-      
+
       const tables = this.parseTypesForTables(typesPath);
 
       console.log(`📋 Found ${tables.length} table definitions`);

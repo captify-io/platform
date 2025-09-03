@@ -2,7 +2,7 @@
  * App Navigation Hook
  * Optimizes navigation between apps and packages with proper state management
  */
-
+"use client";
 import { useCallback } from "react";
 import { useCaptify } from "../context/CaptifyContext";
 import { useRouter } from "next/navigation";

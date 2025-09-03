@@ -1,3 +1,4 @@
+"use client";
 import { useCaptify } from "../context/CaptifyContext";
 import { App } from "../types";
 

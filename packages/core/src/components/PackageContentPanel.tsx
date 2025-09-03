@@ -6,19 +6,15 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef } from "react";
-import { useCaptify } from "../context/CaptifyContext";
 import { PackagePageRouter } from "./PackagePageRouter";
-
-interface PackageContentPanelProps {
-  children?: React.ReactNode;
-  currentHash?: string;
-}
+import { PackageContentPanelProps } from "../types/package";
 
 export function PackageContentPanel({
   children,
   currentHash,
+  packageSlug,
+  packageName,
 }: PackageContentPanelProps) {
-  const { packageConfig, packageState } = useCaptify();
   const prevHashRef = useRef<string | undefined>(undefined);
 
   // Track hash changes
@@ -42,7 +38,11 @@ export function PackageContentPanel({
             </div>
           }
         >
-          <PackagePageRouter currentHash={currentHash} />
+          <PackagePageRouter
+            currentHash={currentHash}
+            packageSlug={packageSlug}
+            packageName={packageName}
+          />
         </Suspense>
       </div>
     </div>

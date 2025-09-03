@@ -58,16 +58,16 @@ export const authConfig = {
           scope: "openid email profile",
           response_type: "code",
           // Add redirect_uri explicitly for development
-          ...(process.env.NODE_ENV === 'development' && {
-            redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`
-          })
+          ...(process.env.NODE_ENV === "development" && {
+            redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
+          }),
         },
       },
       checks: ["nonce", "pkce", "state"],
     }),
   ],
   // Add trustHost for development
-  ...(process.env.NODE_ENV === 'development' && {
+  ...(process.env.NODE_ENV === "development" && {
     trustHost: true,
   }),
   callbacks: {

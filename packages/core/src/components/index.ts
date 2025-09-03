@@ -5,17 +5,15 @@
 
 // Main components
 export { ApplicationLauncher } from "./ApplicationLauncher";
-export { CaptifyLayout } from "./CaptifyLayout";
 export { PackageAgentPanel } from "./PackageAgentPanel";
 export { PackageContentPanel } from "./PackageContentPanel";
 export { PackagePageRouter } from "./PackagePageRouter";
 export { SessionDebug } from "./SessionDebug";
-export { SignInForm } from "./SignInForm";
 export { ThreePanelLayout } from "./ThreePanelLayout";
 
 // Constants and types
-export { APP_CATEGORY_LABELS } from "./constants";
-export type { AppCategory } from "./constants";
+export { APP_CATEGORY_LABELS } from "../types/app";
+export type { AppCategory, ApplicationMenuItem } from "../types/app";
 
 // Re-export from subfolders
 export * from "./navigation";

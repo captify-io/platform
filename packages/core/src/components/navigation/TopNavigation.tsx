@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { lazy, Suspense } from "react";
 import type { Session } from "next-auth";
-import { useCaptify } from "../../context/CaptifyContext";
+import type { CaptifyContextType } from "../../context/CaptifyContext";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -24,12 +25,20 @@ import {
   Shield,
   Settings,
   Bot,
+  Grid3X3,
 } from "lucide-react";
 
+// Lazy load ApplicationLauncher to prevent useCaptify from being called at module import time
+const ApplicationLauncher = lazy(() =>
+  import("../ApplicationLauncher").then((module) => ({
+    default: module.ApplicationLauncher,
+  }))
+);
+
 interface TopNavigationProps {
+  captifyContext: CaptifyContextType;
   onSearchFocus?: () => void;
   onAppMenuClick?: () => void;
-  applicationLauncher?: React.ReactNode;
   currentApplication?: {
     id: string;
     name: string;
@@ -39,15 +48,16 @@ interface TopNavigationProps {
 }
 
 export function TopNavigation({
+  captifyContext,
   onSearchFocus,
   onAppMenuClick,
-  applicationLauncher,
   currentApplication,
   session: propSession,
   handleCognitoLogout,
 }: TopNavigationProps) {
   const router = useRouter();
-  const { session, isAuthenticated } = useCaptify();
+  const { session, isAuthenticated, favoriteApps, toggleFavorite } =
+    captifyContext;
 
   // Get user from session
   const user = session?.user;
@@ -72,15 +82,25 @@ export function TopNavigation({
 
           {/* App Menu Button - Fixed width */}
           <div className="flex-shrink-0">
-            {applicationLauncher || (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-gray-800 hover:text-white p-2"
-              >
-                <div className="w-4 h-4 animate-pulse bg-gray-600 rounded" />
-              </Button>
-            )}
+            <Suspense
+              fallback={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-gray-800 hover:text-white p-2"
+                  disabled
+                >
+                  <Grid3X3 className="h-4 w-4 animate-pulse" />
+                </Button>
+              }
+            >
+              <ApplicationLauncher
+                captifyContext={captifyContext}
+                session={session}
+                favoriteApps={favoriteApps}
+                toggleFavorite={toggleFavorite}
+              />
+            </Suspense>
           </div>
 
           {/* Search - Takes all available space */}

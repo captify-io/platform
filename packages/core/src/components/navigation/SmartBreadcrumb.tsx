@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCaptify } from "../../context/CaptifyContext";
+import type { CaptifyContextType } from "../../context/CaptifyContext";
 import { cn } from "../../lib";
 import {
   Breadcrumb,
@@ -14,6 +14,7 @@ import {
 } from "../ui/breadcrumb";
 
 interface SmartBreadcrumbProps {
+  captifyContext: CaptifyContextType;
   className?: string;
   maxItems?: number;
   showMenuToggle?: boolean;
@@ -26,11 +27,12 @@ interface BreadcrumbItemType {
 }
 
 export function SmartBreadcrumb({
+  captifyContext,
   className,
   maxItems = 5,
   showMenuToggle = true,
 }: SmartBreadcrumbProps) {
-  const { isAuthenticated } = useCaptify();
+  const { isAuthenticated } = captifyContext;
   const pathname = usePathname();
 
   // Generate breadcrumbs from pathname
