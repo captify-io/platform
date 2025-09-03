@@ -42,20 +42,36 @@ applications:
 
             # Install dependencies for all packages
             - echo "Installing dependencies for monorepo..."
-            - pnpm install --frozen-lockfile
+            - pnpm install --frozen-lockfile --include-workspace-root
+            
+            # Ensure devDependencies are installed in packages
+            - echo "Installing package devDependencies..."
+            - cd packages/core && pnpm install && cd ../..
+            - cd packages/mi && pnpm install && cd ../..
 
             # Verify dependencies
             - echo "Verifying workspace packages..."
             - pnpm list --depth=0
             - echo "Verifying core package dependencies..."
             - cd packages/core && pnpm list --depth=0 && cd ../..
+            
+            # Verify build tools are available
+            - echo "Verifying build tools..."
+            - which tsup || echo "tsup not in global PATH"
+            - ls -la packages/core/node_modules/.bin/tsup || echo "tsup not found in core package"
+            - ls -la packages/mi/node_modules/.bin/tsup || echo "tsup not found in mi package"
 
         build:
           commands:
             # Build packages first (@captify/core)
             - echo "Building @captify/core package..."
-            - pnpm --filter @captify/core run build
+            - cd packages/core && npx tsup && cd ../..
             - echo "Core package build complete"
+            
+            # Build MI package  
+            - echo "Building @captify/mi package..."
+            - cd packages/mi && npx tsup && cd ../..
+            - echo "MI package build complete"
 
             # Verify core package was built
             - echo "Verifying core package dist..."
