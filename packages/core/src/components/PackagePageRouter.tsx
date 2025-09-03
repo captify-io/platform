@@ -18,7 +18,14 @@ async function loadPackageRegistry(packageName: string) {
         appModule = await import("../app");
         break;
       case "mi":
-        appModule = await import("@captify/mi/app");
+        // Runtime dynamic import to avoid circular dependency during build
+        try {
+          const packagePath = "@captify/mi/app";
+          appModule = await import(/* @vite-ignore */ packagePath);
+        } catch (error) {
+          console.warn("MI package not available:", error);
+          return null;
+        }
         break;
       default:
         return null;
