@@ -1,9 +1,6 @@
-"use client";
-
 import { useRouter } from "next/navigation";
-import { lazy, Suspense } from "react";
+import React, { lazy, Suspense } from "react";
 import type { Session } from "next-auth";
-import type { CaptifyContextType } from "../../context/CaptifyContext";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -36,7 +33,6 @@ const ApplicationLauncher = lazy(() =>
 );
 
 interface TopNavigationProps {
-  captifyContext: CaptifyContextType;
   onSearchFocus?: () => void;
   onAppMenuClick?: () => void;
   currentApplication?: {
@@ -48,7 +44,6 @@ interface TopNavigationProps {
 }
 
 export function TopNavigation({
-  captifyContext,
   onSearchFocus,
   onAppMenuClick,
   currentApplication,
@@ -56,14 +51,25 @@ export function TopNavigation({
   handleCognitoLogout,
 }: TopNavigationProps) {
   const router = useRouter();
-  const { session, isAuthenticated, favoriteApps, toggleFavorite } =
-    captifyContext;
 
-  // Get user from session
+  // Use session from prop
+  const session = propSession || null;
+  const isAuthenticated = !!session;
   const user = session?.user;
 
-  // Remove problematic session checks - let CaptifyLayout handle authentication
-  // Just render the navigation bar regardless of session status
+  // Enhanced debugging to track where TopNavigation is called from
+  console.log("🚀 TopNavigation RENDER:", {
+    timestamp: new Date().toISOString(),
+    hasSession: !!session,
+    userId: user?.id,
+    userEmail: user?.email,
+    currentApplication: currentApplication?.name,
+    stackTrace: new Error().stack?.split("\n").slice(1, 4).join("\n"),
+  });
+
+  // Add a visible counter to see multiple renders
+  const renderCount = React.useRef(0);
+  renderCount.current += 1;
 
   return (
     <div>
@@ -94,12 +100,7 @@ export function TopNavigation({
                 </Button>
               }
             >
-              <ApplicationLauncher
-                captifyContext={captifyContext}
-                session={session}
-                favoriteApps={favoriteApps}
-                toggleFavorite={toggleFavorite}
-              />
+              <ApplicationLauncher session={session} />
             </Suspense>
           </div>
 

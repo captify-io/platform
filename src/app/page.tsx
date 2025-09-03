@@ -1,23 +1,19 @@
 "use client";
-import { TopNavigation } from "@captify/core/components";
-import { useCaptify } from "@captify/core/context";
+import { useSession } from "next-auth/react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "@captify/core/ui";
 import { Rocket, Shield, Zap, Users } from "lucide-react";
 
 export default function HomePage() {
-  const captifyContext = useCaptify();
-  const { session } = captifyContext;
+  const { data: session } = useSession();
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNavigation captifyContext={captifyContext} />
-
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-16">

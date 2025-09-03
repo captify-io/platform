@@ -12,7 +12,10 @@ interface SignInFormProps {
   error?: string | null;
 }
 
-export function SignInForm({ callbackUrl = "/", error }: SignInFormProps) {
+export default function SignInForm({
+  callbackUrl = "/",
+  error,
+}: SignInFormProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);

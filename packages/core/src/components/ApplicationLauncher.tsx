@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiClient } from "../lib/api";
+import { apiClient } from "../lib";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -14,20 +14,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "./ui/sheet";
-import { DynamicIcon } from "./ui";
-import { App } from "../types";
+import { DynamicIcon } from "lucide-react/dynamic";
+import { App, UserState } from "../types";
 import { APP_CATEGORY_LABELS } from "../types/app";
 import { useDebug } from "../hooks";
 import { Grid3X3, Star } from "lucide-react";
 import type { Session } from "next-auth";
-import type { CaptifyContextType } from "../context/CaptifyContext";
 
 interface ApplicationLauncherProps {
-  captifyContext: CaptifyContextType;
   className?: string;
   session: Session | null;
-  favoriteApps: string[];
-  toggleFavorite: (appId: string) => void;
 }
 
 // Professional App Card Component
@@ -126,16 +122,14 @@ function AppCard({
 }
 
 export function ApplicationLauncher({
-  captifyContext,
   className,
   session,
-  favoriteApps,
-  toggleFavorite,
 }: ApplicationLauncherProps) {
   const searchParams = useSearchParams();
   const isDebugMode = useDebug(searchParams);
   const [isOpen, setIsOpen] = useState(false);
   const [applications, setApplications] = useState<App[]>([]);
+  const [favoriteApps, setFavoriteApps] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -144,23 +138,121 @@ export function ApplicationLauncher({
 
   const router = useRouter();
 
-  // Create local navigation function using passed context
+  // Fetch user's favorite apps from DynamoDB
+  const fetchFavoriteApps = useCallback(async () => {
+    if (!session?.user || !(session.user as any)?.id) return;
+
+    try {
+      const userId = (session.user as any).id;
+      const response = await apiClient.run({
+        service: "dynamo",
+        operation: "query",
+        app: "core",
+        table: "UserState",
+        data: {
+          IndexName: "userId-index",
+          KeyConditionExpression: "userId = :userId",
+          ExpressionAttributeValues: {
+            ":userId": userId,
+          },
+          Limit: 1,
+        },
+      });
+
+      if (response.success && response.data?.Items?.length > 0) {
+        const userState = response.data.Items[0] as UserState;
+        setFavoriteApps(userState.favorites?.applications || []);
+      }
+    } catch (error) {
+      console.error("Error fetching favorite apps:", error);
+    }
+  }, [session?.user]);
+
+  // Toggle favorite app
+  const toggleFavorite = useCallback(
+    async (appId: string) => {
+      if (!session?.user || !(session.user as any)?.id) return;
+
+      const newFavorites = favoriteApps.includes(appId)
+        ? favoriteApps.filter((id) => id !== appId)
+        : [...favoriteApps, appId];
+
+      setFavoriteApps(newFavorites);
+
+      try {
+        const userId = (session.user as any).id;
+
+        // Get current user state
+        const userStatesResponse = await apiClient.run({
+          service: "dynamo",
+          operation: "query",
+          app: "core",
+          table: "UserState",
+          data: {
+            IndexName: "userId-index",
+            KeyConditionExpression: "userId = :userId",
+            ExpressionAttributeValues: {
+              ":userId": userId,
+            },
+            Limit: 1,
+          },
+        });
+
+        if (
+          userStatesResponse.success &&
+          userStatesResponse.data?.Items?.length > 0
+        ) {
+          const userState = userStatesResponse.data.Items[0] as UserState;
+
+          // Update favorites
+          await apiClient.run({
+            service: "dynamo",
+            operation: "update",
+            app: "core",
+            table: "UserState",
+            data: {
+              key: { id: userState.id },
+              updateExpression: "SET #favorites.#applications = :favorites",
+              expressionAttributeNames: {
+                "#favorites": "favorites",
+                "#applications": "applications",
+              },
+              expressionAttributeValues: {
+                ":favorites": newFavorites,
+              },
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error updating favorite apps:", error);
+        // Revert on error
+        setFavoriteApps(favoriteApps);
+      }
+    },
+    [session?.user, favoriteApps]
+  );
+
+  // Create local navigation function
   const navigateToApp = useCallback(
     (app: App) => {
-      // Set current app in global context
-      captifyContext.setCurrentApp(app);
-
       // Navigate to the app's route
       const appRoute = `/${app.slug}`;
       router.push(appRoute);
     },
-    [captifyContext.setCurrentApp, router]
+    [router]
   );
 
   // Ensure component only renders on client-side
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Load favorite apps when session is available
+  useEffect(() => {
+    if (session?.user) {
+      fetchFavoriteApps();
+    }
+  }, [session?.user, fetchFavoriteApps]);
 
   // Extract unique categories from applications with counts
   const categoryStats = applications.reduce(

@@ -3,7 +3,6 @@
  */
 
 import { App } from "./app";
-import { CaptifyContextType } from "../context/CaptifyContext";
 
 // ===== CHAT AND AGENT TYPES =====
 
@@ -74,7 +73,6 @@ export interface AppData {
 
 // Props for ThreePanelLayout component
 export interface ThreePanelLayoutProps {
-  captifyContext: CaptifyContextType;
   children?: React.ReactNode;
   className?: string;
 }
@@ -82,7 +80,6 @@ export interface ThreePanelLayoutProps {
 // Props for PackageAgentPanel component
 export interface PackageAgentPanelProps {
   packageInfo?: PackageInfo;
-  captifyContext: CaptifyContextType;
 }
 
 // Props for PackagePageRouter component

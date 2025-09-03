@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { CaptifyContextType } from "../../context/CaptifyContext";
+import { useSession } from "next-auth/react";
 import { cn } from "../../lib";
 import {
   Breadcrumb,
@@ -14,7 +14,6 @@ import {
 } from "../ui/breadcrumb";
 
 interface SmartBreadcrumbProps {
-  captifyContext: CaptifyContextType;
   className?: string;
   maxItems?: number;
   showMenuToggle?: boolean;
@@ -27,13 +26,13 @@ interface BreadcrumbItemType {
 }
 
 export function SmartBreadcrumb({
-  captifyContext,
   className,
   maxItems = 5,
   showMenuToggle = true,
 }: SmartBreadcrumbProps) {
-  const { isAuthenticated } = captifyContext;
+  const { data: session } = useSession(); // Use direct session hook
   const pathname = usePathname();
+  const isAuthenticated = !!session;
 
   // Generate breadcrumbs from pathname
   const breadcrumbs = useMemo((): BreadcrumbItemType[] => {

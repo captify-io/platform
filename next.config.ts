@@ -8,9 +8,9 @@ const nextConfig = {
   // Transpile packages (Next.js 15+ feature for workspace packages)
   transpilePackages: ["@captify/core"],
 
-  // Optimize images
+  // Disable server-side features for client-only mode
   images: {
-    domains: ["localhost"],
+    unoptimized: true,
   },
 
   // Enable experimental features for better package watching

@@ -1,7 +1,14 @@
 {
   "compilerOptions": {
-    "types": ["react", "react-dom"],
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": [
+      "react",
+      "react-dom"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,18 +27,25 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
     "target": "ES2020"
   },
   "include": [
+    ".next/types/**/*.ts",
+    "dist/types/**/*.ts",
     "next-env.d.ts",
+    "packages/core/src/components/navigation/SmartBreadcrumb.tsx",
+    "packages/core/src/components/navigation/TopNavigation.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".next/types/**/*.ts",
     "src/app/api/auth/[...nextauth]/lib/aws-credentials.ts",
-    "packages/core/src/components/navigation/SmartBreadcrumb.tsx",
-    "packages/core/src/components/navigation/TopNavigation.tsx"
+    "out/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "packages"]
+  "exclude": [
+    "node_modules",
+    "packages"
+  ]
 }

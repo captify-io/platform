@@ -6,12 +6,13 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { cn } from "../lib";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";
 import { Button } from "./ui/button";
 import { ChevronRight, ChevronLeft, Bot, ChevronDown } from "lucide-react";
-import { DynamicIcon } from "./ui";
+import { DynamicIcon } from "lucide-react/dynamic";
 import {
   SidebarProvider,
   Sidebar,
@@ -34,15 +35,14 @@ import {
 } from "./ui/collapsible";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "../hooks/useApi";
-import { MenuItem, AppData, ThreePanelLayoutProps } from "../types/package";
+import { AppData, ThreePanelLayoutProps } from "../types/package";
 
 // Inner component that has access to SidebarProvider context
 const ThreePanelContent = React.memo(function ThreePanelContent({
-  captifyContext,
   children,
   className,
 }: ThreePanelLayoutProps) {
-  const { toggleAgentPanel, setAgentWidth } = captifyContext; // Removed packageConfig and packageState
+  const { data: session } = useSession(); // Use direct session hook
   const [isResizingAgent, setIsResizingAgent] = useState(false);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
@@ -67,8 +67,11 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   // Local agent panel functions
   const handleToggleAgentPanel = () => {
     setAgentPanelOpen(!agentPanelOpen);
-    toggleAgentPanel(); // Also call context function for compatibility
   };
+
+  const handleSetAgentWidth = useCallback((width: number) => {
+    setLocalAgentWidth(width);
+  }, []);
 
   // API hook for fetching app data - use query with slug-order-index
   const {
@@ -216,7 +219,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
         const deltaX = startX - e.clientX;
         const newWidth = Math.max(250, Math.min(600, startWidth + deltaX));
         setLocalAgentWidth(newWidth);
-        setAgentWidth(newWidth); // Also update the context for other components
+        handleSetAgentWidth(newWidth); // Use local handler
       };
 
       const handleMouseUp = () => {
@@ -228,7 +231,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [agentWidth, setAgentWidth]
+    [agentWidth, handleSetAgentWidth]
   );
 
   return (
@@ -273,7 +276,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                   <SidebarMenuButton className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-2 min-w-0">
                                       <DynamicIcon
-                                        name={menuItem.icon}
+                                        name={menuItem.icon as any}
                                         className="h-4 w-4 flex-shrink-0"
                                       />
                                       <span className="truncate">
@@ -298,7 +301,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                           >
                                             <div className="flex items-center gap-2 min-w-0">
                                               <DynamicIcon
-                                                name={child.icon}
+                                                name={child.icon as any}
                                                 className="h-4 w-4 flex-shrink-0"
                                               />
                                               <span className="truncate">
@@ -323,7 +326,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   <DynamicIcon
-                                    name={menuItem.icon}
+                                    name={menuItem.icon as any}
                                     className="h-4 w-4 flex-shrink-0"
                                   />
                                   <span className="truncate">
@@ -409,7 +412,6 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                         }
                       : undefined
                   }
-                  captifyContext={captifyContext}
                 />
               </div>
             </div>
@@ -463,15 +465,12 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
 });
 
 export function ThreePanelLayout({
-  captifyContext,
   children,
   className,
 }: ThreePanelLayoutProps) {
   return (
     <SidebarProvider>
-      <ThreePanelContent captifyContext={captifyContext} className={className}>
-        {children}
-      </ThreePanelContent>
+      <ThreePanelContent className={className}>{children}</ThreePanelContent>
     </SidebarProvider>
   );
 }

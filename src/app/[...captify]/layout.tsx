@@ -1,20 +1,18 @@
 ﻿"use client";
 import { ThreePanelLayout } from "@captify/core/components";
-import { useCaptify } from "@captify/core/context";
 import { useEffect, useState } from "react";
-import { TopNavigation, SmartBreadcrumb } from "@captify/core/components";
+import { SmartBreadcrumb, FavoritesBar } from "@captify/core/components";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
-  params: Promise<{ captify: string }>;
+  params: Promise<{ captify: string[] }>;
 }
 
 export default function CaptifyPageLayout({
   children,
   params,
 }: CaptifyLayoutProps) {
-  const [captify, setCaptify] = useState<string>("");
-  const captifyContext = useCaptify();
+  const [captify, setCaptify] = useState<string[]>([]);
 
   useEffect(() => {
     // Resolve params in useEffect since this is now a client component
@@ -26,21 +24,19 @@ export default function CaptifyPageLayout({
   }, [params]);
 
   useEffect(() => {
-    if (captify) {
-      console.log("called [captify]/layout.tsx with package:", captify);
+    if (captify.length > 0) {
+      console.log("called [captify]/layout.tsx with package:", captify[0]);
     }
   }, [captify]);
 
   // Pass the package name through a data attribute so the context can pick it up
   return (
-    <div data-package={captify} className="h-full">
+    <div data-package={captify[0] || ""} className="h-full">
       <div className="h-screen flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden">
-          <TopNavigation captifyContext={captifyContext} />
-          <SmartBreadcrumb captifyContext={captifyContext} />
-          <ThreePanelLayout captifyContext={captifyContext}>
-            {children}
-          </ThreePanelLayout>
+          <FavoritesBar />
+          <SmartBreadcrumb />
+          <ThreePanelLayout>{children}</ThreePanelLayout>
         </div>
       </div>
     </div>

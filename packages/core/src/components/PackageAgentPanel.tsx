@@ -10,17 +10,10 @@ import { cn } from "../lib";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { X, Send, Settings, Bot } from "lucide-react";
-import {
-  ChatMessage,
-  PackageInfo,
-  PackageAgentPanelProps,
-} from "../types/package";
+import { ChatMessage, PackageAgentPanelProps } from "../types/package";
 
-export function PackageAgentPanel({
-  packageInfo,
-  captifyContext,
-}: PackageAgentPanelProps) {
-  const { session } = captifyContext;
+export function PackageAgentPanel({ packageInfo }: PackageAgentPanelProps) {
+  // Remove dependency on CaptifyContext - session can be passed as prop if needed
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -52,8 +45,6 @@ export function PackageAgentPanel({
     setChatHistory((prev) => [...prev, userMessage]);
 
     try {
-      // TODO: Implement actual agent communication
-      // For now, just add a mock response
       setTimeout(() => {
         const assistantMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),

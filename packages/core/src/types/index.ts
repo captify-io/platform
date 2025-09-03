@@ -29,3 +29,6 @@ export * from "./package";
 
 // Shared types and utilities
 export * from "./shared";
+
+// Icon types
+export * from "./icons";

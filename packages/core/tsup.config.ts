@@ -12,7 +12,7 @@ const createEntryConfig = (
   format: ["esm"] as ["esm"],
   dts: true,
   splitting: false,
-  sourcemap: isDev,
+  sourcemap: true,
   clean: entryName === "services", // Only clean once (first entry alphabetically)
   target: "es2022",
   minify: false,
@@ -41,11 +41,11 @@ export default defineConfig([
   // Server-side modules (no "use client")
   createEntryConfig("services", "src/services/index.ts", false),
   createEntryConfig("api", "src/lib/index.ts", false),
+  createEntryConfig("types", "src/types/index.ts", false),
 
   // Client-side modules (with "use client")
   createEntryConfig("app", "src/app/index.ts", true),
   createEntryConfig("components", "src/components/index.ts", true),
-  createEntryConfig("context", "src/context/index.ts", true),
   createEntryConfig("hooks", "src/hooks/index.ts", true),
   createEntryConfig("ui", "src/components/ui/index.ts", true),
 ]);

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { SignInForm } from "../../../components/SignInForm";
+import { SignInForm } from "@captify/core/components";
 
 function AuthErrorContent() {
   const searchParams = useSearchParams();

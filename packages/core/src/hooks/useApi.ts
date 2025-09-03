@@ -4,8 +4,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CaptifyClient, type CaptifyResponse } from "../lib";
-import { createApiClient } from "../lib";
+import { apiClient, type CaptifyResponse } from "../lib";
 
 interface UseApiState<T> {
   data: T | null;
@@ -23,7 +22,7 @@ interface UseApiReturn<T> extends UseApiState<T> {
  */
 export function useApi<T = any>(
   apiCall: (
-    client: CaptifyClient,
+    client: typeof apiClient,
     ...args: any[]
   ) => Promise<CaptifyResponse<T>>
 ): UseApiReturn<T> {
@@ -38,8 +37,7 @@ export function useApi<T = any>(
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const client = createApiClient();
-        const response = await apiCall(client, ...args);
+        const response = await apiCall(apiClient, ...args);
 
         if (response.success) {
           setState({
@@ -90,7 +88,13 @@ export function useApi<T = any>(
  */
 export function useGetItem<T = any>(tableName: string) {
   return useApi<T>((client, key: Record<string, any>) =>
-    client.getItem({ table: tableName, key })
+    client.run({
+      service: "dynamo",
+      operation: "getItem",
+      app: "core",
+      table: tableName,
+      data: { Key: key },
+    })
   );
 }
 
@@ -99,7 +103,13 @@ export function useGetItem<T = any>(tableName: string) {
  */
 export function usePutItem<T = any>(tableName: string) {
   return useApi<T>((client, item: Record<string, any>) =>
-    client.put({ table: tableName, data: item })
+    client.run({
+      service: "dynamo",
+      operation: "put",
+      app: "core",
+      table: tableName,
+      data: { Item: item },
+    })
   );
 }
 
@@ -115,12 +125,18 @@ export function useUpdateItem<T = any>(tableName: string) {
       expressionAttributeValues?: Record<string, any>,
       expressionAttributeNames?: Record<string, any>
     ) =>
-      client.update({
+      client.run({
+        service: "dynamo",
+        operation: "update",
+        app: "core",
         table: tableName,
-        key,
-        updateExpression,
-        expressionAttributeValues,
-        expressionAttributeNames,
+        data: {
+          Key: key,
+          UpdateExpression: updateExpression,
+          ExpressionAttributeValues: expressionAttributeValues,
+          ExpressionAttributeNames: expressionAttributeNames,
+          ReturnValues: "ALL_NEW",
+        },
       })
   );
 }
@@ -130,7 +146,13 @@ export function useUpdateItem<T = any>(tableName: string) {
  */
 export function useDeleteItem(tableName: string) {
   return useApi<{ success: boolean }>((client, key: Record<string, any>) =>
-    client.delete({ table: tableName, key })
+    client.run({
+      service: "dynamo",
+      operation: "delete",
+      app: "core",
+      table: tableName,
+      data: { Key: key },
+    })
   );
 }
 
@@ -139,7 +161,13 @@ export function useDeleteItem(tableName: string) {
  */
 export function useScanTable<T = any>(tableName: string) {
   return useApi<{ items: T[] }>((client, params: Record<string, any> = {}) =>
-    client.get({ table: tableName, params })
+    client.run({
+      service: "dynamo",
+      operation: "scan",
+      app: "core",
+      table: tableName,
+      data: params,
+    })
   );
 }
 
