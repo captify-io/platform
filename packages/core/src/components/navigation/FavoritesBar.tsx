@@ -1,17 +1,17 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { Star, ChevronRight } from "lucide-react";
 import { apiClient } from "../../lib/api";
+import { useCaptify } from "../CaptifyProvider";
 import type { App, UserState } from "../../types";
 
 export function FavoritesBar() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { session } = useCaptify();
   const [favoriteApps, setFavoriteApps] = useState<string[]>([]);
   const [availableApps, setAvailableApps] = useState<App[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);

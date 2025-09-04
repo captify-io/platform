@@ -1,15 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SessionProvider, useSession } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import SignInForm from "./navigation/SignInForm";
 import { TopNavigation } from "./navigation/TopNavigation";
+import { useCaptify } from "./CaptifyProvider";
 
 function AuthWrapper({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession();
+  const { session, isLoading } = useCaptify();
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
@@ -17,7 +17,7 @@ function AuthWrapper({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === "unauthenticated") {
+  if (!session) {
     return <SignInForm callbackUrl="/" />;
   }
 
@@ -38,16 +38,14 @@ function AuthWrapper({ children }: { children: ReactNode }) {
 
 export function CaptifyProviders({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-        storageKey="captify-theme"
-      >
-        <AuthWrapper>{children}</AuthWrapper>
-      </ThemeProvider>
-    </SessionProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      storageKey="captify-theme"
+    >
+      <AuthWrapper>{children}</AuthWrapper>
+    </ThemeProvider>
   );
 }

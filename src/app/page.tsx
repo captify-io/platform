@@ -1,18 +1,4 @@
-export const dynamic = "force-dynamic"; // no SSG, render at request time
-export const revalidate = 0; // disable caching; optional but safe
-import { useSession } from "next-auth/react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@captify/core/ui";
-import { Rocket, Shield, Zap, Users } from "lucide-react";
-
 export default function HomePage() {
-  const { data: session } = useSession();
-
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
@@ -26,66 +12,69 @@ export default function HomePage() {
             deployment. Build, monitor, and scale your applications with
             confidence.
           </p>
-          {session?.user && (
-            <p className="text-lg text-primary mt-4">
-              Welcome back, {session.user.name || session.user.email}!
-            </p>
-          )}
         </div>
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center">
-            <CardHeader>
-              <Rocket className="h-12 w-12 mx-auto text-primary mb-4" />
-              <CardTitle>Fast Deployment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center">
+            <div className="flex flex-col space-y-1.5 p-6">
+              <div className="h-12 w-12 mx-auto text-primary mb-4">🚀</div>
+              <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                Fast Deployment
+              </h3>
+            </div>
+            <div className="p-6 pt-0">
+              <p className="text-sm text-muted-foreground">
                 Deploy applications quickly with our streamlined workflow and
                 automated processes.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center">
-            <CardHeader>
-              <Shield className="h-12 w-12 mx-auto text-primary mb-4" />
-              <CardTitle>Enterprise Security</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center">
+            <div className="flex flex-col space-y-1.5 p-6">
+              <div className="h-12 w-12 mx-auto text-primary mb-4">🛡️</div>
+              <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                Enterprise Security
+              </h3>
+            </div>
+            <div className="p-6 pt-0">
+              <p className="text-sm text-muted-foreground">
                 Built with security-first principles and compliance standards
                 for enterprise use.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center">
-            <CardHeader>
-              <Zap className="h-12 w-12 mx-auto text-primary mb-4" />
-              <CardTitle>High Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center">
+            <div className="flex flex-col space-y-1.5 p-6">
+              <div className="h-12 w-12 mx-auto text-primary mb-4">⚡</div>
+              <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                High Performance
+              </h3>
+            </div>
+            <div className="p-6 pt-0">
+              <p className="text-sm text-muted-foreground">
                 Optimized for speed and efficiency with real-time monitoring and
                 analytics.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
 
-          <Card className="text-center">
-            <CardHeader>
-              <Users className="h-12 w-12 mx-auto text-primary mb-4" />
-              <CardTitle>Team Collaboration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center">
+            <div className="flex flex-col space-y-1.5 p-6">
+              <div className="h-12 w-12 mx-auto text-primary mb-4">👥</div>
+              <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                Team Collaboration
+              </h3>
+            </div>
+            <div className="p-6 pt-0">
+              <p className="text-sm text-muted-foreground">
                 Work together seamlessly with integrated tools and shared
                 workspaces.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -94,27 +83,31 @@ export default function HomePage() {
             Get Started
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Card className="flex-1 max-w-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Explore Applications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="mb-4">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm flex-1 max-w-sm">
+              <div className="flex flex-col space-y-1.5 p-6">
+                <h3 className="text-lg font-semibold leading-none tracking-tight">
+                  Explore Applications
+                </h3>
+              </div>
+              <div className="p-6 pt-0">
+                <p className="text-sm text-muted-foreground mb-4">
                   Browse and manage your applications from the dashboard.
-                </CardDescription>
-              </CardContent>
-            </Card>
+                </p>
+              </div>
+            </div>
 
-            <Card className="flex-1 max-w-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Monitor Services</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="mb-4">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm flex-1 max-w-sm">
+              <div className="flex flex-col space-y-1.5 p-6">
+                <h3 className="text-lg font-semibold leading-none tracking-tight">
+                  Monitor Services
+                </h3>
+              </div>
+              <div className="p-6 pt-0">
+                <p className="text-sm text-muted-foreground mb-4">
                   Keep track of your services and their performance metrics.
-                </CardDescription>
-              </CardContent>
-            </Card>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </main>

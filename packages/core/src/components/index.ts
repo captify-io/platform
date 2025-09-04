@@ -3,6 +3,9 @@
 // Export all components
 // Add your component exports here as you create them
 
+// Providers
+export { CaptifyProvider, useCaptify } from "./CaptifyProvider";
+
 // Main components
 export { ApplicationLauncher } from "./ApplicationLauncher";
 export { PackageAgentPanel } from "./PackageAgentPanel";

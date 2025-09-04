@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { cn } from "../../lib";
 import {
   Breadcrumb,
@@ -12,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "../ui/breadcrumb";
+import { useCaptify } from "../CaptifyProvider";
 
 interface SmartBreadcrumbProps {
   className?: string;
@@ -30,7 +30,7 @@ export function SmartBreadcrumb({
   maxItems = 5,
   showMenuToggle = true,
 }: SmartBreadcrumbProps) {
-  const { data: session } = useSession(); // Use direct session hook
+  const { session } = useCaptify(); // Use our custom hook
   const pathname = usePathname();
   const isAuthenticated = !!session;
 

@@ -6,7 +6,6 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { cn } from "../lib";
 import { PackageContentPanel } from "./PackageContentPanel";
 import { PackageAgentPanel } from "./PackageAgentPanel";
@@ -35,6 +34,7 @@ import {
 } from "./ui/collapsible";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "../hooks/useApi";
+import { useCaptify } from "./CaptifyProvider";
 import { AppData, ThreePanelLayoutProps } from "../types/package";
 
 // Inner component that has access to SidebarProvider context
@@ -42,7 +42,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   children,
   className,
 }: ThreePanelLayoutProps) {
-  const { data: session } = useSession(); // Use direct session hook
+  const { session } = useCaptify(); // Use our custom hook
   const [isResizingAgent, setIsResizingAgent] = useState(false);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);

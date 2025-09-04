@@ -5,6 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Re-export auth utilities
+export * from "./auth";
+
 // Logout function
 export function logout() {
   // Clear any stored auth tokens
