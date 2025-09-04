@@ -42,6 +42,9 @@ importers:
       '@captify/mi':
         specifier: workspace:*
         version: link:packages/mi
+      '@tailwindcss/postcss':
+        specifier: ^4.1.12
+        version: 4.1.12
       '@types/node':
         specifier: 22.10.3
         version: 22.10.3
@@ -85,9 +88,6 @@ importers:
         specifier: ^11.1.0
         version: 11.1.0
     devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4.1.12
-        version: 4.1.12
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
