@@ -42,7 +42,7 @@ applications:
 
             # Install dependencies for all packages
             - echo "Installing dependencies for monorepo..."
-            - pnpm install --frozen-lockfile --include-workspace-root --include=dev
+            - pnpm install --include-workspace-root --include=dev -w
 
             # Verify dependencies and build tools
             - echo "Verifying workspace packages and build tools..."
@@ -62,8 +62,8 @@ applications:
             - echo "Building @captify/core package..."
             - pnpm --filter @captify/core run build
             - echo "Core package build complete"
-            
-            # Build MI package  
+
+            # Build MI package
             - echo "Building @captify/mi package..."
             - pnpm --filter @captify/mi run build
             - echo "MI package build complete"
