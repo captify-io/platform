@@ -1,4 +1,5 @@
 // app/layout.tsx
+import "./react-polyfill";
 import "./globals.css";
 import * as React from "react";
 import type { ReactNode } from "react";

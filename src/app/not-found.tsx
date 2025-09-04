@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+// Disable static generation for this page to prevent SSR issues
+export const dynamic = 'force-dynamic';
+
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">

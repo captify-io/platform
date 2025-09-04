@@ -3,6 +3,9 @@ import { ThreePanelLayout } from "@captify/core/components";
 import { useEffect, useState } from "react";
 import { SmartBreadcrumb, FavoritesBar } from "@captify/core/components";
 
+// Disable static generation for this layout to prevent SSR issues
+export const dynamic = 'force-dynamic';
+
 interface CaptifyLayoutProps {
   children: React.ReactNode;
   params: Promise<{ captify: string[] }>;

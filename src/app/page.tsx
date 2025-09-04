@@ -1,4 +1,5 @@
-"use client";
+export const dynamic = "force-dynamic"; // no SSG, render at request time
+export const revalidate = 0; // disable caching; optional but safe
 import { useSession } from "next-auth/react";
 import {
   Card,

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+// Disable static generation for this page to prevent SSR issues
+export const dynamic = 'force-dynamic';
+
 interface CaptifyAppPageProps {
   params: Promise<{ captify: string[] }>;
 }

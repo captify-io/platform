@@ -9,38 +9,33 @@ if (typeof window !== 'undefined' && !window.React) {
 
 // Safe hook wrapper that prevents SSR errors
 export function useSafeRef<T>(initialValue: T) {
-  const [isClient, setIsClient] = React.useState(false);
-  const ref = React.useRef<T>(initialValue);
-  
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  // Return a proxy that handles SSR safely
-  return {
-    get current() {
-      return isClient ? ref.current : initialValue;
-    },
-    set current(value: T) {
-      if (isClient) {
-        ref.current = value;
-      }
-    }
-  };
+  if (typeof window === 'undefined') {
+    // SSR: Return a simple object that acts like a ref
+    return { current: initialValue };
+  }
+  return React.useRef<T>(initialValue);
+}
+
+export function useSafeState<T>(initialState: T | (() => T)) {
+  if (typeof window === 'undefined') {
+    // SSR: Return initial state and a no-op setter
+    const initial = typeof initialState === 'function' ? (initialState as () => T)() : initialState;
+    return [initial, () => {}] as const;
+  }
+  return React.useState(initialState);
 }
 
 export function useSafeEffect(effect: React.EffectCallback, deps?: React.DependencyList) {
-  const [isClient, setIsClient] = React.useState(false);
-  
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  React.useEffect(() => {
-    if (isClient) {
-      return effect();
-    }
-  }, [isClient, ...(deps || [])]);
+  if (typeof window === 'undefined') {
+    // SSR: Do nothing
+    return;
+  }
+  return React.useEffect(effect, deps);
 }
+
+// Export safe hooks with standard names for easy replacement
+export const useState = useSafeState;
+export const useRef = useSafeRef;
+export const useEffect = useSafeEffect;
 
 export default React;
