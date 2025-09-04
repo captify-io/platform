@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { getServerSession } from "@captify/core/auth";
-import { CaptifyProvider, SignInForm, TopNavigation } from "@captify/core/components";
+import { CaptifyProvider, SignInForm } from "@captify/core/components";
 import { SessionProvider } from "next-auth/react";
+import { ClientTopNavigation } from "../components/ClientTopNavigation";
 import "./globals.css";
 
 interface ServerCaptifyProviderProps {
@@ -25,7 +26,7 @@ async function ServerCaptifyProvider({
       <CaptifyProvider session={session ?? undefined}>
         {session ? (
           <div className="h-full w-full bg-background">
-            <TopNavigation session={session} />
+            <ClientTopNavigation session={session} />
             <main className="h-full">
               {children}
             </main>
