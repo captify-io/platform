@@ -11,23 +11,20 @@ import { PackagePageRouterProps } from "../types/package";
 // Dynamic package registry loader
 async function loadPackageRegistry(packageName: string) {
   try {
-    // Only load from known packages to avoid webpack bundling issues
     let appModule;
-    switch (packageName) {
-      case "core":
-        appModule = await import("../app");
-        break;
-      case "mi":
-        // Runtime import to avoid circular dependency during build
-        try {
-          appModule = await import("@captify/mi/app");
-        } catch (error) {
-          console.warn("MI package not available:", error);
-          return null;
-        }
-        break;
-      default:
+    
+    if (packageName === "core") {
+      // Local import for core package
+      appModule = await import("../app");
+    } else {
+      // Dynamic import for external packages
+      try {
+        const packagePath = `@captify/${packageName}/app`;
+        appModule = await import(/* @vite-ignore */ packagePath);
+      } catch (error) {
+        console.warn(`Package @captify/${packageName} not available:`, error);
         return null;
+      }
     }
 
     // Get the component and page registries from the app module
