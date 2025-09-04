@@ -1,60 +1,43 @@
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
-  // Enable React strict mode for highlighting potential problems
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
 
-  // Transpile packages (Next.js 15+ feature for workspace packages)
+  // Let Next compile the workspace package from source consistently
   transpilePackages: ["@captify/core"],
 
-  // Disable server-side features for client-only mode
-  images: {
-    unoptimized: true,
-  },
+  images: { unoptimized: true },
 
-  // Enable experimental features for better package watching
   experimental: {
-    // Enable optimized package imports and watching
-    optimizePackageImports: ["@captify/core"],
+    // Avoid optimizing internal workspace package imports until the package is fully ESM + side-effect-free
+    // optimizePackageImports: [], // ← remove @captify/core here
   },
 
-  // Configure webpack for proper package watching
   webpack: (config, { isServer, dev }) => {
+    // Keep your alias for "@" (fine), but do NOT alias @captify/core to dist anywhere
+    const path = require("path");
+    config.resolve.alias = {
+      ...(config.resolve.alias ?? {}),
+      "@": path.resolve(__dirname, "src"),
+    };
+
+    // Dev-only watch tweaks are fine; they won’t affect prod build
     if (dev && !isServer) {
-      // Configure file watching to include package dist folders
       config.watchOptions = {
         ...config.watchOptions,
-        ignored: [
-          "**/node_modules/**",
-          "!**/packages/core/dist/**", // Watch the core package dist
-        ],
-        poll: 1000, // Use polling for reliable file watching on Windows
-        aggregateTimeout: 100, // Shorter timeout for faster rebuilds
+        ignored: ["**/node_modules/**"],
+        poll: 1000,
+        aggregateTimeout: 100,
       };
-
-      // Add package dist directory as a dependency to trigger rebuilds
-      const path = require("path");
-      const packageDistPath = path.resolve(process.cwd(), "packages/core/dist");
-      config.resolve.alias["@"] = path.resolve(__dirname, "src");
-      config.plugins.push({
-        apply(compiler) {
-          compiler.hooks.afterCompile.tap("PackageWatcher", (compilation) => {
-            // Add the entire package dist directory as a dependency
-            compilation.contextDependencies.add(packageDistPath);
-          });
-        },
-      });
     }
 
     return config;
   },
 
-  // Configure turbopack for proper package watching (equivalent to webpack config above)
+  // DO NOT alias @captify/core to dist here — it causes dev/prod divergence
   turbopack: {
     resolveAlias: {
-      // Ensure proper resolution of workspace packages
-      "@captify/core": "./packages/core/dist",
+      // "@captify/core": "./packages/core/dist", // ❌ remove this
     },
   },
 };

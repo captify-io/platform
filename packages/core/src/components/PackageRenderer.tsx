@@ -4,6 +4,7 @@
 "use client";
 
 import { ComponentType, lazy, Suspense } from "react";
+import { getPackageLoader } from "./PackageRegistry";
 
 /**
  * Component that renders a package app with error boundaries
@@ -14,10 +15,34 @@ interface PackageRendererProps {
 }
 
 export function PackageRenderer({ packageName, params }: PackageRendererProps) {
-  // Lazy load the component directly from the package
-  const PackageComponent = lazy(() =>
-    import(`@captify/${packageName}`)
+  // Use static registry for package loading
+  const PackageComponent = lazy(() => {
+    const packageLoader = getPackageLoader(packageName);
+    
+    if (!packageLoader) {
+      return Promise.resolve({
+        default: () => (
+          <div className="p-4">
+            <h2 className="text-lg font-semibold mb-2">
+              Package: {packageName}
+            </h2>
+            <p className="text-muted-foreground">
+              Package @captify/{packageName} not found in registry
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Available packages: core, mi
+            </p>
+          </div>
+        ),
+      });
+    }
+
+    return packageLoader()
       .then((packageModule) => {
+        if (!packageModule) {
+          throw new Error(`Package @captify/${packageName} not available`);
+        }
+        
         // Try to get the main app component from the package
         if (packageModule.default) {
           return { default: packageModule.default };
@@ -65,8 +90,8 @@ export function PackageRenderer({ packageName, params }: PackageRendererProps) {
             </div>
           ),
         };
-      })
-  );
+      });
+  });
 
   return (
     <Suspense

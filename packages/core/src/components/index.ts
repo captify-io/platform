@@ -11,6 +11,7 @@ export { PackagePageRouter } from "./PackagePageRouter";
 export { SessionDebug } from "./SessionDebug";
 export { ThreePanelLayout } from "./ThreePanelLayout";
 export { CaptifyProviders } from "./CaptifyLayout";
+export { ClientOnly } from "./ClientOnly";
 
 // Constants and types
 export { APP_CATEGORY_LABELS } from "../types/app";

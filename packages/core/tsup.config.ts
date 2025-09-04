@@ -19,14 +19,21 @@ const createEntryConfig = (
   treeshake: false,
   external: [
     "react",
-    "react-dom",
+    "react-dom", 
     "react/jsx-runtime",
     "react/jsx-dev-runtime",
+    "next",
+    "next/link",
+    "next/navigation",
+    "next/router",
     "@aws-sdk/*",
+    "@captify/*",
   ],
   esbuildOptions(options) {
     options.jsx = "automatic";
     options.jsxImportSource = "react";
+    options.keepNames = true;
+    options.legalComments = "none";
   },
   ...(addUseClient && {
     banner: {
