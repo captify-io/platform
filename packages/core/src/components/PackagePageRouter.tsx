@@ -10,6 +10,11 @@ import { PackagePageRouterProps } from "../types/package";
 
 // Dynamic package registry loader
 async function loadPackageRegistry(packageName: string) {
+  // Prevent execution during SSR/SSG
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
   try {
     let appModule;
     
@@ -108,7 +113,8 @@ export function PackagePageRouter({
 
   // Load page component when hash or package changes
   useEffect(() => {
-    if (!packageSlug) {
+    // Prevent execution during SSR/SSG
+    if (typeof window === 'undefined' || !packageSlug) {
       return;
     }
 

@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 
 interface CaptifyAppPageProps {
-  params: Promise<{ captify: string }>;
+  params: Promise<{ captify: string[] }>;
 }
 
 export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
-  const [captify, setCaptify] = useState<string>("");
+  const [captify, setCaptify] = useState<string[]>([]);
 
   useEffect(() => {
     // Resolve params in useEffect since this is now a client component
@@ -17,11 +17,14 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
         "DEBUG PAGE: window.location.pathname:",
         window.location.pathname
       );
-      setCaptify(resolvedParams.captify);
+      setCaptify(resolvedParams.captify || []);
+    }).catch(() => {
+      // Handle params resolution error gracefully
+      setCaptify([]);
     });
   }, [params]);
 
-  if (!captify) {
+  if (!captify.length) {
     return (
       <div className="p-6">
         <div className="animate-pulse">
@@ -45,14 +48,17 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
     );
   }
 
+  // Extract the package name (first element) from the captify array
+  const packageName = captify[0] || 'unknown';
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          {captify.charAt(0).toUpperCase() + captify.slice(1)} Application
+          {packageName.charAt(0).toUpperCase() + packageName.slice(1)} Application
         </h1>
         <p className="text-muted-foreground">
-          Welcome to the {captify} application workspace
+          Welcome to the {packageName} application workspace
         </p>
       </div>
 
@@ -60,7 +66,7 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
         <div className="bg-card p-6 rounded-lg border">
           <h2 className="text-xl font-semibold mb-3">Getting Started</h2>
           <p className="text-muted-foreground mb-4">
-            Explore the features and capabilities of the {captify} application.
+            Explore the features and capabilities of the {packageName} application.
           </p>
           <div className="space-y-2">
             <div className="flex items-center text-sm">
@@ -81,7 +87,7 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
         <div className="bg-card p-6 rounded-lg border">
           <h2 className="text-xl font-semibold mb-3">Quick Actions</h2>
           <p className="text-muted-foreground mb-4">
-            Common tasks and shortcuts for the {captify} application.
+            Common tasks and shortcuts for the {packageName} application.
           </p>
           <div className="space-y-2">
             <button className="w-full text-left px-3 py-2 bg-muted rounded hover:bg-muted/80 transition-colors">
@@ -99,7 +105,7 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
         <div className="bg-card p-6 rounded-lg border">
           <h2 className="text-xl font-semibold mb-3">Recent Activity</h2>
           <p className="text-muted-foreground mb-4">
-            Latest updates and activity in the {captify} application.
+            Latest updates and activity in the {packageName} application.
           </p>
           <div className="space-y-2 text-sm">
             <div className="border-l-2 border-blue-500 pl-3 py-1">
