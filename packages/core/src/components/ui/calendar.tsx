@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRef, useEffect } from "react"
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -180,14 +181,10 @@ function CalendarDayButton({
 }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames()
 
-  const ref = React.useRef<HTMLButtonElement>(null)
-  React.useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && modifiers.focused && ref.current) {
-        ref.current.focus()
-      }
-    } catch (error) {
-      console.warn('Calendar focus failed:', error);
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && modifiers.focused && ref.current) {
+      ref.current.focus()
     }
   }, [modifiers.focused])
 
