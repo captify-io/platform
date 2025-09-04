@@ -69,9 +69,15 @@ export function TopNavigation({
     stackTrace: new Error().stack?.split("\n").slice(1, 4).join("\n"),
   });
 
-  // Add a visible counter to see multiple renders
+  // Add a visible counter to see multiple renders (client-side only)
   const renderCount = React.useRef(0);
-  renderCount.current += 1;
+  try {
+    if (typeof window !== 'undefined' && renderCount.current !== null) {
+      renderCount.current += 1;
+    }
+  } catch (error) {
+    console.warn('Render count tracking failed:', error);
+  }
 
   return (
     <div>

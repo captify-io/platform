@@ -182,7 +182,13 @@ function CalendarDayButton({
 
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
-    if (modifiers.focused) ref.current?.focus()
+    try {
+      if (typeof window !== 'undefined' && modifiers.focused && ref.current) {
+        ref.current.focus()
+      }
+    } catch (error) {
+      console.warn('Calendar focus failed:', error);
+    }
   }, [modifiers.focused])
 
   return (

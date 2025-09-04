@@ -42,14 +42,22 @@ applications:
 
             # Install dependencies for all packages
             - echo "Installing dependencies for monorepo..."
-            - pnpm install --frozen-lockfile --include-workspace-root
+            - pnpm install --frozen-lockfile --include-workspace-root --include=dev
 
-            # Verify dependencies
-            - echo "Verifying workspace packages..."
+            # Verify dependencies and build tools
+            - echo "Verifying workspace packages and build tools..."
             - pnpm list --depth=0
+            - echo "Checking build tools availability..."
+            - pnpm --filter @captify/core exec -- which tsup || echo "tsup not found in core"
+            - pnpm --filter @captify/mi exec -- which tsup || echo "tsup not found in mi"
 
         build:
           commands:
+            # Ensure build tools are available
+            - echo "Ensuring build tools are available..."
+            - pnpm --filter @captify/core exec -- npm list tsup typescript || echo "Build tools missing in core"
+            - pnpm --filter @captify/mi exec -- npm list tsup typescript || echo "Build tools missing in mi"
+
             # Build packages first (@captify/core)
             - echo "Building @captify/core package..."
             - pnpm --filter @captify/core run build

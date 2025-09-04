@@ -19,8 +19,13 @@ export function PackageContentPanel({
 
   // Track hash changes
   useEffect(() => {
-    if (prevHashRef.current !== currentHash) {
-      prevHashRef.current = currentHash;
+    try {
+      // Only run on client side and ensure ref is available
+      if (typeof window !== 'undefined' && prevHashRef.current !== currentHash) {
+        prevHashRef.current = currentHash;
+      }
+    } catch (error) {
+      console.warn('Hash tracking failed:', error);
     }
   }, [currentHash]);
 

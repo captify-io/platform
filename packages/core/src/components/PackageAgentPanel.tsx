@@ -20,11 +20,20 @@ export function PackageAgentPanel({ packageInfo }: PackageAgentPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    try {
+      if (typeof window !== 'undefined' && messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    } catch (error) {
+      console.warn('ScrollToBottom failed:', error);
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      scrollToBottom();
+    }
   }, [chatHistory]);
 
   // Local sendMessage implementation
