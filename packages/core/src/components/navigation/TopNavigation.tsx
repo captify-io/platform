@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import React, { lazy, Suspense } from "react";
 import type { Session } from "next-auth";
