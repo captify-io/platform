@@ -3,82 +3,34 @@ applications:
   - appRoot: .
     env:
       variables:
-        AMPLIFY_MONOREPO_APP_ROOT: "."
-        # Node.js version
         NODE_VERSION: "22.15.1"
-        # Package manager settings
         PNPM_VERSION: "9.0.0"
-        # Next.js build optimization
         NEXT_TELEMETRY_DISABLED: "1"
-        # TypeScript path mapping for Amplify
-        TS_NODE_BASEURL: "."
-        # Node.js memory optimization
         NODE_OPTIONS: "--max-old-space-size=4096"
-        # NextAuth environment variables
         NEXTAUTH_URL: $NEXTAUTH_URL
         NEXTAUTH_SECRET: $NEXTAUTH_SECRET
-        # Cognito environment variables
         COGNITO_CLIENT_ID: $COGNITO_CLIENT_ID
         COGNITO_CLIENT_SECRET: $COGNITO_CLIENT_SECRET
         COGNITO_USER_POOL_ID: $COGNITO_USER_POOL_ID
         COGNITO_IDENTITY_POOL_ID: $COGNITO_IDENTITY_POOL_ID
-        # AWS region
         AWS_REGION: $AWS_REGION
-        # Schema for database
         SCHEMA: $SCHEMA
     frontend:
       framework: nextjs
       phases:
         preBuild:
           commands:
-            # Setup Node.js and pnpm
-            - echo "Setting up Node.js and pnpm..."
             - nvm install $NODE_VERSION
             - nvm use $NODE_VERSION
-            - node -v && npm -v
             - corepack enable
             - corepack prepare pnpm@$PNPM_VERSION --activate
-            - pnpm -v
-
-            # Install dependencies for all packages
-            - echo "Installing dependencies for monorepo..."
-            - pnpm install --include-workspace-root --include=dev -w
-
-            # Verify dependencies and build tools
-            - echo "Verifying workspace packages and build tools..."
-            - pnpm list --depth=0
-            - echo "Checking build tools availability..."
-            - pnpm --filter @captify/core exec -- which tsup || echo "tsup not found in core"
-            - pnpm --filter @captify/mi exec -- which tsup || echo "tsup not found in mi"
+            - pnpm install
 
         build:
           commands:
-            # Ensure build tools are available
-            - echo "Ensuring build tools are available..."
-            - pnpm --filter @captify/core exec -- npm list tsup typescript || echo "Build tools missing in core"
-            - pnpm --filter @captify/mi exec -- npm list tsup typescript || echo "Build tools missing in mi"
-
-            # Build packages first (@captify/core)
-            - echo "Building @captify/core package..."
             - pnpm --filter @captify/core run build
-            - echo "Core package build complete"
-
-            # Build MI package
-            - echo "Building @captify/mi package..."
             - pnpm --filter @captify/mi run build
-            - echo "MI package build complete"
-
-            # Verify core package was built
-            - echo "Verifying core package dist..."
-            - ls -la packages/core/dist/
-
-            # Build the Next.js application (includes type checking)
-            - echo "Building Next.js application..."
             - pnpm run build
-
-            # Verify the build output
-            - echo "Build complete! Verifying output..."
-            - ls -la .next/
 
       artifacts:
         baseDirectory: .next
@@ -86,11 +38,6 @@ applications:
           - "**/*"
       cache:
         paths:
-          # Next.js cache
           - .next/cache/**/*
-          # pnpm cache
           - node_modules/.pnpm/**/*
-          - ~/.pnpm-store/**/*
-          # Package build cache
           - packages/*/dist/**/*
-          - packages/*/node_modules/.cache/**/*
