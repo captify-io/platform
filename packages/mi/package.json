@@ -62,17 +62,13 @@
   "dependencies": {
     "@captify/core": "workspace:*",
     "tsup": "^8.0.0",
-    "typescript": "5.9.2"
-  },
-  "devDependencies": {
-    "@types/react": "19.1.1",
-    "@types/react-dom": "19.1.1",
+    "typescript": "5.9.2",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },
-  "peerDependencies": {
-    "react": ">=19.1.0",
-    "react-dom": ">=19.1.0"
+  "devDependencies": {
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1"
   },
   "keywords": [
     "captify",
