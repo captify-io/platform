@@ -1,9 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import NextDynamic from "next/dynamic";
 
 // Client-side only ThreePanelLayout to avoid SSR issues with hooks
-export const ClientThreePanelLayout = NextDynamic(
+const ThreePanelLayout = NextDynamic(
   () => import("@captify/core/components").then((mod) => ({ default: mod.ThreePanelLayout })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-background animate-pulse" />
+  }
 );
+
+export function ClientThreePanelLayout(props: any) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch by not rendering until client-side
+  if (!mounted) {
+    return <div className="h-full w-full bg-background" />;
+  }
+
+  return <ThreePanelLayout {...props} />;
+}

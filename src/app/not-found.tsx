@@ -1,7 +1,6 @@
-import Link from "next/link";
+"use client";
 
-// Disable static generation for this page to prevent SSR issues
-export const dynamic = 'force-dynamic';
+import Link from "next/link";
 
 export default function NotFound() {
   return (

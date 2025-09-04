@@ -9,11 +9,9 @@ interface ServerCaptifyProviderProps {
   children: ReactNode;
 }
 
-async function ServerCaptifyProvider({
-  children,
-}: ServerCaptifyProviderProps) {
+async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   let session = null;
-  
+
   try {
     session = await getServerSession();
   } catch (error) {
@@ -27,9 +25,7 @@ async function ServerCaptifyProvider({
         {session ? (
           <div className="h-full w-full bg-background">
             <ClientTopNavigation session={session} />
-            <main className="h-full">
-              {children}
-            </main>
+            <main className="h-full">{children}</main>
           </div>
         ) : (
           <div className="h-full w-full flex items-center justify-center bg-background">
@@ -47,13 +43,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="h-full m-0 p-0">
-        <ServerCaptifyProvider>
-          {children}
-        </ServerCaptifyProvider>
+        <ServerCaptifyProvider>{children}</ServerCaptifyProvider>
       </body>
     </html>
   );
 }
 
 // Force dynamic rendering for authentication
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
