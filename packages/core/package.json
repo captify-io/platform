@@ -57,7 +57,7 @@
     "build": "tsup",
     "dev": "cross-env NODE_ENV=development tsup --watch",
     "type-check": "npx tsc --noEmit",
-    "clean": "rm -rf dist",
+    "clean": "rimraf dist",
     "install-package": "node -r ts-node/register installer.ts"
   },
   "dependencies": {

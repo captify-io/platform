@@ -1,36 +1,18 @@
-﻿"use client";
-import { useEffect, useState } from "react";
-import { SmartBreadcrumb, FavoritesBar } from "@captify/core/components";
-import { ClientThreePanelLayout } from "../../components/ClientThreePanelLayout";
-
-// Disable static generation for this layout to prevent SSR issues
-export const dynamic = 'force-dynamic';
+﻿import { ReactNode } from 'react';
+import { FavoritesBar, SmartBreadcrumb, ThreePanelLayout } from "@captify/core/components";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
   params: Promise<{ captify: string[] }>;
 }
 
-export default function CaptifyPageLayout({
+export default async function CaptifyPageLayout({
   children,
   params,
 }: CaptifyLayoutProps) {
-  const [captify, setCaptify] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Resolve params in useEffect since this is now a client component
-    params.then((resolvedParams) => {
-      console.log("DEBUG: resolvedParams:", resolvedParams);
-      console.log("DEBUG: window.location.pathname:", window.location.pathname);
-      setCaptify(resolvedParams.captify);
-    });
-  }, [params]);
-
-  useEffect(() => {
-    if (captify.length > 0) {
-      console.log("called [captify]/layout.tsx with package:", captify[0]);
-    }
-  }, [captify]);
+  const { captify } = await params;
+  
+  console.log("called [captify]/layout.tsx with package:", captify[0]);
 
   // Pass the package name through a data attribute so the context can pick it up
   return (
@@ -39,7 +21,7 @@ export default function CaptifyPageLayout({
         <div className="flex-1 overflow-hidden">
           <FavoritesBar />
           <SmartBreadcrumb />
-          <ClientThreePanelLayout>{children}</ClientThreePanelLayout>
+          <ThreePanelLayout>{children}</ThreePanelLayout>
         </div>
       </div>
     </div>

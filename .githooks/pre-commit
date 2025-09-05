@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Pre-commit hook to catch SSR issues like Amplify
+echo "🔍 Running pre-commit checks..."
+
+# Check for TypeScript errors with strict config
+echo "📝 Checking TypeScript (strict mode)..."
+npx tsc --project tsconfig.strict.json --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript strict check failed"
+  exit 1
+fi
+
+# Run ESLint
+echo "🔧 Running ESLint..."
+npx eslint . --ext .ts,.tsx
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed"
+  exit 1
+fi
+
+# Build packages
+echo "📦 Building packages..."
+pnpm run build:packages
+if [ $? -ne 0 ]; then
+  echo "❌ Package build failed"
+  exit 1
+fi
+
+# Strict production build
+echo "🏗️ Running strict production build..."
+pnpm run build:strict
+if [ $? -ne 0 ]; then
+  echo "❌ Strict build failed - this would fail on Amplify!"
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+exit 0

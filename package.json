@@ -12,7 +12,7 @@
     "build:debug": "cross-env NODE_OPTIONS=--trace-warnings next build",
     "build:amplify": "pnpm run build:packages && next build",
     "build:packages": "pnpm --filter @captify/core run build && pnpm --filter @captify/mi run build",
-    "start": "next start",
+        "start": "next start -p ${PORT:-8080}",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "type-check:packages": "pnpm --filter @captify/core run type-check && pnpm --filter @captify/mi run type-check",

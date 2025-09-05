@@ -1,0 +1,223 @@
+name: Deploy to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+    types: [ closed ]
+
+env:
+  AWS_REGION: us-east-1
+  EB_APPLICATION_NAME: anautics-ai
+  EB_ENVIRONMENT_NAME: Anautics-ai-env
+
+jobs:
+  # Build and Test Job
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+          
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Build packages
+      run: pnpm run build:packages
+      
+    - name: Type check
+      run: pnpm run type-check && pnpm run type-check:packages
+      
+    - name: Lint
+      run: pnpm run lint
+      
+    - name: Build application
+      run: pnpm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: |
+          .next/
+          packages/*/dist/
+          node_modules/
+        retention-days: 1
+
+  # Deploy Job (only on successful build and push to main)
+  deploy:
+    name: Deploy to Elastic Beanstalk
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Verify AWS credentials
+      run: |
+        aws sts get-caller-identity
+        
+    - name: Create deployment package
+      run: |
+        # Create version label with timestamp
+        export VERSION_LABEL="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:7}"
+        echo "VERSION_LABEL=$VERSION_LABEL" >> $GITHUB_ENV
+        
+        # Create deployment zip excluding unnecessary files
+        zip -r deploy.zip . \
+          -x "*.git*" \
+          -x "node_modules/@next/swc-*" \
+          -x "node_modules/.cache/*" \
+          -x ".next/cache/*" \
+          -x "*.log" \
+          -x "coverage/*" \
+          -x "*.test.*" \
+          -x "*.spec.*" \
+          -x ".env.local" \
+          -x ".env.development" \
+          -x ".vscode/*" \
+          -x ".idea/*" \
+          -x "README.md" \
+          -x "*.md" \
+          -x "docs/*"
+          
+        echo "Created deployment package: deploy.zip ($(du -h deploy.zip | cut -f1))"
+        
+    - name: Upload to S3
+      run: |
+        export S3_BUCKET="elasticbeanstalk-${{ env.AWS_REGION }}-${{ secrets.AWS_ACCOUNT_ID }}"
+        export S3_KEY="${{ env.EB_APPLICATION_NAME }}/deploy-${{ env.VERSION_LABEL }}.zip"
+        
+        aws s3 cp deploy.zip s3://$S3_BUCKET/$S3_KEY
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+        echo "S3_KEY=$S3_KEY" >> $GITHUB_ENV
+        
+    - name: Create application version
+      run: |
+        aws elasticbeanstalk create-application-version \
+          --application-name ${{ env.EB_APPLICATION_NAME }} \
+          --version-label ${{ env.VERSION_LABEL }} \
+          --description "Deployed from GitHub Actions - Commit: ${GITHUB_SHA:0:7}" \
+          --source-bundle "S3Bucket=${{ env.S3_BUCKET }},S3Key=${{ env.S3_KEY }}"
+          
+    - name: Deploy to environment
+      run: |
+        echo "Deploying version ${{ env.VERSION_LABEL }} to ${{ env.EB_ENVIRONMENT_NAME }}"
+        
+        aws elasticbeanstalk update-environment \
+          --environment-name ${{ env.EB_ENVIRONMENT_NAME }} \
+          --version-label ${{ env.VERSION_LABEL }}
+          
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        aws elasticbeanstalk wait environment-updated \
+          --environment-name ${{ env.EB_ENVIRONMENT_NAME }} \
+          --no-paginate
+          
+    - name: Get deployment status
+      run: |
+        ENV_INFO=$(aws elasticbeanstalk describe-environments \
+          --environment-names ${{ env.EB_ENVIRONMENT_NAME }} \
+          --query "Environments[0].{Status:Status,Health:Health,URL:CNAME}" \
+          --output json)
+          
+        echo "Environment Status: $ENV_INFO"
+        
+        ENV_URL=$(echo $ENV_INFO | jq -r '.URL')
+        if [ "$ENV_URL" != "null" ]; then
+          echo "🚀 Application deployed successfully!"
+          echo "🌐 Environment URL: http://$ENV_URL"
+          echo "📊 Monitor at: https://console.aws.amazon.com/elasticbeanstalk/"
+        fi
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        # Clean up deployment files
+        rm -f deploy.zip
+        
+        # Clean up old application versions (keep last 10)
+        aws elasticbeanstalk describe-application-versions \
+          --application-name ${{ env.EB_APPLICATION_NAME }} \
+          --query 'ApplicationVersions[10:].VersionLabel' \
+          --output text | tr '\t' '\n' | while read version; do
+            if [ ! -z "$version" ]; then
+              echo "Cleaning up old version: $version"
+              aws elasticbeanstalk delete-application-version \
+                --application-name ${{ env.EB_APPLICATION_NAME }} \
+                --version-label "$version" \
+                --delete-source-bundle || true
+            fi
+          done
+
+  # Notification Job
+  notify:
+    name: Notify Deployment Status
+    needs: [build-test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Deployment Success
+      if: needs.deploy.result == 'success'
+      run: |
+        echo "✅ Deployment successful!"
+        echo "The application has been deployed to Elastic Beanstalk."
+        
+    - name: Deployment Failed
+      if: needs.deploy.result == 'failure'
+      run: |
+        echo "❌ Deployment failed!"
+        echo "Check the logs above for error details."
+        exit 1

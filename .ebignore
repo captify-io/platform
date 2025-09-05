@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+packages/*/node_modules/
+
+# Build outputs (will be rebuilt on EB)
+.next/
+out/
+dist/
+packages/*/dist/
+
+# Development files
+.env.local
+.env.development
+.env.test
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.vercel/
+.amplify/
+amplify.yml
+
+# Keep these for EB
+# .ebextensions/
+# .elasticbeanstalk/
+# package.json
+# pnpm-lock.yaml
+# pnpm-workspace.yaml
+# Always include EB deployment configs
+!.platform/**/*
+!.ebextensions/**/*
+!Procfile
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
