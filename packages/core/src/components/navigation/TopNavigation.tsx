@@ -72,7 +72,7 @@ export function TopNavigation({
 
   // Add a visible counter to see multiple renders (client-side only)
   const renderCount = useSafeRef(0);
-  
+
   // Only update render count on client-side
   useEffect(() => {
     renderCount.current += 1;

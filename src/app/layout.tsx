@@ -1,6 +1,10 @@
 import { ReactNode } from "react";
 import { getServerSession } from "@captify/core/auth";
-import { CaptifyProvider, SignInForm, TopNavigation } from "@captify/core/components";
+import {
+  CaptifyProvider,
+  SignInForm,
+  TopNavigation,
+} from "@captify/core/components";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 

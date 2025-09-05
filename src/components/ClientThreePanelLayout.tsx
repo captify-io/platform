@@ -5,10 +5,15 @@ import NextDynamic from "next/dynamic";
 
 // Client-side only ThreePanelLayout to avoid SSR issues with hooks
 const ThreePanelLayout = NextDynamic(
-  () => import("@captify/core/components").then((mod) => ({ default: mod.ThreePanelLayout })),
-  { 
+  () =>
+    import("@captify/core/components").then((mod) => ({
+      default: mod.ThreePanelLayout,
+    })),
+  {
     ssr: false,
-    loading: () => <div className="h-full w-full bg-background animate-pulse" />
+    loading: () => (
+      <div className="h-full w-full bg-background animate-pulse" />
+    ),
   }
 );
 

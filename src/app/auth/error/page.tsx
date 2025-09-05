@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { SignInForm } from "@captify/core/components";
 
 // Disable static generation for this page to prevent SSR issues
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 function AuthErrorContent() {
   const searchParams = useSearchParams();

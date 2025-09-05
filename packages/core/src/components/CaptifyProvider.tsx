@@ -18,7 +18,10 @@ interface CaptifyProviderProps {
   session?: Session | null | undefined;
 }
 
-export function CaptifyProvider({ children, session = null }: CaptifyProviderProps) {
+export function CaptifyProvider({
+  children,
+  session = null,
+}: CaptifyProviderProps) {
   const contextValue: CaptifyContextType = {
     session,
     isLoading: false,

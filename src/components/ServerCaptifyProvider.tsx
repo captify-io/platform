@@ -6,12 +6,10 @@ interface ServerCaptifyProviderProps {
   children: ReactNode;
 }
 
-export async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
+export async function ServerCaptifyProvider({
+  children,
+}: ServerCaptifyProviderProps) {
   const session = await getServerSession();
-  
-  return (
-    <CaptifyProvider session={session}>
-      {children}
-    </CaptifyProvider>
-  );
+
+  return <CaptifyProvider session={session}>{children}</CaptifyProvider>;
 }

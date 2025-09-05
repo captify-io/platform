@@ -50,7 +50,9 @@ export const authConfig: NextAuthConfig = {
       if (account && user) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = account.expires_at ? account.expires_at * 1000 : Date.now() + 3600 * 1000;
+        token.accessTokenExpires = account.expires_at
+          ? account.expires_at * 1000
+          : Date.now() + 3600 * 1000;
         token.user = user;
         return token;
       }
@@ -62,8 +64,10 @@ export const authConfig: NextAuthConfig = {
 
       // Access token has expired, try to update it
       try {
-        const refreshedTokens = await refreshCognitoTokens(token.refreshToken as string);
-        
+        const refreshedTokens = await refreshCognitoTokens(
+          token.refreshToken as string
+        );
+
         return {
           ...token,
           accessToken: refreshedTokens.access_token,
@@ -82,9 +86,9 @@ export const authConfig: NextAuthConfig = {
       if (token.error) {
         throw new Error("RefreshAccessTokenError");
       }
-      
+
       session.accessToken = token.accessToken as string;
-      
+
       // Preserve existing user info if available, otherwise try to extract from token
       if (session.user) {
         // Keep the existing user info - no change needed
@@ -93,25 +97,38 @@ export const authConfig: NextAuthConfig = {
       } else if (token.accessToken) {
         // Last resort: extract from access token
         try {
-          const payload = JSON.parse(Buffer.from((token.accessToken as string).split('.')[1], 'base64').toString());
+          const payload = JSON.parse(
+            Buffer.from(
+              (token.accessToken as string).split(".")[1],
+              "base64"
+            ).toString()
+          );
           session.user = {
             id: payload.sub,
-            email: payload.email || payload.username || `${payload.username}@cognito.local`,
-            name: payload.name || payload.given_name || payload.email || payload.username || "User",
+            email:
+              payload.email ||
+              payload.username ||
+              `${payload.username}@cognito.local`,
+            name:
+              payload.name ||
+              payload.given_name ||
+              payload.email ||
+              payload.username ||
+              "User",
             image: payload.picture,
             emailVerified: null,
           };
         } catch (error) {
           console.error("Error decoding JWT:", error);
           session.user = {
-            id: 'unknown',
-            email: 'user@cognito.local',
-            name: 'Cognito User',
+            id: "unknown",
+            email: "user@cognito.local",
+            name: "Cognito User",
             emailVerified: null,
           };
         }
       }
-      
+
       return session;
     },
     async signIn({ user, account, profile }) {

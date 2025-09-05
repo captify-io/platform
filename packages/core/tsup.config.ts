@@ -19,7 +19,7 @@ const createEntryConfig = (
   treeshake: false,
   external: [
     "react",
-    "react-dom", 
+    "react-dom",
     "react/jsx-runtime",
     "react/jsx-dev-runtime",
     "next",

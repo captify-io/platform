@@ -2,7 +2,7 @@ import { getServerSession } from "@captify/core/lib";
 
 export async function UserWelcome() {
   const session = await getServerSession();
-  
+
   if (!session?.user) {
     return null;
   }

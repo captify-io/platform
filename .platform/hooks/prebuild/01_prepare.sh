@@ -10,10 +10,10 @@ export PATH="$PNPM_HOME:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:/usr/local/
 # Prefer corepack if present; otherwise install via npm -g
 if command -v corepack >/dev/null 2>&1; then
   corepack enable || true
-  corepack prepare pnpm@9.0.0 --activate || true
+  corepack prepare pnpm@10.15.1 --activate || true
 fi
 if ! command -v pnpm >/dev/null 2>&1; then
-  npm install -g pnpm@9.0.0
+  npm install -g pnpm@10.15.1
 fi
 
 hash -r

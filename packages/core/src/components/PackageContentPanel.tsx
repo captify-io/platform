@@ -21,11 +21,14 @@ export function PackageContentPanel({
   useEffect(() => {
     try {
       // Only run on client side and ensure ref is available
-      if (typeof window !== 'undefined' && prevHashRef.current !== currentHash) {
+      if (
+        typeof window !== "undefined" &&
+        prevHashRef.current !== currentHash
+      ) {
         prevHashRef.current = currentHash;
       }
     } catch (error) {
-      console.warn('Hash tracking failed:', error);
+      console.warn("Hash tracking failed:", error);
     }
   }, [currentHash]);
 

@@ -18,7 +18,7 @@ export function PackageRenderer({ packageName, params }: PackageRendererProps) {
   // Use static registry for package loading
   const PackageComponent = lazy(() => {
     const packageLoader = getPackageLoader(packageName);
-    
+
     if (!packageLoader) {
       return Promise.resolve({
         default: () => (
@@ -42,7 +42,7 @@ export function PackageRenderer({ packageName, params }: PackageRendererProps) {
         if (!packageModule) {
           throw new Error(`Package @captify/${packageName} not available`);
         }
-        
+
         // Try to get the main app component from the package
         if (packageModule.default) {
           return { default: packageModule.default };

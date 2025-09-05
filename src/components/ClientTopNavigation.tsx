@@ -6,10 +6,15 @@ import { Session } from "next-auth";
 
 // Client-side only TopNavigation to avoid SSR issues with hooks
 const TopNavigation = NextDynamic(
-  () => import("@captify/core/components").then((mod) => ({ default: mod.TopNavigation })),
-  { 
+  () =>
+    import("@captify/core/components").then((mod) => ({
+      default: mod.TopNavigation,
+    })),
+  {
     ssr: false,
-    loading: () => <div className="h-16 bg-background border-b animate-pulse" />
+    loading: () => (
+      <div className="h-16 bg-background border-b animate-pulse" />
+    ),
   }
 );
 

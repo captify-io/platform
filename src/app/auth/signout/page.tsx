@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 // Disable static generation for this page to prevent SSR issues
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default function SignOutPage() {
   return (

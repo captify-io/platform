@@ -7,22 +7,24 @@ const PACKAGE_LOADERS: Record<string, () => Promise<any>> = {
   // Add new packages here as they're created
 };
 
-export function getPackageLoader(packageName: string): (() => Promise<any>) | null {
+export function getPackageLoader(
+  packageName: string
+): (() => Promise<any>) | null {
   return PACKAGE_LOADERS[packageName] || null;
 }
 
 export async function loadPackageRegistry(packageName: string) {
   // Prevent execution during SSR/SSG
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
-  
+
   const packageLoader = getPackageLoader(packageName);
   if (!packageLoader) {
     console.warn(`Package ${packageName} not found in registry`);
     return null;
   }
-  
+
   try {
     const appModule = await packageLoader();
     if (!appModule) {

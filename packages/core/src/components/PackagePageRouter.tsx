@@ -59,7 +59,7 @@ export function PackagePageRouter({
   // Load page component when hash or package changes
   useEffect(() => {
     // Prevent execution during SSR/SSG
-    if (typeof window === 'undefined' || !packageSlug) {
+    if (typeof window === "undefined" || !packageSlug) {
       return;
     }
 

@@ -9,10 +9,10 @@ interface ClientOnlyProps {
 
 export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
   // This ensures the component only renders on the client
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return fallback as ReactNode;
   }
-  
+
   return children as ReactNode;
 }
 

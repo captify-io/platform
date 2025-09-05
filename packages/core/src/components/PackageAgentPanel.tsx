@@ -21,17 +21,17 @@ export function PackageAgentPanel({ packageInfo }: PackageAgentPanelProps) {
 
   const scrollToBottom = () => {
     try {
-      if (typeof window !== 'undefined' && messagesEndRef.current) {
+      if (typeof window !== "undefined" && messagesEndRef.current) {
         messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
       }
     } catch (error) {
-      console.warn('ScrollToBottom failed:', error);
+      console.warn("ScrollToBottom failed:", error);
     }
   };
 
   useEffect(() => {
     // Only run on client side
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       scrollToBottom();
     }
   }, [chatHistory]);

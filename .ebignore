@@ -38,18 +38,6 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
-# Misc
-.vercel/
-.amplify/
-amplify.yml
-
-# Keep these for EB
-# .ebextensions/
-# .elasticbeanstalk/
-# package.json
-# pnpm-lock.yaml
-# pnpm-workspace.yaml
-# Always include EB deployment configs
 !.platform/**/*
 !.ebextensions/**/*
 !Procfile

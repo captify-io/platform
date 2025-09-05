@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 // Disable static generation for this page to prevent SSR issues
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface CaptifyAppPageProps {
   params: Promise<{ captify: string[] }>;
@@ -14,17 +14,19 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
 
   useEffect(() => {
     // Resolve params in useEffect since this is now a client component
-    params.then((resolvedParams) => {
-      console.log("DEBUG PAGE: resolvedParams:", resolvedParams);
-      console.log(
-        "DEBUG PAGE: window.location.pathname:",
-        window.location.pathname
-      );
-      setCaptify(resolvedParams.captify || []);
-    }).catch(() => {
-      // Handle params resolution error gracefully
-      setCaptify([]);
-    });
+    params
+      .then((resolvedParams) => {
+        console.log("DEBUG PAGE: resolvedParams:", resolvedParams);
+        console.log(
+          "DEBUG PAGE: window.location.pathname:",
+          window.location.pathname
+        );
+        setCaptify(resolvedParams.captify || []);
+      })
+      .catch(() => {
+        // Handle params resolution error gracefully
+        setCaptify([]);
+      });
   }, [params]);
 
   if (!captify.length) {
@@ -52,13 +54,14 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
   }
 
   // Extract the package name (first element) from the captify array
-  const packageName = captify[0] || 'unknown';
+  const packageName = captify[0] || "unknown";
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          {packageName.charAt(0).toUpperCase() + packageName.slice(1)} Application
+          {packageName.charAt(0).toUpperCase() + packageName.slice(1)}{" "}
+          Application
         </h1>
         <p className="text-muted-foreground">
           Welcome to the {packageName} application workspace
@@ -69,7 +72,8 @@ export default function CaptifyAppPage({ params }: CaptifyAppPageProps) {
         <div className="bg-card p-6 rounded-lg border">
           <h2 className="text-xl font-semibold mb-3">Getting Started</h2>
           <p className="text-muted-foreground mb-4">
-            Explore the features and capabilities of the {packageName} application.
+            Explore the features and capabilities of the {packageName}{" "}
+            application.
           </p>
           <div className="space-y-2">
             <div className="flex items-center text-sm">

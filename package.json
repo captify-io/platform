@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "dev": "next dev --turbo",
     "dev:watch": "concurrently \"pnpm run dev:packages\" \"pnpm run dev\" --names \"📦,⚡\" --prefix-colors \"blue,green\"",
@@ -12,7 +12,7 @@
     "build:debug": "cross-env NODE_OPTIONS=--trace-warnings next build",
     "build:amplify": "pnpm run build:packages && next build",
     "build:packages": "pnpm --filter @captify/core run build && pnpm --filter @captify/mi run build",
-        "start": "next start -p ${PORT:-8080}",
+    "start": "next start -p ${PORT:-8080}",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "type-check:packages": "pnpm --filter @captify/core run type-check && pnpm --filter @captify/mi run type-check",
@@ -73,6 +73,12 @@
       "typescript": "5.9.2",
       "react": "19.1.1",
       "react-dom": "19.1.1"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
