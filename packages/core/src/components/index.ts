@@ -1,26 +1,36 @@
 "use client";
 
-// Export all components
-// Add your component exports here as you create them
+// Navigation components
+export * from './navigation/FavoritesBar';
+export { default as SignInForm } from './navigation/SignInForm';
+export * from './navigation/SmartBreadcrumb';
+export * from './navigation/TopNavigation';
 
-// Providers
-export { CaptifyProvider, useCaptify } from "./CaptifyProvider";
+// Layout components
+export * from './layout/CaptifyLayout';
+export * from './layout/ThreePanelLayout';
 
-// Main components
-export { ApplicationLauncher } from "./ApplicationLauncher";
-export { PackageAgentPanel } from "./PackageAgentPanel";
-export { PackageContentPanel } from "./PackageContentPanel";
-export { PackagePageRouter } from "./PackagePageRouter";
-export { SessionDebug } from "./SessionDebug";
-export { ThreePanelLayout } from "./ThreePanelLayout";
-export { CaptifyProviders } from "./CaptifyLayout";
-export { ClientOnly } from "./ClientOnly";
+// Provider components
+export * from './providers/CaptifyProvider';
+export * from './providers/ClientOnly';
+export * from './providers/ServerCaptifyProvider';
 
-// Constants and types
-export { APP_CATEGORY_LABELS } from "../types/app";
-export type { AppCategory, ApplicationMenuItem } from "../types/app";
+// Package components
+export * from './packages/PackageAgentPanel';
+export * from './packages/PackageContentPanel';
+export * from './packages/PackagePageRouter';
+export * from './packages/PackageRegistry';
+export * from './packages/PackageRenderer';
 
-// Re-export from subfolders
-export * from "./navigation";
-export * from "./search";
-export * from "./theme";
+// Search components
+export * from './search/GlobalSearch';
+
+// Theme components
+export * from './theme/ThemeToggle';
+
+// Application components
+export * from './ApplicationLauncher';
+export * from './UserRegistrationForm';
+
+// Re-export UI components
+export * from './ui';

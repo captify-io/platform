@@ -2,7 +2,8 @@
  * Core base interfaces and shared types
  */
 
-import type { UUID } from "crypto";
+// Use string type instead of crypto UUID to avoid Node.js dependency in browser builds
+// import type { UUID } from "crypto";
 
 // ===== BASE CORE INTERFACE =====
 // All entities in the system extend this base interface

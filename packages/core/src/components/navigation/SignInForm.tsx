@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React from "react";
+import { useEffect, useCallback } from "react";
+import { useState } from "../../lib/react-compat";
 import { signIn } from "next-auth/react";
 
 // Email validation constants (moved outside component to avoid re-creation)

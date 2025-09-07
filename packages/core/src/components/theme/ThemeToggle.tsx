@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useState } from "../../lib/react-compat";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "../ui/button";
 

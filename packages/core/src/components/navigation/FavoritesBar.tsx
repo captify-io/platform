@@ -1,50 +1,23 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import React from "react";
+import { useMemo, useEffect, useCallback } from "react";
+import { useState } from "../../lib/react-compat";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { Star, ChevronRight } from "lucide-react";
 import { apiClient } from "../../lib/api";
-import { useCaptify } from "../CaptifyProvider";
-import type { App, UserState } from "../../types";
+import { useCaptify } from "../providers/CaptifyProvider";
+import { useFavorites } from "../../hooks/useFavorites";
+import type { App } from "../../types";
 
 export function FavoritesBar() {
   const router = useRouter();
   const { session } = useCaptify();
-  const [favoriteApps, setFavoriteApps] = useState<string[]>([]);
+  const { favoriteApps, loading: favoritesLoading } = useFavorites();
   const [availableApps, setAvailableApps] = useState<App[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
-
-  // Fetch user's favorite apps from DynamoDB
-  const fetchFavoriteApps = useCallback(async () => {
-    if (!session?.user || !(session.user as any)?.id) return;
-
-    try {
-      const userId = (session.user as any).id;
-      const response = await apiClient.run({
-        service: "dynamo",
-        operation: "query",
-        app: "core",
-        table: "UserState",
-        data: {
-          IndexName: "userId-index",
-          KeyConditionExpression: "userId = :userId",
-          ExpressionAttributeValues: {
-            ":userId": userId,
-          },
-          Limit: 1,
-        },
-      });
-
-      if (response.success && response.data?.Items?.length > 0) {
-        const userState = response.data.Items[0] as UserState;
-        setFavoriteApps(userState.favorites?.applications || []);
-      }
-    } catch (error) {
-      console.error("Error fetching favorite apps:", error);
-    }
-  }, [session?.user]);
 
   // Fetch available apps from DynamoDB
   const fetchAvailableApps = useCallback(async () => {
@@ -78,13 +51,12 @@ export function FavoritesBar() {
     }
   }, [session?.user]);
 
-  // Load data when session is available
+  // Load apps when session is available
   useEffect(() => {
     if (session?.user) {
       fetchAvailableApps();
-      fetchFavoriteApps();
     }
-  }, [session?.user, fetchAvailableApps, fetchFavoriteApps]);
+  }, [session?.user, fetchAvailableApps]);
 
   // Get favorite app objects from available apps
   const favoriteAppObjects = useMemo(() => {
@@ -99,7 +71,7 @@ export function FavoritesBar() {
   }, [favoriteApps, availableApps, appsLoading]);
 
   // Don't render if loading
-  if (appsLoading) {
+  if (appsLoading || favoritesLoading) {
     return (
       <div className="border-b border-border bg-background">
         <div className="max-w-full mx-auto px-4 py-2">

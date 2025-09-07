@@ -1,0 +1,9 @@
+{
+  "packages": [
+    "core",
+    "mi",
+    "rmf"
+  ],
+  "description": "List of @captify packages to register with the API",
+  "autoDiscover": true
+}

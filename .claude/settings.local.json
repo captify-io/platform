@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsup:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pnpm --filter \"@captify/admin\" run build)",
+      "Bash(pnpm --filter \"@captify/core\" run build)",
+      "Bash(pnpm run:*)",
+      "Bash(sed:*)",
+      "Bash(pnpm --filter \"@captify/mi\" run build)",
+      "Bash(pnpm --filter \"@captify/pmbook\" run build)",
+      "Bash(pnpm --filter \"@captify/rmf\" run build)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(find:*)",
+      "Bash(NODE_ENV=development pnpm run build)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(npm ls:*)",
+      "Bash(pnpm install:*)",
+      "Bash(eb deploy:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

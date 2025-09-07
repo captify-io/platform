@@ -1,14 +1,7 @@
 {
   "compilerOptions": {
-    "types": [
-      "react",
-      "react-dom"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "types": ["react", "react-dom"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,25 +20,31 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@captify/admin": ["./apps/admin/src"],
+      "@captify/admin/*": ["./apps/admin/src/*"],
+      "@captify/mi": ["./apps/mi/src"],
+      "@captify/mi/*": ["./apps/mi/src/*"],
+      "@captify/pmbook": ["./apps/pmbook/src"],
+      "@captify/pmbook/*": ["./apps/pmbook/src/*"],
+      "@captify/rmf": ["./apps/rmf/src"],
+      "@captify/rmf/*": ["./apps/rmf/src/*"],
+      "@captify/core": ["./packages/core/src"],
+      "@captify/core/*": ["./packages/core/src/*"]
     },
-    "target": "ES2020"
+    "target": "ES2022"
   },
   "include": [
-    ".next/types/**/*.ts",
-    "dist/types/**/*.ts",
     "next-env.d.ts",
-    "packages/core/src/components/navigation/SmartBreadcrumb.tsx",
-    "packages/core/src/components/navigation/TopNavigation.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/app/api/auth/[...nextauth]/lib/aws-credentials.ts",
-    "out/types/**/*.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "packages"
+    "packages/*/src",
+    "packages/*/dist",
+    "apps/*/src",
+    "apps/*/dist"
   ]
 }

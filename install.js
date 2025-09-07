@@ -181,6 +181,20 @@ class CaptifyPackageInstaller {
   generateMenuFromPages(packagePath, packageName) {
     const pagesPath = join(packagePath, "src", "app", "pages");
     const indexPath = join(packagePath, "src", "app", "index.ts");
+    const menuJsonPath = join(packagePath, "src", "menu.json");
+
+    // First, check if there's a menu.json file
+    if (existsSync(menuJsonPath)) {
+      try {
+        console.log(`📋 Reading menu from menu.json`);
+        const menuContent = readFileSync(menuJsonPath, "utf8");
+        const menu = JSON.parse(menuContent);
+        return menu;
+      } catch (error) {
+        console.log(`⚠️  Could not parse menu.json: ${error.message}`);
+        console.log(`   Falling back to page scanning...`);
+      }
+    }
 
     if (!existsSync(pagesPath)) {
       console.log(`⚠️  No pages directory found at ${pagesPath}`);
@@ -464,9 +478,321 @@ class CaptifyPackageInstaller {
   }
 
   /**
+   * Create Cognito Identity Pool for app
+   */
+  async createIdentityPool(packageName) {
+    try {
+      const poolName = `captify-${packageName}-identity-pool`;
+      
+      console.log(`🔐 Creating identity pool: ${poolName}...`);
+      
+      // Check if pool already exists
+      try {
+        const listCommand = `aws cognito-identity list-identity-pools --max-results 60 --region ${this.region}`;
+        const result = execSync(listCommand, { encoding: "utf8" });
+        const pools = JSON.parse(result);
+        
+        const existingPool = pools.IdentityPools?.find(p => p.IdentityPoolName === poolName);
+        if (existingPool) {
+          console.log(`✅ Identity pool already exists: ${existingPool.IdentityPoolId}`);
+          return {
+            IdentityPoolId: existingPool.IdentityPoolId,
+            IdentityPoolArn: `arn:aws:cognito-identity:${this.region}:${process.env.AWS_ACCOUNT_ID || '211125459951'}:identitypool/${existingPool.IdentityPoolId}`
+          };
+        }
+      } catch (error) {
+        console.log("⚠️  Could not list existing pools, will create new one");
+      }
+      
+      // Create IAM roles for the identity pool
+      const authenticatedRole = await this.createIAMRole(packageName, 'authenticated');
+      const unauthenticatedRole = await this.createIAMRole(packageName, 'unauthenticated');
+      
+      // Create identity pool configuration
+      const poolConfig = {
+        IdentityPoolName: poolName,
+        AllowUnauthenticatedIdentities: false,
+        CognitoIdentityProviders: process.env.COGNITO_USER_POOL_ID ? [{
+          ClientId: process.env.COGNITO_CLIENT_ID,
+          ProviderName: `cognito-idp.${this.region}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
+          ServerSideTokenCheck: false
+        }] : [],
+        SupportedLoginProviders: {}
+      };
+      
+      // Create temporary file for the JSON
+      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
+      const tempFile = join(tempDir, "identity-pool.json");
+      writeFileSync(tempFile, JSON.stringify(poolConfig, null, 2));
+      
+      // Create identity pool
+      const createCommand = `aws cognito-identity create-identity-pool --cli-input-json file://${tempFile.replace(/\\/g, "/")} --region ${this.region}`;
+      const createResult = execSync(createCommand, { encoding: "utf8" });
+      const pool = JSON.parse(createResult);
+      
+      console.log(`✅ Created identity pool: ${pool.IdentityPoolId}`);
+      
+      // Set identity pool roles
+      const rolesConfig = {
+        IdentityPoolId: pool.IdentityPoolId,
+        Roles: {
+          authenticated: authenticatedRole.Arn,
+          unauthenticated: unauthenticatedRole.Arn
+        }
+      };
+      
+      const rolesFile = join(tempDir, "pool-roles.json");
+      writeFileSync(rolesFile, JSON.stringify(rolesConfig, null, 2));
+      
+      const setRolesCommand = `aws cognito-identity set-identity-pool-roles --cli-input-json file://${rolesFile.replace(/\\/g, "/")} --region ${this.region}`;
+      execSync(setRolesCommand);
+      
+      console.log(`✅ Set identity pool roles`);
+      
+      // Clean up temp files
+      try {
+        const fs = await import("fs");
+        fs.unlinkSync(tempFile);
+        fs.unlinkSync(rolesFile);
+        fs.rmdirSync(tempDir);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      
+      return {
+        IdentityPoolId: pool.IdentityPoolId,
+        IdentityPoolArn: `arn:aws:cognito-identity:${this.region}:${process.env.AWS_ACCOUNT_ID || '211125459951'}:identitypool/${pool.IdentityPoolId}`
+      };
+    } catch (error) {
+      console.error(`⚠️  Could not create identity pool: ${error.message}`);
+      return {
+        IdentityPoolId: `placeholder-pool-${packageName}`,
+        IdentityPoolArn: `arn:aws:cognito-identity:${this.region}:placeholder:identitypool/placeholder-${packageName}`
+      };
+    }
+  }
+  
+  /**
+   * Create IAM role for identity pool
+   */
+  async createIAMRole(packageName, roleType) {
+    try {
+      const roleName = `captify-${packageName}-${roleType}`;
+      
+      // Check if role exists
+      try {
+        const getCommand = `aws iam get-role --role-name ${roleName} --region ${this.region}`;
+        const result = execSync(getCommand, { encoding: "utf8" });
+        const role = JSON.parse(result).Role;
+        console.log(`  ✅ IAM role already exists: ${roleName}`);
+        return role;
+      } catch (error) {
+        // Role doesn't exist, create it
+      }
+      
+      // Create trust policy
+      const trustPolicy = {
+        Version: "2012-10-17",
+        Statement: [{
+          Effect: "Allow",
+          Principal: {
+            Federated: "cognito-identity.amazonaws.com"
+          },
+          Action: "sts:AssumeRoleWithWebIdentity"
+        }]
+      };
+      
+      // Create role
+      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
+      const trustFile = join(tempDir, "trust-policy.json");
+      writeFileSync(trustFile, JSON.stringify(trustPolicy, null, 2));
+      
+      const createRoleCommand = `aws iam create-role --role-name ${roleName} --assume-role-policy-document file://${trustFile.replace(/\\/g, "/")} --region ${this.region}`;
+      const roleResult = execSync(createRoleCommand, { encoding: "utf8" });
+      const role = JSON.parse(roleResult).Role;
+      
+      // Create access policy
+      const accessPolicy = {
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Effect: "Allow",
+            Action: [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan"
+            ],
+            Resource: `arn:aws:dynamodb:${this.region}:*:table/captify-${packageName}-*`
+          },
+          {
+            Effect: "Allow",
+            Action: [
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject"
+            ],
+            Resource: `arn:aws:s3:::captify-${packageName}-bucket/*`
+          }
+        ]
+      };
+      
+      const policyFile = join(tempDir, "access-policy.json");
+      writeFileSync(policyFile, JSON.stringify(accessPolicy, null, 2));
+      
+      const putPolicyCommand = `aws iam put-role-policy --role-name ${roleName} --policy-name ${roleName}-policy --policy-document file://${policyFile.replace(/\\/g, "/")} --region ${this.region}`;
+      execSync(putPolicyCommand);
+      
+      console.log(`  ✅ Created IAM role: ${roleName}`);
+      
+      // Clean up
+      try {
+        const fs = await import("fs");
+        fs.unlinkSync(trustFile);
+        fs.unlinkSync(policyFile);
+        fs.rmdirSync(tempDir);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      
+      return role;
+    } catch (error) {
+      console.error(`  ⚠️  Could not create IAM role: ${error.message}`);
+      return {
+        Arn: `arn:aws:iam::placeholder:role/captify-${packageName}-${roleType}`,
+        RoleName: `captify-${packageName}-${roleType}`
+      };
+    }
+  }
+  
+  /**
+   * Create S3 bucket for app
+   */
+  async createS3Bucket(packageName) {
+    try {
+      const bucketName = `captify-${packageName}-bucket`;
+      
+      console.log(`📦 Creating S3 bucket: ${bucketName}...`);
+      
+      // Check if bucket exists
+      try {
+        const headCommand = `aws s3api head-bucket --bucket ${bucketName} --region ${this.region}`;
+        execSync(headCommand, { stdio: "pipe" });
+        console.log(`✅ S3 bucket already exists: ${bucketName}`);
+        return {
+          BucketName: bucketName,
+          BucketArn: `arn:aws:s3:::${bucketName}`
+        };
+      } catch (error) {
+        // Bucket doesn't exist, create it
+      }
+      
+      // Create bucket
+      const createCommand = this.region === 'us-east-1' 
+        ? `aws s3api create-bucket --bucket ${bucketName} --region ${this.region}`
+        : `aws s3api create-bucket --bucket ${bucketName} --region ${this.region} --create-bucket-configuration LocationConstraint=${this.region}`;
+      
+      execSync(createCommand);
+      console.log(`✅ Created S3 bucket: ${bucketName}`);
+      
+      // Enable versioning
+      const versioningCommand = `aws s3api put-bucket-versioning --bucket ${bucketName} --versioning-configuration Status=Enabled --region ${this.region}`;
+      execSync(versioningCommand);
+      
+      // Set bucket policy for app access
+      const bucketPolicy = {
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "AllowAppAccess",
+            Effect: "Allow",
+            Principal: {
+              AWS: `arn:aws:iam::*:role/captify-${packageName}-authenticated`
+            },
+            Action: [
+              "s3:GetObject",
+              "s3:PutObject"
+            ],
+            Resource: `arn:aws:s3:::${bucketName}/*`
+          }
+        ]
+      };
+      
+      const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
+      const policyFile = join(tempDir, "bucket-policy.json");
+      writeFileSync(policyFile, JSON.stringify(bucketPolicy, null, 2));
+      
+      const policyCommand = `aws s3api put-bucket-policy --bucket ${bucketName} --policy file://${policyFile.replace(/\\/g, "/")} --region ${this.region}`;
+      
+      try {
+        execSync(policyCommand);
+        console.log(`✅ Set bucket policy`);
+      } catch (error) {
+        console.log(`⚠️  Could not set bucket policy: ${error.message}`);
+      }
+      
+      // Clean up
+      try {
+        const fs = await import("fs");
+        fs.unlinkSync(policyFile);
+        fs.rmdirSync(tempDir);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      
+      return {
+        BucketName: bucketName,
+        BucketArn: `arn:aws:s3:::${bucketName}`
+      };
+    } catch (error) {
+      console.error(`⚠️  Could not create S3 bucket: ${error.message}`);
+      return {
+        BucketName: `placeholder-bucket-${packageName}`,
+        BucketArn: `arn:aws:s3:::placeholder-bucket-${packageName}`
+      };
+    }
+  }
+  
+  /**
+   * Create Bedrock Agent placeholder
+   */
+  async createBedrockAgent(packageName) {
+    // Placeholder for future Bedrock Agent creation
+    console.log(`🤖 Creating Bedrock agent placeholder for ${packageName}...`);
+    
+    return {
+      AgentId: `agent-${packageName}-${Date.now()}`,
+      AgentAliasId: `alias-${packageName}-${Date.now()}`,
+      AgentName: `captify-${packageName}-agent`,
+      AgentArn: `arn:aws:bedrock:${this.region}:placeholder:agent/captify-${packageName}`,
+      Status: "placeholder",
+      CreatedAt: new Date().toISOString()
+    };
+  }
+  
+  /**
+   * Create Knowledge Base placeholder
+   */
+  async createKnowledgeBase(packageName, s3Bucket) {
+    // Placeholder for future Knowledge Base creation
+    console.log(`📚 Creating Knowledge Base placeholder for ${packageName}...`);
+    
+    return {
+      KnowledgeBaseId: `kb-${packageName}-${Date.now()}`,
+      KnowledgeBaseArn: `arn:aws:bedrock:${this.region}:placeholder:knowledge-base/captify-${packageName}`,
+      DataSourceId: `ds-${packageName}-${Date.now()}`,
+      S3BucketName: s3Bucket.BucketName,
+      Status: "placeholder",
+      CreatedAt: new Date().toISOString()
+    };
+  }
+
+  /**
    * Update app configuration in captify-core-App table
    */
-  async updateAppConfiguration(packagePath, packageName, menu) {
+  async updateAppConfiguration(packagePath, packageName, menu, awsResources = {}) {
     try {
       const packageJsonPath = join(packagePath, "package.json");
       const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
@@ -491,8 +817,16 @@ class CaptifyPackageInstaller {
         visibility: "internal",
         icon: this.getIconForPage(packageName),
         menu,
-        agentId: null,
-        agentAliasId: null,
+        // AWS Resources
+        identityPoolId: awsResources.identityPool?.IdentityPoolId || null,
+        identityPoolArn: awsResources.identityPool?.IdentityPoolArn || null,
+        s3BucketName: awsResources.s3Bucket?.BucketName || null,
+        s3BucketArn: awsResources.s3Bucket?.BucketArn || null,
+        agentId: awsResources.agent?.AgentId || null,
+        agentAliasId: awsResources.agent?.AgentAliasId || null,
+        agentArn: awsResources.agent?.AgentArn || null,
+        knowledgeBaseId: awsResources.knowledgeBase?.KnowledgeBaseId || null,
+        knowledgeBaseArn: awsResources.knowledgeBase?.KnowledgeBaseArn || null,
       };
 
       // Convert to DynamoDB format
@@ -729,6 +1063,99 @@ class CaptifyPackageInstaller {
   }
 
   /**
+   * Ensure core tables (App and TableMetadata) exist
+   * These tables are required by all packages
+   */
+  async ensureCoreTablesExist() {
+    console.log("🔍 Checking for core tables...");
+    
+    // Define core table configurations
+    const coreTableConfigs = [
+      {
+        name: "App",
+        tableName: `${this.tablePrefix}-core-App`,
+        attributes: [
+          {
+            AttributeName: "id",
+            AttributeType: "S",
+          },
+        ],
+        keySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+      },
+      {
+        name: "TableMetadata",
+        tableName: `${this.tablePrefix}-core-TableMetadata`,
+        attributes: [
+          {
+            AttributeName: "id",
+            AttributeType: "S",
+          },
+        ],
+        keySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+      },
+    ];
+
+    // Check and create each core table if needed
+    for (const tableConfig of coreTableConfigs) {
+      try {
+        // Check if table exists
+        const describeCommand = `aws dynamodb describe-table --table-name ${tableConfig.tableName} --region ${this.region}`;
+        
+        try {
+          execSync(describeCommand, { stdio: "pipe" });
+          console.log(`✅ Core table ${tableConfig.tableName} already exists`);
+        } catch (error) {
+          // Table doesn't exist, create it
+          console.log(`📋 Creating core table ${tableConfig.tableName}...`);
+          
+          // Create table configuration
+          const createTableCommand = {
+            TableName: tableConfig.tableName,
+            KeySchema: tableConfig.keySchema,
+            AttributeDefinitions: tableConfig.attributes,
+            BillingMode: "PAY_PER_REQUEST",
+          };
+
+          // Create temporary file for the JSON
+          const tempDir = mkdtempSync(join(tmpdir(), "captify-installer-"));
+          const tempFile = join(tempDir, "create-table.json");
+
+          writeFileSync(tempFile, JSON.stringify(createTableCommand, null, 2));
+
+          const command = `aws dynamodb create-table --cli-input-json file://${tempFile.replace(
+            /\\/g,
+            "/"
+          )} --region ${this.region}`;
+          execSync(command);
+
+          console.log(`✅ Created core table ${tableConfig.tableName}`);
+
+          // Clean up temp file
+          try {
+            const fs = await import("fs");
+            fs.unlinkSync(tempFile);
+            fs.rmdirSync(tempDir);
+          } catch (cleanupError) {
+            // Ignore cleanup errors
+          }
+
+          // Wait for table to be active
+          console.log(`⏳ Waiting for table to be active...`);
+          const waitCommand = `aws dynamodb wait table-exists --table-name ${tableConfig.tableName} --region ${this.region}`;
+          execSync(waitCommand);
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error ensuring core table ${tableConfig.tableName}: ${error.message}`
+        );
+        throw error;
+      }
+    }
+    
+    console.log("✅ Core tables ready");
+  }
+
+  /**
    * Install package
    */
   async installPackage(packageName) {
@@ -758,33 +1185,70 @@ class CaptifyPackageInstaller {
       // Get existing tables
       const existingTables = this.getExistingTables();
 
-      // Create/update tables
-      for (const table of tables) {
+      // 1a. FIRST: Ensure core tables exist (App and TableMetadata)
+      await this.ensureCoreTablesExist();
+
+      // 1b. Separate tables into core tables and others
+      const coreTableNames = ['App', 'TableMetadata'];
+      const coreTables = tables.filter(t => coreTableNames.includes(t.name));
+      const otherTables = tables.filter(t => !coreTableNames.includes(t.name));
+
+      // 1c. Create/update core tables first
+      for (const table of coreTables) {
+        await this.createOrUpdateTable(table);
+      }
+
+      // 1d. Then create/update other tables
+      for (const table of otherTables) {
         await this.createOrUpdateTable(table);
       }
 
       // Delete unused tables
       await this.deleteUnusedTables(tables, existingTables);
 
-      // 2. Generate menu from pages
+      // 2. Create AWS resources for the app
+      console.log(`\n🔧 Creating AWS resources for ${packageName}...`);
+      
+      const awsResources = {};
+      
+      // Create Identity Pool
+      awsResources.identityPool = await this.createIdentityPool(packageName);
+      
+      // Create S3 Bucket
+      awsResources.s3Bucket = await this.createS3Bucket(packageName);
+      
+      // Create Bedrock Agent placeholder
+      awsResources.agent = await this.createBedrockAgent(packageName);
+      
+      // Create Knowledge Base placeholder
+      awsResources.knowledgeBase = await this.createKnowledgeBase(packageName, awsResources.s3Bucket);
+      
+      console.log(`✅ AWS resources created/verified\n`);
+
+      // 3. Generate menu from pages
       const menu = this.generateMenuFromPages(packagePath, packageName);
       console.log(`📋 Generated menu with ${menu.length} items`);
 
-      // 3. Update app configuration
+      // 4. Update app configuration with AWS resources
       const appConfig = await this.updateAppConfiguration(
         packagePath,
         packageName,
-        menu
+        menu,
+        awsResources
       );
 
       console.log(`🎉 Successfully installed package: ${packageName}`);
-      console.log(`📋 App ID: ${appConfig.appId}`);
+      console.log(`📋 App ID: ${appConfig.id}`);
+      console.log(`🔐 Identity Pool: ${awsResources.identityPool?.IdentityPoolId || 'placeholder'}`);
+      console.log(`📦 S3 Bucket: ${awsResources.s3Bucket?.BucketName || 'placeholder'}`);
+      console.log(`🤖 Agent: ${awsResources.agent?.AgentId || 'placeholder'}`);
 
       return {
         packageName,
         tables,
         menu,
         appConfig,
+        awsResources,
       };
     } catch (error) {
       console.error(

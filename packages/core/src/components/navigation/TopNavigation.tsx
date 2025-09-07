@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { lazy, Suspense, useRef, useEffect } from "react";
+import React, { lazy, Suspense, useRef, useEffect, useState } from "react";
+import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { useSafeRef } from "../../lib/react-compat";
 import { Button } from "../ui/button";
@@ -16,6 +17,7 @@ import {
 } from "../ui/dropdown-menu";
 import { GlobalSearch } from "../search/GlobalSearch";
 import { ThemeToggle } from "../theme/ThemeToggle";
+import { ApplicationLauncher } from "./ApplicationLauncher";
 import {
   Bell,
   Zap,
@@ -26,14 +28,11 @@ import {
   Settings,
   Bot,
   Grid3X3,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  X,
 } from "lucide-react";
-
-// Lazy load ApplicationLauncher to prevent useCaptify from being called at module import time
-const ApplicationLauncher = lazy(() =>
-  import("../ApplicationLauncher").then((module) => ({
-    default: module.ApplicationLauncher,
-  }))
-);
 
 interface TopNavigationProps {
   onSearchFocus?: () => void;
@@ -43,17 +42,44 @@ interface TopNavigationProps {
     name: string;
   };
   session?: Session | null;
-  handleCognitoLogout?: () => Promise<void>;
 }
+
+// Mock notifications data - in a real app, this would come from an API
+const mockNotifications = [
+  {
+    id: "1",
+    title: "System Update",
+    message: "Platform has been updated to version 2.1.0",
+    type: "success" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
+    read: false,
+  },
+  {
+    id: "2", 
+    title: "Security Alert",
+    message: "New login detected from Washington, DC",
+    type: "warning" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
+    read: true,
+  },
+  {
+    id: "3",
+    title: "Report Ready",
+    message: "Your monthly analytics report is ready for download",
+    type: "info" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+    read: false,
+  },
+];
 
 export function TopNavigation({
   onSearchFocus,
   onAppMenuClick,
   currentApplication,
   session: propSession,
-  handleCognitoLogout,
 }: TopNavigationProps) {
   const router = useRouter();
+  const [notifications, setNotifications] = useState(mockNotifications);
 
   // Use session from prop
   const session = propSession || null;
@@ -78,6 +104,80 @@ export function TopNavigation({
     renderCount.current += 1;
   });
 
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      // Use the NextAuth API endpoint directly to avoid JSON parsing issues
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          csrfToken: await fetch("/api/auth/csrf").then(res => res.json()).then(data => data.csrfToken)
+        })
+      });
+
+      // Don't parse response as JSON if it's not JSON
+      if (response.ok) {
+        // Successful signout, redirect manually
+        router.push("/");
+        router.refresh();
+      } else {
+        throw new Error(`SignOut failed with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error signing out:", error);
+      
+      // Fallback: try the NextAuth signOut function with minimal config
+      try {
+        await signOut({ redirect: false });
+        router.push("/");
+        router.refresh();
+      } catch (fallbackError) {
+        console.error("Fallback signout failed:", fallbackError);
+        
+        // Final fallback: clear storage and force redirect
+        if (typeof window !== "undefined") {
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+          window.location.href = "/";
+        }
+      }
+    }
+  };
+
+  // Handle notification actions
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, read: true }
+          : notification
+      )
+    );
+  };
+
+  const dismissNotification = (notificationId: string) => {
+    setNotifications(prev =>
+      prev.filter(notification => notification.id !== notificationId)
+    );
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const formatTimeAgo = (timestamp: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
   return (
     <div>
       {/* Main Top Bar */}
@@ -95,20 +195,7 @@ export function TopNavigation({
 
           {/* App Menu Button - Fixed width */}
           <div className="flex-shrink-0">
-            <Suspense
-              fallback={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-gray-800 hover:text-white p-2"
-                  disabled
-                >
-                  <Grid3X3 className="h-4 w-4 animate-pulse" />
-                </Button>
-              }
-            >
-              <ApplicationLauncher session={session} />
-            </Suspense>
+            <ApplicationLauncher currentApplication={currentApplication} />
           </div>
 
           {/* Search - Takes all available space */}
@@ -129,13 +216,101 @@ export function TopNavigation({
               <Bot className="h-4 w-4" />
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-gray-800 hover:text-white p-2 cursor-pointer"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
+            {/* Notifications */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-gray-800 hover:text-white p-2 cursor-pointer relative"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {unreadCount} unread
+                    </span>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No notifications</p>
+                  </div>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-3 border-b last:border-b-0 hover:bg-accent/50 ${
+                          !notification.read ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {notification.type === "success" && (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
+                              {notification.type === "warning" && (
+                                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                              )}
+                              {notification.type === "info" && (
+                                <Clock className="h-4 w-4 text-blue-500" />
+                              )}
+                              <h4 className="font-medium text-sm truncate">
+                                {notification.title}
+                              </h4>
+                              {!notification.read && (
+                                <div className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {notification.message}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatTimeAgo(notification.timestamp)}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            {!notification.read && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => markAsRead(notification.id)}
+                                className="h-6 w-6 p-0 hover:bg-accent"
+                                title="Mark as read"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => dismissNotification(notification.id)}
+                              className="h-6 w-6 p-0 hover:bg-accent"
+                              title="Dismiss"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Token Counter */}
             <div className="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-md border border-gray-700 whitespace-nowrap">
@@ -254,7 +429,7 @@ export function TopNavigation({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={handleCognitoLogout}
+                    onClick={handleSignOut}
                     className="flex items-center space-x-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                   >
                     <LogOut className="h-4 w-4" />

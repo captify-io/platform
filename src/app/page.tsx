@@ -1,6 +1,6 @@
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full bg-background overflow-auto">
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-16">

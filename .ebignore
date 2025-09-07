@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm/
 packages/*/node_modules/
 
 # Build outputs (will be rebuilt on EB)

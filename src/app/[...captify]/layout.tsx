@@ -1,9 +1,5 @@
 ﻿import { ReactNode } from "react";
-import {
-  FavoritesBar,
-  SmartBreadcrumb,
-  ThreePanelLayout,
-} from "@captify/core/components";
+import { ClientCaptifyLayout } from "../../components/ClientCaptifyLayout";
 
 interface CaptifyLayoutProps {
   children: React.ReactNode;
@@ -18,16 +14,9 @@ export default async function CaptifyPageLayout({
 
   console.log("called [captify]/layout.tsx with package:", captify[0]);
 
-  // Pass the package name through a data attribute so the context can pick it up
   return (
-    <div data-package={captify[0] || ""} className="h-full">
-      <div className="h-screen flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          <FavoritesBar />
-          <SmartBreadcrumb />
-          <ThreePanelLayout>{children}</ThreePanelLayout>
-        </div>
-      </div>
-    </div>
+    <ClientCaptifyLayout packageName={captify[0] || ""}>
+      {children}
+    </ClientCaptifyLayout>
   );
 }

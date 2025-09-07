@@ -35,16 +35,6 @@ const nextConfig = {
   webpack: (config, { isServer, dev }) => {
     // Only apply webpack config when not using turbopack
     if (process.env.NODE_ENV === "production") {
-      // Ensure consistent React resolution across monorepo
-      const path = require("path");
-      config.resolve.alias = {
-        ...(config.resolve.alias ?? {}),
-        "@": path.resolve(__dirname, "src"),
-        // Force single React instance across monorepo
-        react: path.resolve(__dirname, "node_modules/react"),
-        "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      };
-
       // Optimize for Amplify build environment
       if (!dev && !isServer) {
         // Reduce bundle size for Amplify's 50MB limit
@@ -58,6 +48,13 @@ const nextConfig = {
                 name: "vendors",
                 chunks: "all",
                 maxSize: 244000, // ~240KB chunks
+              },
+              captifyPackages: {
+                test: /[\\/]packages[\\/]/,
+                name: "captify-packages",
+                chunks: "all",
+                priority: 10,
+                maxSize: 200000, // ~200KB chunks for internal packages
               },
             },
           },
@@ -74,7 +71,6 @@ const nextConfig = {
   turbopack: {
     resolveAlias: {
       "@": "./src",
-      // ❌ Do NOT alias react/react-dom here; use pnpm overrides instead.
     },
   },
 };

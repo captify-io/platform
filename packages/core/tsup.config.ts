@@ -1,59 +1,36 @@
-import { defineConfig } from "tsup";
+import { defineConfig, type Options } from "tsup";
+import { createSharedConfig } from "../../tsup.config.base.js";
 
-const isDev = process.env.NODE_ENV === "development";
+const entries = [
+  // Main entry point
+  { entryName: "index", entryPath: "src/index.ts", addUseClient: false },
+  
+  // Components (with "use client") - special handling for dynamic imports
+  { entryName: "components", entryPath: "src/components/index.ts", addUseClient: true },
+  { entryName: "ui", entryPath: "src/components/ui/index.ts", addUseClient: true },
+  
+  // Types (no "use client")
+  { entryName: "types", entryPath: "src/types/index.ts", addUseClient: false },
+  
+  // Hooks (with "use client")  
+  { entryName: "hooks", entryPath: "src/hooks/index.ts", addUseClient: true },
+  
+  // Lib utilities (mixed)
+  { entryName: "lib", entryPath: "src/lib/index.ts", addUseClient: false },
+  
+  // Services (server-side only, no "use client")
+  { entryName: "services", entryPath: "src/services/index.ts", addUseClient: false },
+];
 
-// Helper function to create config for each entry
-const createEntryConfig = (
-  entryName: string,
-  entryPath: string,
-  addUseClient: boolean
-) => ({
-  entry: { [entryName]: entryPath },
-  format: ["esm"] as ["esm"],
-  dts: true,
-  splitting: false,
-  sourcemap: true,
-  clean: entryName === "services", // Only clean once (first entry alphabetically)
-  target: "es2022",
-  minify: false,
-  treeshake: false,
-  external: [
-    "react",
-    "react-dom",
-    "react/jsx-runtime",
-    "react/jsx-dev-runtime",
-    "next",
-    "next/link",
-    "next/navigation",
-    "next/router",
-    "@aws-sdk/*",
-    "@captify/*",
-  ],
-  esbuildOptions(options) {
-    options.jsx = "automatic";
-    options.jsxImportSource = "react";
-    options.keepNames = true;
-    options.legalComments = "none";
-  },
-  ...(addUseClient && {
-    banner: {
-      js: '"use client";',
-    },
-  }),
-  onSuccess: isDev ? `echo '@captify/core ${entryName} rebuilt!'` : undefined,
-  watch: isDev ? [`src/**/*.ts`, `src/**/*.tsx`] : false,
-});
+// Create config from base but customize for components entry
+const configs = createSharedConfig(entries);
 
-export default defineConfig([
-  // Server-side modules (no "use client")
-  createEntryConfig("services", "src/services/index.ts", false),
-  createEntryConfig("api", "src/lib/index.ts", false),
-  createEntryConfig("types", "src/types/index.ts", false),
-  createEntryConfig("auth", "src/auth.ts", false),
+// Disable declaration generation for components entry to avoid rootDir issues
+const componentsConfig = configs.find((c: Options) => 
+  c.entry && Object.keys(c.entry)[0] === 'components'
+);
+if (componentsConfig) {
+  componentsConfig.dts = false;
+}
 
-  // Client-side modules (with "use client")
-  createEntryConfig("app", "src/app/index.ts", true),
-  createEntryConfig("components", "src/components/index.ts", true),
-  createEntryConfig("hooks", "src/hooks/index.ts", true),
-  createEntryConfig("ui", "src/components/ui/index.ts", true),
-]);
+export default defineConfig(configs);

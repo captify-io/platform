@@ -1,0 +1,55 @@
+{
+  "name": "@captify/pmbook",
+  "version": "1.0.0",
+  "description": "Strategic alignment and business operations platform for government contracting",
+  "main": "./dist/app.mjs",
+  "types": "./dist/app.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/app.mjs",
+      "types": "./dist/app.d.mts"
+    },
+    "./services": {
+      "import": "./dist/services.mjs",
+      "types": "./dist/services.d.mts"
+    },
+    "./app": {
+      "import": "./dist/app.mjs",
+      "types": "./dist/app.d.mts"
+    },
+    "./app/client": {
+      "import": "./dist/app/client.mjs",
+      "types": "./dist/app/client.d.mts"
+    },
+    "./app/pageLoader": {
+      "import": "./dist/app/pageLoader.mjs",
+      "types": "./dist/app/pageLoader.d.mts"
+    },
+    "./components": {
+      "import": "./dist/components.mjs",
+      "types": "./dist/components.d.mts"
+    },
+    "./types": {
+      "import": "./dist/types.mjs",
+      "types": "./dist/types.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@captify/admin": "workspace:*",
+    "@captify/core": "workspace:*",
+    "@aws-sdk/client-dynamodb": "^3.693.0",
+    "@aws-sdk/lib-dynamodb": "^3.693.0",
+    "@aws-sdk/client-s3": "^3.693.0",
+    "date-fns": "^3.0.0",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
+  }
+}

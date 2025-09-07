@@ -1,33 +1,127 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiClient } from "../lib";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { ScrollArea } from "./ui/scroll-area";
-import { Input } from "./ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "./ui/sheet";
+import { apiClient } from "../lib/api";
+import { cn } from "../lib/utils";
+import { 
+  Button, 
+  Badge, 
+  ScrollArea, 
+  Input,
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from "./ui";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { App, UserState } from "../types";
-import { APP_CATEGORY_LABELS } from "../types/app";
-import { useDebug } from "../hooks";
-import { Grid3X3, Star } from "lucide-react";
+import { Grid3X3, Star, Search } from "lucide-react";
+import { useFavorites } from "../hooks/useFavorites";
 import type { Session } from "next-auth";
+
+// Type definitions
+export interface App {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  category?: string;
+  url?: string;
+  status?: string;
+  cloudProvider?: string;
+  region?: string;
+  environment?: string;
+}
+
+export type AppCategory = 
+  | "core"
+  | "analytics"
+  | "communication"
+  | "storage"
+  | "compute"
+  | "database"
+  | "security"
+  | "monitoring"
+  | "networking"
+  | "ai_ml"
+  | "development"
+  | "other";
+
+export const APP_CATEGORY_LABELS: Record<AppCategory, string> = {
+  core: "Core Services",
+  analytics: "Analytics",
+  communication: "Communication",
+  storage: "Storage",
+  compute: "Compute",
+  database: "Database",
+  security: "Security",
+  monitoring: "Monitoring",
+  networking: "Networking",
+  ai_ml: "AI/ML",
+  development: "Development",
+  other: "Other",
+};
+
+type FilterType = 
+  | "favorites" 
+  | "all-applications" 
+  | "all-services"
+  | AppCategory;
 
 interface ApplicationLauncherProps {
   className?: string;
   session: Session | null;
+  variant?: "compact" | "aws";
 }
 
-// Professional App Card Component
-function AppCard({
+// Left sidebar navigation item component (AWS variant)
+function NavItem({
+  label,
+  icon,
+  isActive,
+  count,
+  onClick,
+  type = "default",
+}: {
+  label: string;
+  icon: string;
+  isActive: boolean;
+  count?: number;
+  onClick: () => void;
+  type?: "default" | "divider-after";
+}) {
+  return (
+    <>
+      <button
+        onClick={onClick}
+        className={cn(
+          "w-full flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors",
+          isActive
+            ? "bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <DynamicIcon name={icon as any} className="h-4 w-4" />
+          <span>{label}</span>
+        </div>
+        {count !== undefined && (
+          <Badge variant="secondary" className="text-xs">
+            {count}
+          </Badge>
+        )}
+      </button>
+      {type === "divider-after" && (
+        <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+      )}
+    </>
+  );
+}
+
+// Compact App Card Component
+function CompactAppCard({
   app,
   isFavorite,
   onToggleFavorite,
@@ -38,19 +132,6 @@ function AppCard({
   onToggleFavorite: (appId: string) => void;
   onAppClick: (app: App) => void;
 }) {
-  const searchParams = useSearchParams();
-  const isDebugMode = useDebug(searchParams);
-
-  // Debug logging for each app (only when debug mode is enabled)
-  if (isDebugMode) {
-    console.log("🔍 AppCard Debug for app:", app.name || "Unknown");
-    console.log("  App object:", app);
-    console.log("  App properties:", Object.keys(app));
-    console.log("  App.name:", app.name);
-    console.log("  App.description:", (app as any).description);
-    console.log("  App.category:", (app as any).category);
-  }
-
   return (
     <div
       className="group relative flex items-center space-x-2 p-1.5 hover:bg-accent/50 cursor-pointer transition-all duration-200 rounded-md border border-transparent hover:border-border/50"
@@ -60,7 +141,7 @@ function AppCard({
       <div className="relative">
         <div className="w-8 h-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-border group-hover:border-blue-500/30 transition-all duration-200">
           <DynamicIcon
-            name={(app as any).icon || "package"}
+            name={(app.icon || "package") as any}
             className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors"
           />
         </div>
@@ -79,17 +160,12 @@ function AppCard({
               {app.name}
             </h4>
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0">
-              {(app as any).description ||
-                "Application description not available"}
+              {app.description || "Application description not available"}
             </p>
             <div className="flex items-center mt-0.5">
               <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                {APP_CATEGORY_LABELS[
-                  (app as any).category as keyof typeof APP_CATEGORY_LABELS
-                ] ||
-                  (app as any).category?.charAt(0).toUpperCase() +
-                    (app as any).category?.slice(1) ||
-                  "Other"}
+                {(app.category && APP_CATEGORY_LABELS[app.category as AppCategory]) ||
+                  (app.category ? app.category.charAt(0).toUpperCase() + app.category.slice(1) : "Other")}
               </Badge>
             </div>
           </div>
@@ -105,16 +181,74 @@ function AppCard({
             className={`ml-1 h-6 w-6 p-0 transition-all duration-200 self-start ${
               isFavorite
                 ? "text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-                : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                : "text-muted-foreground hover:text-yellow-500 hover:bg-accent"
             }`}
-            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Star
-              className={`h-3 w-3 ${
+              className={`h-3.5 w-3.5 transition-all duration-200 ${
                 isFavorite ? "fill-current" : ""
-              } transition-all duration-200`}
+              }`}
             />
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// AWS-style App Card Component
+function AWSAppCard({
+  app,
+  isFavorite,
+  onToggleFavorite,
+  onAppClick,
+}: {
+  app: App;
+  isFavorite: boolean;
+  onToggleFavorite: (appId: string) => void;
+  onAppClick: (app: App) => void;
+}) {
+  return (
+    <div
+      className="group p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-all duration-200 bg-white dark:bg-gray-800"
+      onClick={() => onAppClick(app)}
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-gray-200 dark:border-gray-600 flex-shrink-0">
+          <DynamicIcon
+            name={(app.icon || "package") as any}
+            className="h-6 w-6 text-blue-600"
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-1">
+            <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 truncate pr-2">
+              {app.name}
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                onToggleFavorite(app.id);
+              }}
+              className={cn(
+                "h-6 w-6 p-0 flex-shrink-0",
+                isFavorite
+                  ? "text-yellow-500 hover:text-yellow-600"
+                  : "text-gray-400 hover:text-yellow-500"
+              )}
+            >
+              <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+            </Button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+            {app.description || "No description available"}
+          </p>
+          <Badge variant="secondary" className="text-xs">
+            {APP_CATEGORY_LABELS[app.category as AppCategory] || "Other"}
+          </Badge>
         </div>
       </div>
     </div>
@@ -124,465 +258,270 @@ function AppCard({
 export function ApplicationLauncher({
   className,
   session,
+  variant = "compact",
 }: ApplicationLauncherProps) {
-  const searchParams = useSearchParams();
-  const isDebugMode = useDebug(searchParams);
-  const [isOpen, setIsOpen] = useState(false);
-  const [applications, setApplications] = useState<App[]>([]);
-  const [favoriteApps, setFavoriteApps] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isMounted, setIsMounted] = useState(false);
-
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { favoriteApps: favorites, toggleFavorite } = useFavorites();
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const [apps, setApps] = useState<App[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all-applications");
 
-  // Fetch user's favorite apps from DynamoDB
-  const fetchFavoriteApps = useCallback(async () => {
-    if (!session?.user || !(session.user as any)?.id) return;
-
-    try {
-      const userId = (session.user as any).id;
-      const response = await apiClient.run({
-        service: "dynamo",
-        operation: "query",
-        app: "core",
-        table: "UserState",
-        data: {
-          IndexName: "userId-index",
-          KeyConditionExpression: "userId = :userId",
-          ExpressionAttributeValues: {
-            ":userId": userId,
-          },
-          Limit: 1,
-        },
-      });
-
-      if (response.success && response.data?.Items?.length > 0) {
-        const userState = response.data.Items[0] as UserState;
-        setFavoriteApps(userState.favorites?.applications || []);
-      }
-    } catch (error) {
-      console.error("Error fetching favorite apps:", error);
-    }
-  }, [session?.user]);
-
-  // Toggle favorite app
-  const toggleFavorite = useCallback(
-    async (appId: string) => {
-      if (!session?.user || !(session.user as any)?.id) return;
-
-      const newFavorites = favoriteApps.includes(appId)
-        ? favoriteApps.filter((id) => id !== appId)
-        : [...favoriteApps, appId];
-
-      setFavoriteApps(newFavorites);
-
+  // Fetch applications
+  useEffect(() => {
+    const fetchApps = async () => {
+      if (!session?.user) return;
+      
+      setLoading(true);
       try {
-        const userId = (session.user as any).id;
-
-        // Get current user state
-        const userStatesResponse = await apiClient.run({
-          service: "dynamo",
-          operation: "query",
-          app: "core",
-          table: "UserState",
-          data: {
-            IndexName: "userId-index",
-            KeyConditionExpression: "userId = :userId",
-            ExpressionAttributeValues: {
-              ":userId": userId,
-            },
-            Limit: 1,
-          },
+        const result = await apiClient.run({
+          service: "application",
+          operation: "listApplications",
         });
-
-        if (
-          userStatesResponse.success &&
-          userStatesResponse.data?.Items?.length > 0
-        ) {
-          const userState = userStatesResponse.data.Items[0] as UserState;
-
-          // Update favorites
-          await apiClient.run({
-            service: "dynamo",
-            operation: "update",
-            app: "core",
-            table: "UserState",
-            data: {
-              key: { id: userState.id },
-              updateExpression: "SET #favorites.#applications = :favorites",
-              expressionAttributeNames: {
-                "#favorites": "favorites",
-                "#applications": "applications",
-              },
-              expressionAttributeValues: {
-                ":favorites": newFavorites,
-              },
-            },
-          });
+        
+        if (result.success && result.data) {
+          setApps(result.data);
         }
       } catch (error) {
-        console.error("Error updating favorite apps:", error);
-        // Revert on error
-        setFavoriteApps(favoriteApps);
+        console.error("Failed to fetch applications:", error);
+      } finally {
+        setLoading(false);
       }
-    },
-    [session?.user, favoriteApps]
-  );
+    };
 
-  // Create local navigation function
-  const navigateToApp = useCallback(
-    (app: App) => {
-      // Navigate to the app's route
-      const appRoute = `/${app.slug}`;
-      router.push(appRoute);
-    },
-    [router]
-  );
-
-  // Ensure component only renders on client-side
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Load favorite apps when session is available
-  useEffect(() => {
-    if (session?.user) {
-      fetchFavoriteApps();
-    }
-  }, [session?.user, fetchFavoriteApps]);
-
-  // Extract unique categories from applications with counts
-  const categoryStats = applications.reduce(
-    (acc: Record<string, number>, app: App) => {
-      const category = (app as any).category || "other";
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
-  const categories = Object.keys(categoryStats);
-
-  // Filter applications based on selected categories and search
-  const filteredApplications = applications.filter((app: App) => {
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      selectedCategories.includes((app as any).category || "other");
-
-    const matchesSearch =
-      searchQuery === "" ||
-      app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ((app as any).description || "")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-    return matchesCategory && matchesSearch;
-  });
-
-  // Separate favorites and regular apps
-  const favoriteAppsFiltered = filteredApplications.filter((app) =>
-    favoriteApps.includes(app.id)
-  );
-  const regularAppsFiltered = filteredApplications.filter(
-    (app) => !favoriteApps.includes(app.id)
-  );
-
-  if (isDebugMode) {
-    console.log("🔍 ApplicationLauncher Stats:");
-    console.log("  Total applications:", applications.length);
-    console.log("  Filtered applications:", filteredApplications.length);
-    console.log("  Categories:", categories);
-    console.log("  Selected categories:", selectedCategories);
-    console.log("  Search query:", searchQuery);
-  }
-
-  const fetchApps = useCallback(async () => {
-    if (!session) {
-      setError("Authentication required");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.run({
-        service: "dynamo",
-        operation: "scan",
-        app: "core",
-        table: "App",
-        data: {
-          limit: 50,
-        },
-      });
-
-      if (!response.success) {
-        setError(response.error || "Failed to fetch applications");
-        return;
-      }
-
-      const apps = response.data?.Items || [];
-
-      if (isDebugMode) {
-        console.log("🔍 ApplicationLauncher Debug:");
-        console.log("  Raw response:", response);
-        console.log("  Response data:", response.data);
-        console.log("  DynamoDB Items:", apps);
-        console.log("  Items length:", apps.length);
-        console.log("  First item:", apps[0]);
-      }
-
-      setApplications(apps);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, [session, isDebugMode]);
-
-  // Fetch when opened and clear when closed
-  useEffect(() => {
     if (isOpen) {
       fetchApps();
-    } else {
-      // Clear search and selections when menu closes
-      setSearchQuery("");
-      setSelectedCategories([]);
     }
-  }, [isOpen, fetchApps]);
+  }, [isOpen, session]);
 
-  const handleToggleFavorite = async (appId: string) => {
-    await toggleFavorite(appId);
-  };
+  // Toggle favorite
+  const handleToggleFavorite = useCallback((appId: string) => {
+    toggleFavorite(appId);
+  }, [toggleFavorite]);
 
-  const handleAppClick = (app: App) => {
-    navigateToApp(app);
+  // Handle app click
+  const handleAppClick = useCallback((app: App) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("app", app.slug);
+    router.push(`/?${newParams.toString()}`);
     setIsOpen(false);
+  }, [router, searchParams]);
+
+  // Filter apps based on search and active filter
+  const filteredApps = apps.filter((app) => {
+    const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         app.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (activeFilter === "favorites") {
+      return favorites.includes(app.id);
+    } else if (activeFilter === "all-applications" || activeFilter === "all-services") {
+      return true;
+    } else {
+      return app.category === activeFilter;
+    }
+  });
+
+  // Get category counts
+  const getCategoryCount = (category: AppCategory) => {
+    return apps.filter(app => app.category === category).length;
   };
 
-  const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-  };
+  const renderCompactView = () => (
+    <SheetContent
+      side="left"
+      className="w-[400px] sm:w-[450px] p-0 overflow-hidden"
+    >
+      <div className="flex flex-col h-full">
+        <SheetHeader className="px-4 pt-4 pb-3 border-b">
+          <SheetTitle className="text-base">Application Launcher</SheetTitle>
+          <div className="relative mt-2">
+            <Input
+              type="text"
+              placeholder="Search applications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+          </div>
+        </SheetHeader>
 
-  // Render loading state while mounting to prevent SSR issues
-  if (!isMounted) {
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className={`text-white hover:bg-gray-800 hover:text-white p-2 ${
-          className || ""
-        }`}
-      >
-        <Grid3X3 className="w-4 h-4" />
-      </Button>
-    );
-  }
+        <ScrollArea className="flex-1 px-2 py-2">
+          <div className="space-y-0.5">
+            {loading ? (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                Loading applications...
+              </div>
+            ) : filteredApps.length === 0 ? (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                No applications found
+              </div>
+            ) : (
+              filteredApps.map((app) => (
+                <CompactAppCard
+                  key={app.id}
+                  app={app}
+                  isFavorite={favorites.includes(app.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                  onAppClick={handleAppClick}
+                />
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    </SheetContent>
+  );
+
+  const renderAWSView = () => (
+    <SheetContent 
+      side="left" 
+      className="w-full sm:max-w-4xl p-0 overflow-hidden"
+    >
+      <div className="flex h-full">
+        {/* Left Sidebar */}
+        <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+          <SheetHeader className="px-4 pt-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <SheetTitle className="text-lg font-semibold">Services</SheetTitle>
+          </SheetHeader>
+          
+          <ScrollArea className="h-[calc(100vh-5rem)]">
+            <div className="p-3 space-y-1">
+              <NavItem
+                label="Favorites"
+                icon="star"
+                isActive={activeFilter === "favorites"}
+                count={favorites.length}
+                onClick={() => setActiveFilter("favorites")}
+                type="divider-after"
+              />
+              
+              <NavItem
+                label="All Applications"
+                icon="grid-3x3"
+                isActive={activeFilter === "all-applications"}
+                count={apps.length}
+                onClick={() => setActiveFilter("all-applications")}
+              />
+              
+              <NavItem
+                label="All Services"
+                icon="layers"
+                isActive={activeFilter === "all-services"}
+                count={apps.length}
+                onClick={() => setActiveFilter("all-services")}
+                type="divider-after"
+              />
+              
+              {Object.entries(APP_CATEGORY_LABELS).map(([key, label]) => (
+                <NavItem
+                  key={key}
+                  label={label}
+                  icon={getCategoryIcon(key as AppCategory)}
+                  isActive={activeFilter === key}
+                  count={getCategoryCount(key as AppCategory)}
+                  onClick={() => setActiveFilter(key as FilterType)}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Right Panel */}
+        <div className="flex-1 flex flex-col">
+          <div className="px-6 pt-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {activeFilter === "favorites" && "Favorites"}
+                {activeFilter === "all-applications" && "All Applications"}
+                {activeFilter === "all-services" && "All Services"}
+                {APP_CATEGORY_LABELS[activeFilter as AppCategory]}
+              </h2>
+              <Badge variant="secondary">
+                {filteredApps.length} {filteredApps.length === 1 ? "item" : "items"}
+              </Badge>
+            </div>
+            
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 p-6">
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading applications...
+              </div>
+            ) : filteredApps.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {searchQuery 
+                  ? `No results found for "${searchQuery}"`
+                  : "No applications in this category"}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredApps.map((app) => (
+                  <AWSAppCard
+                    key={app.id}
+                    app={app}
+                    isFavorite={favorites.includes(app.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                    onAppClick={handleAppClick}
+                  />
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </div>
+    </SheetContent>
+  );
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className={`text-white hover:bg-gray-800 hover:text-white p-2 ${
-            className || ""
-          }`}
+          className={cn("flex items-center gap-2", className)}
         >
-          <Grid3X3 className="w-4 h-4" />
+          <Grid3X3 className="h-4 w-4" />
+          <span>Applications</span>
         </Button>
       </SheetTrigger>
-
-      <SheetContent
-        side="left"
-        className="w-[400px] sm:w-[500px] p-0 overflow-hidden z-[250]"
-      >
-        {/* Use a fragment and move all content into a separate component or prop if required by your UI library */}
-        <>
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <SheetHeader className="p-4 pb-3 border-b bg-gradient-to-r from-blue-500/5 to-purple-600/10">
-              <SheetTitle className="flex items-center gap-2 text-xl">
-                <DynamicIcon name="package" className="h-6 w-6 text-blue-600" />
-                Applications
-              </SheetTitle>
-
-              {/* Search moved under Applications */}
-              <div className="relative mt-3">
-                <DynamicIcon
-                  name="search"
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500"
-                />
-                <Input
-                  placeholder="Search applications..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </SheetHeader>
-
-            {/* Categories Filter - moved up since search is now in header */}
-            {applications.length > 0 && (
-              <div className="p-3 border-b bg-slate-50 dark:bg-slate-900/50">
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant={
-                      selectedCategories.length === 0 ? "default" : "outline"
-                    }
-                    className="cursor-pointer transition-all hover:bg-blue-600 hover:text-white bg-blue-500 text-white border-blue-500"
-                    onClick={() => setSelectedCategories([])}
-                  >
-                    All ({applications.length})
-                  </Badge>
-                  {categories.map((category) => (
-                    <Badge
-                      key={category}
-                      variant={
-                        selectedCategories.includes(category)
-                          ? "default"
-                          : "outline"
-                      }
-                      className={`cursor-pointer transition-all ${
-                        selectedCategories.includes(category)
-                          ? "hover:bg-blue-600 bg-blue-500 text-white border-blue-500"
-                          : "hover:bg-blue-500 hover:text-white hover:border-blue-500"
-                      }`}
-                      onClick={() => toggleCategory(category)}
-                    >
-                      {APP_CATEGORY_LABELS[
-                        category as keyof typeof APP_CATEGORY_LABELS
-                      ] ||
-                        category.charAt(0).toUpperCase() +
-                          category.slice(1)}{" "}
-                      ({categoryStats[category]})
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Applications List */}
-            <ScrollArea className="flex-1">
-              <div className="p-2">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
-                    <p className="text-muted-foreground font-medium">
-                      Loading applications...
-                    </p>
-                  </div>
-                ) : error ? (
-                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                      <DynamicIcon
-                        name="alert-triangle"
-                        className="w-6 h-6 text-red-500"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="font-semibold mb-2">
-                        Unable to load applications
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {error.includes("not authorized") ||
-                        error.includes("permission")
-                          ? "You don't have permission to view applications."
-                          : "There was an error loading applications."}
-                      </p>
-                      <Button onClick={fetchApps} size="sm">
-                        Try Again
-                      </Button>
-                    </div>
-                  </div>
-                ) : filteredApplications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <DynamicIcon
-                        name="search"
-                        className="w-6 h-6 text-blue-500"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="font-semibold mb-2">
-                        No applications found
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {searchQuery || selectedCategories.length > 0
-                          ? "Try adjusting your search or filters"
-                          : "No applications are available"}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Favorites Section */}
-                    {favoriteAppsFiltered.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <DynamicIcon
-                            name="star"
-                            className="h-4 w-4 text-yellow-500 fill-yellow-500"
-                          />
-                          <h4 className="font-medium text-sm text-foreground">
-                            Favorites
-                          </h4>
-                        </div>
-                        <div className="space-y-0.5">
-                          {favoriteAppsFiltered.map((app: App) => (
-                            <AppCard
-                              key={app.id || app.slug || `fav-${app.name}`}
-                              app={app}
-                              isFavorite={true}
-                              onToggleFavorite={handleToggleFavorite}
-                              onAppClick={handleAppClick}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Regular Apps Section */}
-                    {regularAppsFiltered.length > 0 && (
-                      <div>
-                        {favoriteAppsFiltered.length > 0 && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <DynamicIcon
-                              name="package"
-                              className="h-4 w-4 text-blue-500"
-                            />
-                            <h4 className="font-medium text-sm text-foreground">
-                              All Applications
-                            </h4>
-                          </div>
-                        )}
-                        <div className="space-y-0.5">
-                          {regularAppsFiltered.map((app: App) => (
-                            <AppCard
-                              key={app.id || app.slug || `reg-${app.name}`}
-                              app={app}
-                              isFavorite={false}
-                              onToggleFavorite={handleToggleFavorite}
-                              onAppClick={handleAppClick}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </>
-      </SheetContent>
+      
+      {variant === "aws" ? renderAWSView() : renderCompactView()}
     </Sheet>
   );
+}
+
+// Helper function to get icon for category
+function getCategoryIcon(category: AppCategory): string {
+  const iconMap: Record<AppCategory, string> = {
+    core: "cpu",
+    analytics: "bar-chart",
+    communication: "message-circle",
+    storage: "hard-drive",
+    compute: "server",
+    database: "database",
+    security: "shield",
+    monitoring: "activity",
+    networking: "network",
+    ai_ml: "brain",
+    development: "code",
+    other: "package",
+  };
+  return iconMap[category] || "package";
 }

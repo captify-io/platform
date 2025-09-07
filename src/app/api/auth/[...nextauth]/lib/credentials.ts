@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@captify/core/lib";
 import {
   CognitoIdentityClient,
   GetCredentialsForIdentityCommand,

@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import { getServerSession } from "@captify/core/auth";
-import { CaptifyProvider } from "@captify/core/components";
+import { auth, CaptifyProvider } from "@captify/core";
 
 interface ServerCaptifyProviderProps {
   children: ReactNode;
@@ -9,7 +8,7 @@ interface ServerCaptifyProviderProps {
 export async function ServerCaptifyProvider({
   children,
 }: ServerCaptifyProviderProps) {
-  const session = await getServerSession();
+  const session = await auth();
 
   return <CaptifyProvider session={session}>{children}</CaptifyProvider>;
 }

@@ -1,6 +1,8 @@
+'use client';
+
 import * as React from "react"
 
-import { cn } from "@/lib"
+import { cn } from "../../lib"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {

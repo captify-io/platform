@@ -11,7 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "../ui/breadcrumb";
-import { useCaptify } from "../CaptifyProvider";
+import { useCaptify } from "../providers/CaptifyProvider";
 
 interface SmartBreadcrumbProps {
   className?: string;

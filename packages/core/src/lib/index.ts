@@ -1,25 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-// Re-export auth utilities
-export * from "./auth";
-
-// Logout function
-export function logout() {
-  // Clear any stored auth tokens
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("auth-token");
-    sessionStorage.removeItem("auth-token");
-  }
-
-  // Redirect to sign out page
-  window.location.href = "/auth/signout";
-}
-
-// Re-export API types and client
-export { apiClient } from "./api";
-export type { CaptifyResponse, ApiRequest } from "./api";
+// API client and utilities
+export * from './api';
+export * from './react-compat';
+export * from './auth';
+export { cn } from './utils';

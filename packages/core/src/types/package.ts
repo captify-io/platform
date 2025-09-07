@@ -2,7 +2,21 @@
  * Package configuration and state management types
  */
 
-import { App } from "./app";
+import { Core } from "./core";
+
+// App type definition (from core package)
+export interface App extends Core {
+  version: string;
+  status: "active" | "inactive" | "maintenance" | "deprecated";
+  category: string;
+  visibility: "public" | "internal" | "private";
+  icon: string;
+  enabled?: boolean;
+  menu: MenuItem[];
+  identityPoolId?: string;
+  agentId?: string;
+  agentAliasId?: string;
+}
 
 // ===== CHAT AND AGENT TYPES =====
 
@@ -67,6 +81,7 @@ export interface AppData {
   id: string;
   agentId?: string;
   agentAliasId?: string;
+  identityPoolId?: string;
 }
 
 // ===== COMPONENT PROP INTERFACES =====
