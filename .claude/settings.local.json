@@ -75,7 +75,13 @@
       "Bash(del nul)",
       "Bash(aws s3api put-bucket-policy:*)",
       "Bash(aws s3 rm:*)",
-      "Bash(aws s3:*)"
+      "Bash(aws s3:*)",
+      "Bash(git fetch:*)",
+      "Bash(aws elasticbeanstalk describe-applications:*)",
+      "Bash(aws iam list-attached-user-policies:*)",
+      "Bash(aws iam get-policy-version:*)",
+      "Bash(aws iam detach-user-policy:*)",
+      "Bash(aws iam list-user-policies:*)"
     ],
     "deny": [],
     "ask": []
