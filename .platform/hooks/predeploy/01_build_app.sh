@@ -15,21 +15,26 @@ cd /var/app/staging
 export NODE_ENV=production
 export NEXT_TELEMETRY_DISABLED=1
 
-# Ensure pnpm is available
-export PNPM_HOME="/root/.local/share/pnpm"
-export PATH="$PNPM_HOME:/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:/usr/local/sbin:$PATH"
+# Ensure PATH is set correctly
+export PATH="/usr/local/bin:/usr/bin:/bin:/sbin:/usr/sbin:/usr/local/sbin:$PATH"
 
 echo "Working directory: $(pwd)"
 echo "Node version: $(node --version)"
-echo "pnpm version: $(pnpm --version)"
+echo "NPM version: $(npm --version)"
 
-# Build packages first
-echo "Building packages..."
-pnpm run build:packages
+# Ensure .npmrc exists for any package operations
+if [ ! -f ".npmrc" ]; then
+  echo "Creating .npmrc for predeploy process..."
+  cat > .npmrc << EOF
+@captify-io:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+registry=https://registry.npmjs.org/
+EOF
+fi
 
 # Build the main application
-echo "Building main application..."
-pnpm run build
+echo "Building application..."
+npm run build
 
 # Verify that the build was successful
 if [ ! -d ".next" ]; then

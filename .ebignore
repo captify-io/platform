@@ -1,13 +1,11 @@
 # Dependencies
 node_modules/
-.pnpm/
-packages/*/node_modules/
+.npm/
 
 # Build outputs (will be rebuilt on EB)
 .next/
 out/
 dist/
-packages/*/dist/
 
 # Development files
 .env.local
@@ -43,5 +41,4 @@ coverage/
 !.ebextensions/**/*
 !Procfile
 !package.json
-!pnpm-lock.yaml
-!pnpm-workspace.yaml
+!package-lock.json
