@@ -1,0 +1,94 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ElasticBeanstalkS3BucketAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:DeleteBucket",
+        "s3:GetBucketLocation",
+        "s3:GetBucketPolicy",
+        "s3:ListBucket",
+        "s3:ListBucketVersions",
+        "s3:PutBucketPolicy",
+        "s3:PutBucketVersioning",
+        "s3:GetBucketVersioning",
+        "s3:GetBucketAcl",
+        "s3:PutBucketAcl",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:PutBucketPublicAccessBlock"
+      ],
+      "Resource": [
+        "arn:aws:s3:::elasticbeanstalk-us-east-1-211125459951",
+        "arn:aws:s3:::elasticbeanstalk-*"
+      ]
+    },
+    {
+      "Sid": "ElasticBeanstalkS3ObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:PutObject",
+        "s3:PutObjectAcl",
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "s3:GetObjectAcl",
+        "s3:RestoreObject",
+        "s3:ListMultipartUploadParts",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": [
+        "arn:aws:s3:::elasticbeanstalk-us-east-1-211125459951/*",
+        "arn:aws:s3:::elasticbeanstalk-*/*"
+      ]
+    },
+    {
+      "Sid": "ElasticBeanstalkOperations",
+      "Effect": "Allow",
+      "Action": [
+        "elasticbeanstalk:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RequiredEC2Permissions",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "autoscaling:Describe*",
+        "elasticloadbalancing:Describe*",
+        "cloudwatch:Describe*",
+        "cloudwatch:List*",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:PutMetricData",
+        "sns:List*",
+        "sns:Publish",
+        "cloudformation:Describe*",
+        "cloudformation:List*",
+        "cloudformation:GetTemplate",
+        "cloudformation:ValidateTemplate",
+        "logs:Describe*",
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMRoleAccess",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::211125459951:role/aws-elasticbeanstalk-*"
+      ]
+    }
+  ]
+}

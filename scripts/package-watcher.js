@@ -2,7 +2,7 @@
 
 /**
  * Package Change Notifier
- * Watches for changes in @captify/core package and triggers browser refresh
+ * Watches for changes in @captify-io/core package and triggers browser refresh
  */
 
 const chokidar = require("chokidar");
