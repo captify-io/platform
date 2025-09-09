@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
-import { auth } from "@captify/core";
+import { auth } from "@captify-io/core/auth";
 import { serviceRegistry } from "../lib/service-registry";
 
 export async function GET(request: NextRequest) {
@@ -84,9 +84,10 @@ async function handleRequest(request: NextRequest, method: string) {
         const forceRefresh = body.forceRefresh === true;
 
         if (identityPoolId) {
-          if (identityPoolId.includes("52e865f2")) {
+          // Check if this is the base/admin identity pool
+          if (identityPoolId === process.env.COGNITO_IDENTITY_POOL_ID) {
             console.log(
-              `🔐 [API Route] Admin Identity Pool requested: ${identityPoolId}`
+              `🔐 [API Route] Base Identity Pool requested: ${identityPoolId}`
             );
           } else {
             console.log(
@@ -138,14 +139,14 @@ async function handleRequest(request: NextRequest, method: string) {
 
         if (!serviceHandler) {
           throw new Error(
-            `Service ${body.service} not found in @captify/${app} package`
+            `Service ${body.service} not found in @captify-io/${app} package`
           );
         }
       } catch (importError) {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Failed to load service ${body.service} from @captify/${app}`,
+            error: `Failed to load service ${body.service} from @captify-io/${app}`,
             details:
               importError instanceof Error
                 ? importError.message

@@ -3,7 +3,7 @@ import {
   GetCredentialsForIdentityCommand,
   GetIdCommand,
 } from "@aws-sdk/client-cognito-identity";
-import { getSessionConfig } from "../auth/[...nextauth]/lib/session-config";
+import { getSessionConfig } from "./session-config";
 
 // Get session configuration
 const sessionConfig = getSessionConfig();
@@ -38,9 +38,10 @@ export function getCredentialsStatus(poolId?: string): {
   poolId?: string;
 } {
   // If poolId provided, check that specific cache
-  const cache = poolId ? credentialsCacheMap.get(poolId) : 
-                Array.from(credentialsCacheMap.values())[0]; // Get first cache if no poolId
-  
+  const cache = poolId
+    ? credentialsCacheMap.get(poolId)
+    : Array.from(credentialsCacheMap.values())[0]; // Get first cache if no poolId
+
   if (!cache) {
     return { exists: false, expired: false };
   }
@@ -109,18 +110,22 @@ export async function getAwsCredentialsFromIdentityPool(
 
   // Use the provided identity pool ID or fall back to environment
   const poolId = identityPoolId || process.env.COGNITO_IDENTITY_POOL_ID;
-  
+
   if (!poolId) {
-    throw new Error(`Missing Identity Pool ID. Provided: ${identityPoolId}, Environment: ${process.env.COGNITO_IDENTITY_POOL_ID}`);
+    throw new Error(
+      `Missing Identity Pool ID. Provided: ${identityPoolId}, Environment: ${process.env.COGNITO_IDENTITY_POOL_ID}`
+    );
   }
-  
+
   // Step 2: Check if AWS credentials exist and are still valid for this pool
   const now = new Date();
   const cachedCredentials = credentialsCacheMap.get(poolId);
 
   // Force refresh if requested (e.g., for admin operations)
   if (forceRefresh) {
-    console.log(`🔄 Force refresh requested for pool ${poolId}, clearing credentials cache`);
+    console.log(
+      `🔄 Force refresh requested for pool ${poolId}, clearing credentials cache`
+    );
     credentialsCacheMap.delete(poolId);
   }
 
@@ -129,7 +134,9 @@ export async function getAwsCredentialsFromIdentityPool(
       console.log(`✅ Using cached AWS credentials for pool: ${poolId}`);
       return cachedCredentials;
     } else {
-      console.log(`⏰ AWS credentials have expired for pool ${poolId}, refreshing...`);
+      console.log(
+        `⏰ AWS credentials have expired for pool ${poolId}, refreshing...`
+      );
       credentialsCacheMap.delete(poolId);
     }
   }
@@ -139,20 +146,24 @@ export async function getAwsCredentialsFromIdentityPool(
 
   const region = process.env.AWS_REGION || "us-east-1";
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
-  
-  console.log('[Credentials] ============================================');
-  console.log('[Credentials] Identity Pool Resolution:');
-  console.log('[Credentials] - Provided:', identityPoolId || 'none');
-  console.log('[Credentials] - Environment:', process.env.COGNITO_IDENTITY_POOL_ID);
-  console.log('[Credentials] - Final Pool ID:', poolId);
-  
-  if (poolId?.includes('52e865f2')) {
-    console.log('[Credentials] 🔐 This is the ADMIN Identity Pool');
-  } else if (poolId?.includes('565334e6')) {
-    console.log('[Credentials] 👤 This is the DEFAULT Identity Pool');
+
+  console.log("[Credentials] ============================================");
+  console.log("[Credentials] Identity Pool Resolution:");
+  console.log("[Credentials] - Provided:", identityPoolId || "none");
+  console.log(
+    "[Credentials] - Environment:",
+    process.env.COGNITO_IDENTITY_POOL_ID
+  );
+  console.log("[Credentials] - Final Pool ID:", poolId);
+
+  // Compare with environment variable instead of hardcoding
+  if (poolId === process.env.COGNITO_IDENTITY_POOL_ID) {
+    console.log("[Credentials] 🔐 This is the BASE Identity Pool");
+  } else {
+    console.log("[Credentials] 📦 This is a CUSTOM Identity Pool");
   }
-  console.log('[Credentials] ============================================');
-  
+  console.log("[Credentials] ============================================");
+
   if (!userPoolId) {
     throw new Error("Missing User Pool ID in environment configuration");
   }
@@ -176,13 +187,13 @@ export async function getAwsCredentialsFromIdentityPool(
     }
 
     console.log(`✅ Got Identity ID: ${identityResponse.IdentityId}`);
-    
+
     // Log user groups for debugging role mapping
     if (session?.groups || session?.user?.groups) {
       const groups = session?.groups || session?.user?.groups || [];
-      console.log(`👥 User groups: ${groups.join(', ') || 'none'}`);
-      if (groups.includes('Admins')) {
-        console.log('🔑 User is in Admins group - should get admin role');
+      console.log(`👥 User groups: ${groups.join(", ") || "none"}`);
+      if (groups.includes("Admins")) {
+        console.log("🔑 User is in Admins group - should get admin role");
       }
     }
 
@@ -221,22 +232,25 @@ export async function getAwsCredentialsFromIdentityPool(
       expiration: credentialExpiration,
       identityPoolId: poolId,
     };
-    
+
     credentialsCacheMap.set(poolId, newCredentials);
 
     console.log(
       `💾 Cached AWS credentials for pool ${poolId} until: ${newCredentials.expiration.toISOString()}`
     );
-    
+
     // Try to decode the session token to see what role was assumed
     try {
-      const tokenParts = newCredentials.sessionToken.split(':');
+      const tokenParts = newCredentials.sessionToken.split(":");
       if (tokenParts.length > 4) {
         const roleInfo = tokenParts[4];
-        if (roleInfo.includes('CaptifyAdmin') || roleInfo.includes('Cognito_CaptifyAdmin')) {
-          console.log('✅ Using ADMIN role credentials');
-        } else if (roleInfo.includes('Captify_Default')) {
-          console.log('📦 Using DEFAULT role credentials');
+        if (
+          roleInfo.includes("CaptifyAdmin") ||
+          roleInfo.includes("Cognito_CaptifyAdmin")
+        ) {
+          console.log("✅ Using ADMIN role credentials");
+        } else if (roleInfo.includes("Captify_Default")) {
+          console.log("📦 Using DEFAULT role credentials");
         } else {
           console.log(`ℹ️ Using role: ${roleInfo}`);
         }
@@ -269,13 +283,15 @@ export async function getAwsCredentialsFromIdentityPool(
         `Identity Pool not found: ${poolId}. Please check your Cognito configuration.`
       );
     }
-    
+
     if (error.name === "InvalidIdentityPoolConfigurationException") {
       throw new Error(
         `Invalid Identity Pool configuration for pool: ${poolId}. Check IAM roles assigned to this pool. Error: ${error.message}`
       );
     }
 
-    throw new Error(`Failed to get AWS credentials from pool ${poolId}: ${error.message}`);
+    throw new Error(
+      `Failed to get AWS credentials from pool ${poolId}: ${error.message}`
+    );
   }
 }
