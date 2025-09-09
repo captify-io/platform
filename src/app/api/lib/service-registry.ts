@@ -23,27 +23,8 @@ class ServiceRegistry {
   private registry: Map<string, () => Promise<ServiceModule>> = new Map();
 
   private constructor() {
-    // Register installed packages dynamically
-    // Core is always available
-    this.registerDynamicPackage("core");
-    
-    // Register pmbook if it's installed
-    this.registerDynamicPackage("pmbook");
-    
-    // Future packages can be added here when installed
-    // this.registerDynamicPackage("rmf");
-    // this.registerDynamicPackage("admin");
-    // this.registerDynamicPackage("mi");
-  }
-
-  /**
-   * Dynamically register a package with the correct @captify-io scope
-   */
-  private registerDynamicPackage(slug: string) {
-    this.registerPackage(
-      slug,
-      () => import(`@captify-io/${slug}/services`) as Promise<ServiceModule>
-    );
+    // Registry starts empty - packages are loaded on-demand
+    // No hardcoded packages - everything is dynamic
   }
 
   static getInstance(): ServiceRegistry {
@@ -64,27 +45,27 @@ class ServiceRegistry {
    * Get a service handler from a package
    */
   async getServiceHandler(packageName: string, serviceName: string) {
-    // Check if package is registered
-    const loader = this.registry.get(packageName);
+    // Check if we've already cached this package loader
+    let loader = this.registry.get(packageName);
 
     if (!loader) {
-      // Try dynamic import for unregistered packages
-      // This allows for truly dynamic package loading
-      try {
-        const serviceModule = await import(
-          `@captify-io/${packageName}/services`
-        );
-        return serviceModule.services?.use(serviceName);
-      } catch (error) {
-        throw new Error(
-          `Package @captify-io/${packageName} not found or not installed`
-        );
-      }
+      // Create a loader for this package on first request
+      // This way we only load packages that are actually used
+      loader = () => import(`@captify-io/${packageName}/services`) as Promise<ServiceModule>;
+      this.registry.set(packageName, loader);
     }
 
-    // Load the registered package
-    const serviceModule = await loader();
-    return serviceModule.services?.use(serviceName);
+    try {
+      // Load the package and get the service
+      const serviceModule = await loader();
+      return serviceModule.services?.use(serviceName);
+    } catch (error) {
+      // Clear from registry if it failed
+      this.registry.delete(packageName);
+      throw new Error(
+        `Package @captify-io/${packageName} not found or not installed`
+      );
+    }
   }
 
   /**
