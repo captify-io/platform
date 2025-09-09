@@ -6,7 +6,7 @@ import NextDynamic from "next/dynamic";
 // Client-side only ThreePanelLayout to avoid SSR issues with hooks
 const ThreePanelLayout = NextDynamic(
   () =>
-    import("@captify/core/components").then((mod) => ({
+    import("@captify-io/core/components").then((mod) => ({
       default: mod.ThreePanelLayout,
     })),
   {

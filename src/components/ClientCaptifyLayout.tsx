@@ -1,6 +1,6 @@
 "use client";
 
-import { ThreePanelLayout } from "@captify/core/components";
+import { ThreePanelLayout } from "@captify-io/core/components";
 
 interface ClientCaptifyLayoutProps {
   children: React.ReactNode;

@@ -1,11 +1,11 @@
 /**
  * Auto-discovery for Captify packages
- * Automatically finds and registers all @captify/* packages
+ * Automatically finds and registers all @captify-io/* packages
  */
 
-import { serviceRegistry } from './service-registry';
-import fs from 'fs';
-import path from 'path';
+import { serviceRegistry } from "./service-registry";
+import fs from "fs";
+import path from "path";
 
 /**
  * Automatically discover and register @captify packages
@@ -14,20 +14,21 @@ import path from 'path';
 export async function autoDiscoverPackages() {
   try {
     // Look for packages in node_modules/@captify
-    const packagesDir = path.join(process.cwd(), 'node_modules', '@captify');
-    
+    const packagesDir = path.join(process.cwd(), "node_modules", "@captify");
+
     if (!fs.existsSync(packagesDir)) {
-      console.warn('No @captify packages directory found');
+      console.warn("No @captify packages directory found");
       return;
     }
 
-    const packages = fs.readdirSync(packagesDir)
-      .filter(dir => {
-        // Check if it's a directory with a services export
-        const packagePath = path.join(packagesDir, dir);
-        const servicesPath = path.join(packagePath, 'dist', 'services.js');
-        return fs.statSync(packagePath).isDirectory() && fs.existsSync(servicesPath);
-      });
+    const packages = fs.readdirSync(packagesDir).filter((dir) => {
+      // Check if it's a directory with a services export
+      const packagePath = path.join(packagesDir, dir);
+      const servicesPath = path.join(packagePath, "dist", "services.js");
+      return (
+        fs.statSync(packagePath).isDirectory() && fs.existsSync(servicesPath)
+      );
+    });
 
     // Register each discovered package
     for (const packageName of packages) {
@@ -35,15 +36,19 @@ export async function autoDiscoverPackages() {
         // Register with dynamic import
         serviceRegistry.registerPackage(
           packageName,
-          () => import(`@captify/${packageName}/services`)
+          () => import(`@captify-io/${packageName}/services`)
         );
-        console.log(`✅ Auto-registered package: @captify/${packageName}`);
+        console.log(`✅ Auto-registered package: @captify-io/${packageName}`);
       }
     }
 
-    console.log(`📦 Total packages registered: ${serviceRegistry.getRegisteredPackages().length}`);
+    console.log(
+      `📦 Total packages registered: ${
+        serviceRegistry.getRegisteredPackages().length
+      }`
+    );
   } catch (error) {
-    console.error('Error during package auto-discovery:', error);
+    console.error("Error during package auto-discovery:", error);
   }
 }
 
@@ -51,26 +56,28 @@ export async function autoDiscoverPackages() {
 export async function loadPackagesFromConfig() {
   try {
     // Look for a captify.config.json in the project root
-    const configPath = path.join(process.cwd(), 'captify.config.json');
-    
+    const configPath = path.join(process.cwd(), "captify.config.json");
+
     if (!fs.existsSync(configPath)) {
       return;
     }
 
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+
     if (config.packages && Array.isArray(config.packages)) {
       for (const packageName of config.packages) {
         if (!serviceRegistry.isPackageRegistered(packageName)) {
           serviceRegistry.registerPackage(
             packageName,
-            () => import(`@captify/${packageName}/services`)
+            () => import(`@captify-io/${packageName}/services`)
           );
-          console.log(`✅ Registered package from config: @captify/${packageName}`);
+          console.log(
+            `✅ Registered package from config: @captify-io/${packageName}`
+          );
         }
       }
     }
   } catch (error) {
-    console.error('Error loading packages from config:', error);
+    console.error("Error loading packages from config:", error);
   }
 }

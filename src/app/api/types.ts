@@ -1,6 +1,6 @@
 /**
  * API Package Types
- * All type definitions for the @captify/api package
+ * All type definitions for the @captify-io/api package
  * Infrastructure and AWS interface types only
  */
 

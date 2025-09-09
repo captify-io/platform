@@ -4,7 +4,7 @@ import * as React from "react";
 import type { ReactNode } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
-import { SignInForm } from "@captify/core/components";
+import { SignInForm } from "@captify-io/core/components";
 
 function AuthWrapper({ children }: { children: ReactNode }) {
   const { status } = useSession();

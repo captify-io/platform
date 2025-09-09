@@ -7,7 +7,7 @@ import { Session } from "next-auth";
 // Client-side only TopNavigation to avoid SSR issues with hooks
 const TopNavigation = NextDynamic(
   () =>
-    import("@captify/core/components").then((mod) => ({
+    import("@captify-io/core/components").then((mod) => ({
       default: mod.TopNavigation,
     })),
   {

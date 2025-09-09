@@ -14,23 +14,25 @@ export async function GET(request: NextRequest) {
     if (packageName) {
       // Get services for a specific package
       try {
-        const servicesModule = await import(`@captify/${packageName}/services`);
-        
+        const servicesModule = await import(
+          `@captify-io/${packageName}/services`
+        );
+
         // Extract available service names
         const services = servicesModule.services;
         const availableServices: string[] = [];
-        
+
         // Try to get service names from the module
         // This is a bit hacky but works for our pattern
-        if (services && typeof services.use === 'function') {
+        if (services && typeof services.use === "function") {
           // Common service names to check
           const commonServices = [
-            'dynamo', 
-            'debug', 
-            'applicationAccess',
+            "dynamo",
+            "debug",
+            "applicationAccess",
             packageName, // Package-specific service
           ];
-          
+
           for (const serviceName of commonServices) {
             try {
               const handler = services.use(serviceName);
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
 
         return new Response(
           JSON.stringify({
-            package: `@captify/${packageName}`,
+            package: `@captify-io/${packageName}`,
             services: availableServices,
             registered: serviceRegistry.isPackageRegistered(packageName),
           }),
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         return new Response(
           JSON.stringify({
-            error: `Package @captify/${packageName} not found`,
+            error: `Package @captify-io/${packageName} not found`,
           }),
           {
             status: 404,
@@ -69,12 +71,13 @@ export async function GET(request: NextRequest) {
 
     // List all registered packages
     const packages = serviceRegistry.getRegisteredPackages();
-    
+
     return new Response(
       JSON.stringify({
-        packages: packages.map(p => `@captify/${p}`),
+        packages: packages.map((p) => `@captify-io/${p}`),
         total: packages.length,
-        description: "Use ?package=<name> to discover services in a specific package",
+        description:
+          "Use ?package=<name> to discover services in a specific package",
       }),
       {
         status: 200,
