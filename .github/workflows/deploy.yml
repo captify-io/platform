@@ -125,9 +125,8 @@ jobs:
 
       - name: Upload to S3
         run: |
-          # Use the actual bucket name since it already exists
           export S3_BUCKET="elasticbeanstalk-us-east-1-211125459951"
-          export S3_KEY="${{ env.EB_APPLICATION_NAME }}/deploy-${{ env.VERSION_LABEL }}.zip"
+          export S3_KEY="deployments/captify-${{ env.VERSION_LABEL }}.zip"
 
           # Check if bucket exists
           if aws s3 ls "s3://$S3_BUCKET" 2>/dev/null; then
