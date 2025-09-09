@@ -1,9 +1,13 @@
 {
-  "packages": [
-    "core",
-    "mi",
-    "rmf"
-  ],
-  "description": "List of @captify packages to register with the API",
-  "autoDiscover": true
+  "name": "captify-platform",
+  "version": "1.0.0",
+  "packages": {},
+  "apps": {},
+  "settings": {
+    "packageManager": "pnpm",
+    "typescript": true,
+    "eslint": true,
+    "autoDiscover": true
+  },
+  "description": "Captify platform configuration"
 }

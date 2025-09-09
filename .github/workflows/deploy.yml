@@ -128,17 +128,36 @@ jobs:
           export S3_BUCKET="elasticbeanstalk-${{ env.AWS_REGION }}-${{ secrets.AWS_ACCOUNT_ID }}"
           export S3_KEY="${{ env.EB_APPLICATION_NAME }}/deploy-${{ env.VERSION_LABEL }}.zip"
 
-          # Create bucket if it doesn't exist
-          if ! aws s3 ls "s3://$S3_BUCKET" 2>/dev/null; then
-            echo "Creating S3 bucket: $S3_BUCKET"
-            aws s3 mb "s3://$S3_BUCKET" --region ${{ env.AWS_REGION }}
-            
-            # Enable versioning for Elastic Beanstalk
-            aws s3api put-bucket-versioning \
-              --bucket "$S3_BUCKET" \
-              --versioning-configuration Status=Enabled
+          # Check if bucket exists
+          if aws s3 ls "s3://$S3_BUCKET" 2>/dev/null; then
+            echo "✅ Using existing S3 bucket: $S3_BUCKET"
           else
-            echo "S3 bucket already exists: $S3_BUCKET"
+            echo "❌ S3 bucket does not exist: $S3_BUCKET"
+            echo "Please create this bucket manually in AWS Console or update IAM permissions"
+            echo ""
+            echo "Option 1: Create bucket manually in AWS Console:"
+            echo "  1. Go to https://s3.console.aws.amazon.com/s3/"
+            echo "  2. Click 'Create bucket'"
+            echo "  3. Name it: $S3_BUCKET"
+            echo "  4. Region: ${{ env.AWS_REGION }}"
+            echo "  5. Enable versioning"
+            echo ""
+            echo "Option 2: Add S3 CreateBucket permission to IAM user 'mi-app-user':"
+            echo "  Add this policy to the user in IAM:"
+            echo '  {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:CreateBucket",
+                      "s3:PutBucketVersioning"
+                    ],
+                    "Resource": "arn:aws:s3:::elasticbeanstalk-*"
+                  }
+                ]
+              }'
+            exit 1
           fi
 
           # Upload deployment package
