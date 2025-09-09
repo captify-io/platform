@@ -6,9 +6,15 @@
 
 type ServiceModule = {
   services: {
-    use: (serviceName: string) => {
-      execute: (request: any, credentials?: any, session?: any) => Promise<any>;
-    } | undefined;
+    use: (serviceName: string) =>
+      | {
+          execute: (
+            request: any,
+            credentials?: any,
+            session?: any
+          ) => Promise<any>;
+        }
+      | undefined;
   };
 };
 
@@ -17,13 +23,27 @@ class ServiceRegistry {
   private registry: Map<string, () => Promise<ServiceModule>> = new Map();
 
   private constructor() {
-    // Pre-register known packages for webpack optimization
-    // These will be bundled by webpack but loaded on-demand
-    this.registerPackage('core', () => import('@captify/core/services') as Promise<ServiceModule>);
-    this.registerPackage('admin', () => import('@captify/admin/services') as Promise<ServiceModule>);
-    this.registerPackage('mi', () => import('@captify/mi/services') as Promise<ServiceModule>);
-    this.registerPackage('rmf', () => import('@captify/rmf/services') as Promise<ServiceModule>);
-    this.registerPackage('pmbook', () => import('@captify/pmbook/services') as Promise<ServiceModule>);
+    // Register installed packages dynamically
+    // Core is always available
+    this.registerDynamicPackage("core");
+    
+    // Register pmbook if it's installed
+    this.registerDynamicPackage("pmbook");
+    
+    // Future packages can be added here when installed
+    // this.registerDynamicPackage("rmf");
+    // this.registerDynamicPackage("admin");
+    // this.registerDynamicPackage("mi");
+  }
+
+  /**
+   * Dynamically register a package with the correct @captify-io scope
+   */
+  private registerDynamicPackage(slug: string) {
+    this.registerPackage(
+      slug,
+      () => import(`@captify-io/${slug}/services`) as Promise<ServiceModule>
+    );
   }
 
   static getInstance(): ServiceRegistry {
@@ -46,15 +66,19 @@ class ServiceRegistry {
   async getServiceHandler(packageName: string, serviceName: string) {
     // Check if package is registered
     const loader = this.registry.get(packageName);
-    
+
     if (!loader) {
       // Try dynamic import for unregistered packages
       // This allows for truly dynamic package loading
       try {
-        const serviceModule = await import(`@captify/${packageName}/services`);
+        const serviceModule = await import(
+          `@captify-io/${packageName}/services`
+        );
         return serviceModule.services?.use(serviceName);
       } catch (error) {
-        throw new Error(`Package @captify/${packageName} not found or not installed`);
+        throw new Error(
+          `Package @captify-io/${packageName} not found or not installed`
+        );
       }
     }
 
