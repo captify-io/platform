@@ -26,7 +26,7 @@
     "@aws-sdk/client-ssm": "^3.883.0",
     "@aws-sdk/credential-providers": "^3.873.0",
     "@aws-sdk/lib-dynamodb": "^3.873.0",
-    "@captify-io/core": "^1.0.10",
+    "@captify-io/core": "1.0.11",
     "@captify-io/pmbook": "^1.0.4",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/node": "22.10.3",
