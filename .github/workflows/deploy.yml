@@ -144,8 +144,8 @@ jobs:
             fi
           fi
 
-          # Upload deployment package
-          aws s3 cp deploy.zip s3://$S3_BUCKET/$S3_KEY
+          # Upload deployment package with proper permissions for EB
+          aws s3 cp deploy.zip s3://$S3_BUCKET/$S3_KEY --acl private --metadata "uploaded-by=github-actions"
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
           echo "S3_KEY=$S3_KEY" >> $GITHUB_ENV
 
