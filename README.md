@@ -126,22 +126,74 @@ Custom packages should follow the @captify-io package structure:
 
 ### AWS Elastic Beanstalk
 
-The platform is configured for deployment to AWS Elastic Beanstalk:
+The platform is configured for automated deployment to AWS Elastic Beanstalk via GitHub Actions.
 
-1. Ensure AWS credentials are configured
-2. Deploy using GitHub Actions (automatic on push to master)
-3. Or deploy manually:
+#### Automatic Deployment (GitHub Actions)
+
+Deployments are triggered automatically when pushing to the `master` branch:
+
+1. **Build Phase**: 
+   - Runs TypeScript type checking
+   - Builds the Next.js application
+   - Creates optimized production bundle
+
+2. **Deploy Phase**:
+   - Uploads build artifacts to S3
+   - Creates new application version in Elastic Beanstalk
+   - Deploys to the environment: `Anautics-ai-env`
+
+#### Prerequisites
+
+The following AWS resources must be configured:
+- **S3 Bucket**: `elasticbeanstalk-us-east-1-211125459951` (created automatically)
+- **EB Application**: `anautics-ai`
+- **EB Environment**: `Anautics-ai-env`
+- **IAM User**: `mi-app-user` with deployment permissions
+
+#### Required GitHub Secrets
+
+Configure these in your repository settings:
+- `NODE_AUTH_TOKEN` - GitHub Personal Access Token for package access
+- `AWS_ACCESS_KEY_ID` - AWS access key for deployment
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key for deployment
+
+#### Manual Deployment
+
+For manual deployment using EB CLI:
 ```bash
-eb deploy
+# Initialize EB CLI (first time only)
+eb init -p node.js-20 anautics-ai --region us-east-1
+
+# Deploy to environment
+eb deploy Anautics-ai-env
 ```
 
 ### Configuration
 
 The platform uses:
-- Amazon Linux 2023
-- Node.js 20 platform
-- nginx for reverse proxy
-- Automatic npm package installation
+- **Platform**: Amazon Linux 2023
+- **Node.js**: Version 20.x
+- **Web Server**: nginx (reverse proxy)
+- **Port**: 8081 (internal), 80 (external)
+- **Instance Type**: Configurable (default: t3.micro)
+
+### Environment Variables
+
+Required environment variables for production:
+- `NEXTAUTH_URL` - Production URL
+- `NEXTAUTH_SECRET` - NextAuth secret key
+- `COGNITO_USER_POOL_ID` - AWS Cognito User Pool
+- `COGNITO_CLIENT_ID` - Cognito App Client ID
+- `COGNITO_CLIENT_SECRET` - Cognito App Client Secret
+- `COGNITO_IDENTITY_POOL_ID` - Cognito Identity Pool
+- `AWS_REGION` - AWS region (default: us-east-1)
+
+### Monitoring
+
+Monitor your deployment:
+- **Application Health**: AWS Elastic Beanstalk Console
+- **Logs**: Available via EB CLI (`eb logs`) or AWS Console
+- **Metrics**: CloudWatch dashboards for CPU, memory, and request metrics
 
 ## Security
 
