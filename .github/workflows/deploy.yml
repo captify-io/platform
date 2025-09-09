@@ -153,13 +153,17 @@ jobs:
         run: |
           # Create application if it doesn't exist
           echo "Checking if application exists: ${{ env.EB_APPLICATION_NAME }}"
-          if aws elasticbeanstalk describe-applications --application-names "${{ env.EB_APPLICATION_NAME }}" 2>/dev/null | grep -q "\"ApplicationName\": \"${{ env.EB_APPLICATION_NAME }}\""; then
+          
+          # Check if application exists using AWS CLI exit code
+          if aws elasticbeanstalk describe-applications --application-names "${{ env.EB_APPLICATION_NAME }}" --output json 2>/dev/null | grep -q "ApplicationName"; then
             echo "✅ Application already exists: ${{ env.EB_APPLICATION_NAME }}"
           else
-            echo "Creating Elastic Beanstalk application: ${{ env.EB_APPLICATION_NAME }}"
+            echo "Application not found, creating: ${{ env.EB_APPLICATION_NAME }}"
             aws elasticbeanstalk create-application \
               --application-name "${{ env.EB_APPLICATION_NAME }}" \
-              --description "Captify Platform Application" || echo "⚠️ Application may already exist, continuing..."
+              --description "Captify Platform Application" 2>/dev/null || {
+                echo "⚠️ Application creation returned an error (may already exist), continuing..."
+              }
           fi
 
           # Create application version
