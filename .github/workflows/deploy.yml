@@ -125,7 +125,8 @@ jobs:
 
       - name: Upload to S3
         run: |
-          export S3_BUCKET="elasticbeanstalk-${{ env.AWS_REGION }}-${{ secrets.AWS_ACCOUNT_ID }}"
+          # Use the actual bucket name since it already exists
+          export S3_BUCKET="elasticbeanstalk-us-east-1-211125459951"
           export S3_KEY="${{ env.EB_APPLICATION_NAME }}/deploy-${{ env.VERSION_LABEL }}.zip"
 
           # Check if bucket exists
