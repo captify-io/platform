@@ -128,36 +128,20 @@ jobs:
           export S3_BUCKET="elasticbeanstalk-us-east-1-211125459951"
           export S3_KEY="deployments/captify-${{ env.VERSION_LABEL }}.zip"
 
-          # Check if bucket exists
-          if aws s3 ls "s3://$S3_BUCKET" 2>/dev/null; then
-            echo "✅ Using existing S3 bucket: $S3_BUCKET"
+          # Check if bucket exists (using head-bucket which is more reliable)
+          echo "Checking S3 bucket: $S3_BUCKET"
+          if aws s3api head-bucket --bucket "$S3_BUCKET" 2>/dev/null; then
+            echo "✅ S3 bucket exists and is accessible: $S3_BUCKET"
           else
-            echo "❌ S3 bucket does not exist: $S3_BUCKET"
-            echo "Please create this bucket manually in AWS Console or update IAM permissions"
-            echo ""
-            echo "Option 1: Create bucket manually in AWS Console:"
-            echo "  1. Go to https://s3.console.aws.amazon.com/s3/"
-            echo "  2. Click 'Create bucket'"
-            echo "  3. Name it: $S3_BUCKET"
-            echo "  4. Region: ${{ env.AWS_REGION }}"
-            echo "  5. Enable versioning"
-            echo ""
-            echo "Option 2: Add S3 CreateBucket permission to IAM user 'mi-app-user':"
-            echo "  Add this policy to the user in IAM:"
-            echo '  {
-                "Version": "2012-10-17",
-                "Statement": [
-                  {
-                    "Effect": "Allow",
-                    "Action": [
-                      "s3:CreateBucket",
-                      "s3:PutBucketVersioning"
-                    ],
-                    "Resource": "arn:aws:s3:::elasticbeanstalk-*"
-                  }
-                ]
-              }'
-            exit 1
+            echo "⚠️ Could not verify bucket with head-bucket, trying alternative check..."
+            # Try listing the bucket contents as a fallback
+            if aws s3 ls "s3://$S3_BUCKET" --max-items 1 2>/dev/null; then
+              echo "✅ S3 bucket exists (verified via ls): $S3_BUCKET"
+            else
+              echo "⚠️ Bucket verification failed, but continuing anyway..."
+              echo "   The bucket may exist but have restricted permissions."
+              echo "   The upload will fail if the bucket truly doesn't exist."
+            fi
           fi
 
           # Upload deployment package
