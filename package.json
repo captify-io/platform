@@ -23,7 +23,6 @@
     "deploy": "npm run build:app && npm run build:package && npm run git:commit && npm run git:push && gh workflow run deploy.yml"
   },
   "dependencies": {
-    "@captify-io/agent": "^1.0.2",
     "@aws-sdk/client-cloudwatch": "^3.883.0",
     "@aws-sdk/client-cognito-identity": "^3.876.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.873.0",
@@ -36,6 +35,7 @@
     "@aws-sdk/client-ssm": "^3.883.0",
     "@aws-sdk/credential-providers": "^3.873.0",
     "@aws-sdk/lib-dynamodb": "^3.873.0",
+    "@captify-io/agent": "^1.0.10",
     "@hookform/resolvers": "^3.3.2",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -147,6 +147,11 @@
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
+    },
+    "./lib": {
+      "types": "./dist/lib/index.d.ts",
+      "import": "./dist/lib/index.js",
+      "require": "./dist/lib/index.cjs"
     }
   },
   "files": [

@@ -15,6 +15,9 @@ export default defineConfig({
     // Hooks
     "lib/hooks": "src/hooks/index.ts",
 
+    // Lib index (for /lib export)
+    "lib/index": "src/lib/index.ts",
+
     // UI components (barrel export)
     "components/ui": "src/components/ui/index.ts",
 
@@ -64,6 +67,8 @@ export default defineConfig({
     "vaul",
     "@hookform/resolvers",
     "zod",
+    "@captify-io/agent",
+    /^@captify-io\/agent\/.*/
   ],
 
   // Splitting
