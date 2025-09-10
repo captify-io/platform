@@ -74,24 +74,24 @@
       "require": "./dist/index.js"
     },
     "./auth": {
-      "types": "./dist/lib/auth.d.ts",
-      "import": "./dist/lib/auth.mjs",
-      "require": "./dist/lib/auth.js"
+      "types": "./dist/auth.d.ts",
+      "import": "./dist/auth.mjs",
+      "require": "./dist/auth.js"
     },
     "./types": {
-      "types": "./dist/lib/types.d.ts",
-      "import": "./dist/lib/types.mjs",
-      "require": "./dist/lib/types.js"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.js"
     },
     "./hooks": {
-      "types": "./dist/lib/hooks.d.ts",
-      "import": "./dist/lib/hooks.mjs",
-      "require": "./dist/lib/hooks.js"
+      "types": "./dist/hooks/hooks.d.ts",
+      "import": "./dist/hooks/hooks.mjs",
+      "require": "./dist/hooks/hooks.js"
     },
     "./api": {
-      "types": "./dist/lib/api.d.ts",
-      "import": "./dist/lib/api.mjs",
-      "require": "./dist/lib/api.js"
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.mjs",
+      "require": "./dist/api.js"
     },
     "./utils": {
       "types": "./dist/lib/utils.d.ts",
@@ -99,14 +99,14 @@
       "require": "./dist/lib/utils.js"
     },
     "./ui": {
-      "types": "./dist/components/ui.d.ts",
-      "import": "./dist/components/ui.mjs",
-      "require": "./dist/components/ui.js"
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.mjs",
+      "require": "./dist/ui.js"
     },
     "./theme": {
-      "types": "./dist/components/theme.d.ts",
-      "import": "./dist/components/theme.mjs",
-      "require": "./dist/components/theme.js"
+      "types": "./dist/theme.d.ts",
+      "import": "./dist/theme.mjs",
+      "require": "./dist/theme.js"
     }
   },
   "files": [
