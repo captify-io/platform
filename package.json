@@ -1,16 +1,21 @@
 {
-  "name": "captify-platform",
-  "private": true,
-  "version": "1.0.0",
+  "name": "@captify-io/platform",
+  "private": false,
+  "version": "1.0.18",
   "type": "module",
+  "description": "Core components, utilities, and services for the Captify platform",
   "scripts": {
     "dev": "next dev --turbo -p 3000",
     "dev:webpack": "next dev -p 3000",
-    "build": "next build",
+    "build": "npm run build:app && npm run build:package",
+    "build:app": "next build",
+    "build:package": "tsup && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "build:dev": "tsup --watch",
     "start": "next start -p 8081",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next dist node_modules"
+    "clean": "rm -rf .next dist node_modules",
+    "prepublishOnly": "npm run build:package"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.883.0",
@@ -27,7 +32,6 @@
     "@aws-sdk/lib-dynamodb": "^3.873.0",
     "@captify-io/pmbook": "^1.0.4",
     "@tailwindcss/postcss": "^4.1.12",
-    "@types/node": "22.10.3",
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
     "clsx": "^2.1.1",
@@ -46,9 +50,67 @@
     "typescript": "5.9.2",
     "uuid": "^11.1.0"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/lib/auth.d.ts",
+      "import": "./dist/lib/auth.mjs",
+      "require": "./dist/lib/auth.js"
+    },
+    "./api": {
+      "types": "./dist/lib/api.d.ts",
+      "import": "./dist/lib/api.mjs",
+      "require": "./dist/lib/api.js"
+    },
+    "./utils": {
+      "types": "./dist/lib/utils.d.ts",
+      "import": "./dist/lib/utils.mjs",
+      "require": "./dist/lib/utils.js"
+    },
+    "./ui": {
+      "types": "./dist/components/ui.d.ts",
+      "import": "./dist/components/ui.mjs",
+      "require": "./dist/components/ui.js"
+    },
+    "./theme": {
+      "types": "./dist/components/theme.d.ts",
+      "import": "./dist/components/theme.mjs",
+      "require": "./dist/components/theme.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/captify-io/platform.git"
+  },
+  "keywords": [
+    "captify",
+    "react",
+    "components",
+    "ui",
+    "auth",
+    "api",
+    "nextjs"
+  ],
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "next": "^14.0.0 || ^15.0.0",
+    "next-auth": "^5.0.0",
+    "next-themes": "^0.4.0",
+    "lucide-react": "^0.400.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^3.0.0"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
@@ -56,8 +118,10 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.2",
+    "@types/node": "^24.3.1",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.21",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "tsup": "^8.5.0"
   }
 }
