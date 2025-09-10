@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { auth } from "../auth";
+import { auth } from "../lib/auth";
 import { CaptifyProvider } from "./providers/CaptifyProvider";
 
 interface ServerCaptifyProviderProps {
