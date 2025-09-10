@@ -6,12 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function createApiClient(): CaptifyClient {
-  return new CaptifyClient({
-    appId: "core",
-    session: null, // Session will be handled by the client internally
-  });
+export function generateUUID(): string {
+  return crypto.randomUUID();
 }
+
 
 export interface CaptifyResponse<T = any> {
   success: boolean;
@@ -79,74 +77,3 @@ class ApiClient {
 // Export singleton instance
 export const apiClient = new ApiClient();
 
-// CaptifyClient with convenience methods
-export class CaptifyClient extends ApiClient {
-  private appId: string;
-  private session: Session | null;
-
-  constructor(config?: { appId?: string; session?: Session | null }) {
-    super();
-    this.appId = config?.appId || "core";
-    this.session = config?.session || null;
-  }
-
-  async query(params: { table: string; [key: string]: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "query",
-      app: this.appId,
-      table: params.table,
-      data: params,
-    });
-  }
-
-  async get(params: { table: string; [key: string]: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "scan",
-      app: this.appId,
-      table: params.table,
-      data: params,
-    });
-  }
-
-  async getItem(params: { table: string; key: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "get",
-      app: this.appId,
-      table: params.table,
-      data: { key: params.key },
-    });
-  }
-
-  async put(params: { table: string; data: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "put",
-      app: this.appId,
-      table: params.table,
-      data: params.data,
-    });
-  }
-
-  async update(params: { table: string; [key: string]: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "update",
-      app: this.appId,
-      table: params.table,
-      data: params,
-    });
-  }
-
-  async delete(params: { table: string; key: any }) {
-    return this.run({
-      service: "dynamo",
-      operation: "delete",
-      app: this.appId,
-      table: params.table,
-      data: { key: params.key },
-    });
-  }
-}
