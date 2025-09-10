@@ -9,6 +9,12 @@ export default defineConfig({
     'lib/utils': 'src/lib/utils.ts',
     'lib/react-compat': 'src/lib/react-compat.ts',
     
+    // Types
+    'lib/types': 'src/types/index.ts',
+    
+    // Hooks
+    'lib/hooks': 'src/hooks/index.ts',
+    
     // UI components (barrel export)
     'components/ui': 'src/components/ui/index.ts',
     
