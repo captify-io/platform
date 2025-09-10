@@ -78,6 +78,16 @@
       "import": "./dist/lib/auth.mjs",
       "require": "./dist/lib/auth.js"
     },
+    "./types": {
+      "types": "./dist/lib/types.d.ts",
+      "import": "./dist/lib/types.mjs",
+      "require": "./dist/lib/types.js"
+    },
+    "./hooks": {
+      "types": "./dist/lib/hooks.d.ts",
+      "import": "./dist/lib/hooks.mjs",
+      "require": "./dist/lib/hooks.js"
+    },
     "./api": {
       "types": "./dist/lib/api.d.ts",
       "import": "./dist/lib/api.mjs",
