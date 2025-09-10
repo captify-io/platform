@@ -1,4 +1,4 @@
-import { PackagePageRouter } from "@captify-io/core/components";
+import { PackagePageRouter } from "../../components";
 
 interface CaptifyAppPageProps {
   params: Promise<{ captify: string[] }>;

@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
-import { auth } from "@captify-io/core/auth";
-import { serviceRegistry } from "../lib/service-registry";
+import { auth } from "../../../auth";
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
@@ -80,10 +79,11 @@ async function handleRequest(request: NextRequest, method: string) {
 
       try {
         // Use Identity Pool from request body if provided, otherwise use default
+        // Default to COGNITO_IDENTITY_POOL_ID if app is 'core' or identityPoolId is not provided
         let identityPoolId = body.identityPoolId;
         const forceRefresh = body.forceRefresh === true;
 
-        if (identityPoolId) {
+        if (identityPoolId && app !== "core") {
           // Check if this is the base/admin identity pool
           if (identityPoolId === process.env.COGNITO_IDENTITY_POOL_ID) {
             console.log(
@@ -97,7 +97,7 @@ async function handleRequest(request: NextRequest, method: string) {
         } else {
           identityPoolId = process.env.COGNITO_IDENTITY_POOL_ID;
           console.log(
-            `👤 [API Route] Using default Identity Pool: ${identityPoolId}`
+            `👤 [API Route] Using default Identity Pool for app '${app}': ${identityPoolId}`
           );
         }
 
@@ -129,20 +129,79 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-      // Get service handler from the registry
+      // Get service handler - simplified direct import
+      console.log("[API Route] ===== SERVICE LOADING =====");
+      console.log(
+        `[API Route] Loading service '${body.service}' from app '${app}'`
+      );
+      console.log(`[API Route] This will import: @captify-io/${app}/services`);
+
       let serviceHandler;
       try {
-        serviceHandler = await serviceRegistry.getServiceHandler(
-          app,
-          body.service
+        // Dynamically import the module
+        console.log(`[API Route] Importing @captify-io/${app}/services`);
+        const serviceModule = await import(`@captify-io/${app}/services`);
+        console.log("[API Route] Service module imported successfully");
+        console.log(
+          "[API Route] Service module has 'services' property:",
+          "services" in serviceModule
+        );
+
+        if (!serviceModule.services) {
+          throw new Error(
+            `No services export found in @captify-io/${app}/services`
+          );
+        }
+
+        console.log(
+          "[API Route] Services object type:",
+          typeof serviceModule.services
+        );
+        console.log(
+          "[API Route] Services has 'use' method:",
+          typeof serviceModule.services.use === "function"
+        );
+
+        if (typeof serviceModule.services.use !== "function") {
+          throw new Error(
+            `services.use is not a function in @captify-io/${app}/services`
+          );
+        }
+
+        // Get the service handler
+        console.log(`[API Route] Calling services.use('${body.service}')`);
+        serviceHandler = serviceModule.services.use(body.service);
+        console.log(
+          "[API Route] Service handler result:",
+          serviceHandler ? "found" : "not found"
         );
 
         if (!serviceHandler) {
           throw new Error(
-            `Service ${body.service} not found in @captify-io/${app} package`
+            `Service '${body.service}' not found in @captify-io/${app} package`
           );
         }
+
+        if (typeof serviceHandler.execute !== "function") {
+          throw new Error(
+            `Service '${body.service}' does not have an execute method`
+          );
+        }
+
+        console.log("[API Route] ✅ Service handler loaded successfully");
       } catch (importError) {
+        console.error("[API Route] ❌ Service loading error:", importError);
+        console.error(
+          "[API Route] Error name:",
+          importError instanceof Error ? importError.name : typeof importError
+        );
+        console.error(
+          "[API Route] Error message:",
+          importError instanceof Error
+            ? importError.message
+            : String(importError)
+        );
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -154,19 +213,6 @@ async function handleRequest(request: NextRequest, method: string) {
           }),
           {
             status: 404,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      if (!serviceHandler.execute) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Service ${body.service} does not have an execute function`,
-          }),
-          {
-            status: 400,
             headers: { "Content-Type": "application/json" },
           }
         );

@@ -4,7 +4,7 @@
   "packages": {},
   "apps": {},
   "settings": {
-    "packageManager": "pnpm",
+    "packageManager": "npm",
     "typescript": true,
     "eslint": true,
     "autoDiscover": true

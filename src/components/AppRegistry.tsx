@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// Temporarily disabled - app-loader uses Node.js APIs not available in browser
-// import { loadDynamicApps } from '@/lib/app-loader';
 
 interface LoadedApp {
   enabled: boolean;
@@ -13,28 +11,14 @@ interface LoadedApp {
 
 export function AppRegistry({ children }: { children: React.ReactNode }) {
   const [apps, setApps] = useState<Record<string, LoadedApp>>({});
-  const [loading, setLoading] = useState(false); // Changed to false since we're not loading
+  const [loading, setLoading] = useState(false);
 
-  // Temporarily disabled dynamic app loading
-  // useEffect(() => {
-  //   async function loadApps() {
-  //     try {
-  //       const loadedApps = await loadDynamicApps();
-  //       setApps(loadedApps);
-        
-  //       // Store in window for global access
-  //       if (typeof window !== 'undefined') {
-  //         (window as any).__CAPTIFY_APPS__ = loadedApps;
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to load apps:', error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
-
-  //   loadApps();
-  // }, []);
+  useEffect(() => {
+    // Store empty apps for now - dynamic discovery happens at runtime
+    if (typeof window !== 'undefined') {
+      (window as any).__CAPTIFY_APPS__ = {};
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -61,10 +45,6 @@ export function useApps() {
     if (typeof window !== 'undefined' && (window as any).__CAPTIFY_APPS__) {
       setApps((window as any).__CAPTIFY_APPS__);
     }
-    // Temporarily disabled
-    // else {
-    //   loadDynamicApps().then(setApps);
-    // }
   }, []);
 
   return apps;

@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
-import { auth } from "@captify-io/core/auth";
+import { auth } from "../auth";
 import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
-import { UserRegistrationForm } from "@captify-io/core/components";
-import { SignInForm } from "@captify-io/core/components";
+import { UserRegistrationForm } from "../components";
+import { SignInForm } from "../components/navigation";
 import "./globals.css";
 
 interface ServerCaptifyProviderProps {

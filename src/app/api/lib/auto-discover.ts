@@ -13,20 +13,22 @@ import path from "path";
  */
 export async function autoDiscoverPackages() {
   try {
-    // Look for packages in node_modules/@captify
-    const packagesDir = path.join(process.cwd(), "node_modules", "@captify");
+    // Look for packages in node_modules/@captify-io
+    const packagesDir = path.join(process.cwd(), "node_modules", "@captify-io");
 
     if (!fs.existsSync(packagesDir)) {
-      console.warn("No @captify packages directory found");
+      console.warn("No @captify-io packages directory found");
       return;
     }
 
     const packages = fs.readdirSync(packagesDir).filter((dir) => {
       // Check if it's a directory with a services export
       const packagePath = path.join(packagesDir, dir);
-      const servicesPath = path.join(packagePath, "dist", "services.js");
+      const servicesPathJS = path.join(packagePath, "dist", "services.js");
+      const servicesPathMJS = path.join(packagePath, "dist", "services.mjs");
       return (
-        fs.statSync(packagePath).isDirectory() && fs.existsSync(servicesPath)
+        fs.statSync(packagePath).isDirectory() && 
+        (fs.existsSync(servicesPathJS) || fs.existsSync(servicesPathMJS))
       );
     });
 

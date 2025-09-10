@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
-import { auth } from "@captify-io/core/auth";
-import { CaptifyProvider } from "@captify-io/core/components";
+import { auth } from "../auth";
+import { CaptifyProvider } from "./providers/CaptifyProvider";
 
 interface ServerCaptifyProviderProps {
   children: ReactNode;

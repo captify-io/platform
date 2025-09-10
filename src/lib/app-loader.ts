@@ -77,17 +77,17 @@ export async function loadDynamicApps() {
           ...packageJson.devDependencies,
         };
 
-        // Look for @captify-io/apps-* packages
+        // Look for @captify-io/* packages (excluding core)
         for (const [pkgName, version] of Object.entries(dependencies)) {
-          if (pkgName.startsWith("@captify-io/apps-")) {
-            const appName = pkgName.replace("@captify-io/apps-", "");
+          if (pkgName.startsWith("@captify-io/") && pkgName !== "@captify-io/core") {
+            const appName = pkgName.replace("@captify-io/", "");
             if (!loadedApps[appName]) {
               try {
-                const appModule = await import(pkgName);
+                const appModule = await import(`${pkgName}/app`);
                 loadedApps[appName] = {
                   enabled: true,
-                  path: `/apps/${appName}`,
-                  package: pkgName,
+                  path: `/${appName}`,
+                  package: `${pkgName}/app`,
                   module: appModule,
                 };
                 console.log(`✓ Auto-discovered app: ${appName}`);

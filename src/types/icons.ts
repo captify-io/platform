@@ -1,0 +1,127 @@
+import { LucideProps } from "lucide-react";
+
+/**
+ * Props for the DynamicIcon component
+ */
+export interface DynamicIconProps extends LucideProps {
+  /** The name of the Lucide icon to render */
+  name: string;
+  /** Fallback icon component to use if the named icon is not found */
+  fallback?: React.ComponentType<any>;
+  /** Whether to suppress error messages when icon is not found */
+  suppressErrors?: boolean;
+}
+
+/**
+ * Type for icon name mappings
+ */
+export type IconNameMap = Record<string, string>;
+
+/**
+ * Common icon names that can be used with DynamicIcon
+ */
+export type CommonIconNames =
+  | "dashboard"
+  | "layout-dashboard"
+  | "users"
+  | "user"
+  | "settings"
+  | "cog"
+  | "gear"
+  | "home"
+  | "house"
+  | "package"
+  | "box"
+  | "database"
+  | "data"
+  | "server"
+  | "cloud"
+  | "code"
+  | "cpu"
+  | "processor"
+  | "monitor"
+  | "screen"
+  | "analytics"
+  | "chart"
+  | "bar-chart-3"
+  | "reports"
+  | "report"
+  | "file-text"
+  | "security"
+  | "shield"
+  | "access"
+  | "key"
+  | "tools"
+  | "wrench"
+  | "help"
+  | "support"
+  | "help-circle"
+  | "logout"
+  | "log-out"
+  | "signin"
+  | "log-in"
+  | "search"
+  | "filter"
+  | "menu"
+  | "bars"
+  | "hamburger"
+  | "close"
+  | "cancel"
+  | "x"
+  | "delete"
+  | "trash"
+  | "trash-2"
+  | "edit"
+  | "pencil"
+  | "add"
+  | "plus"
+  | "create"
+  | "minus"
+  | "remove"
+  | "check"
+  | "tick"
+  | "star"
+  | "favorite"
+  | "heart"
+  | "like"
+  | "bell"
+  | "notification"
+  | "mail"
+  | "email"
+  | "message"
+  | "chat"
+  | "message-square"
+  | "phone"
+  | "calendar"
+  | "date"
+  | "clock"
+  | "time"
+  | "globe"
+  | "world"
+  | "link"
+  | "external"
+  | "external-link"
+  | "download"
+  | "upload"
+  | "file"
+  | "document"
+  | "file-text"
+  | "folder"
+  | "directory"
+  | "image"
+  | "photo"
+  | "video"
+  | "play"
+  | "pause"
+  | "stop"
+  | "square"
+  | "refresh"
+  | "reload"
+  | "sync"
+  | "refresh-cw"
+  | "wifi"
+  | "network"
+  | "bluetooth"
+  | "battery"
+  | "power"
+  | "circle";

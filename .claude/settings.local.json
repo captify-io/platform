@@ -81,7 +81,12 @@
       "Bash(aws iam list-attached-user-policies:*)",
       "Bash(aws iam get-policy-version:*)",
       "Bash(aws iam detach-user-policy:*)",
-      "Bash(aws iam list-user-policies:*)"
+      "Bash(aws iam list-user-policies:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --repo captify-io/platform --limit 3)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 17593127775 --repo captify-io/platform --log)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --repo captify-io/platform --limit 2)",
+      "Bash(cat:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

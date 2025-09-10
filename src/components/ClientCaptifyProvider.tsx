@@ -6,7 +6,7 @@ import {
   FavoritesBar,
   SignInForm,
   TopNavigation,
-} from "@captify-io/core/components";
+} from "../components";
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 

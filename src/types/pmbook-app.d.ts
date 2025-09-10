@@ -1,0 +1,1 @@
+declare module '@captify-io/pmbook/app';

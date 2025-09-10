@@ -10,8 +10,7 @@
     "start": "next start -p 8081",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next dist node_modules",
-    "install:captify": "npx @captify-io/core@latest"
+    "clean": "rm -rf .next dist node_modules"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.883.0",
@@ -26,7 +25,6 @@
     "@aws-sdk/client-ssm": "^3.883.0",
     "@aws-sdk/credential-providers": "^3.873.0",
     "@aws-sdk/lib-dynamodb": "^3.873.0",
-    "@captify-io/core": "1.0.11",
     "@captify-io/pmbook": "^1.0.4",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/node": "22.10.3",

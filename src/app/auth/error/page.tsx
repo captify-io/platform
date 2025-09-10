@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { SignInForm } from "@captify-io/core/components";
+import { SignInForm } from "../../../components";
 
 // Disable static generation for this page to prevent SSR issues
 export const dynamic = "force-dynamic";
