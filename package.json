@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev --turbo -p 3000",
     "dev:webpack": "next dev -p 3000",
-    "build": "npm run build:package && npm run git:commit && npm run git:push && npm run publish:package",
+    "build": "npm run git:commit && npm run version:patch && npm run build:package && npm run git:push && npm run publish:package",
     "build:app": "next build",
     "build:package": "tsup && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:dev": "tsup --watch",
@@ -18,6 +18,7 @@
     "prepublishOnly": "npm run build:package",
     "git:commit": "git add -A && git commit -m \"Package update: $(date)\" || echo \"No changes to commit\"",
     "git:push": "git push origin master",
+    "version:patch": "npm version patch",
     "publish:package": "npm publish",
     "deploy": "npm run build:app && npm run build:package && npm run git:commit && npm run git:push && gh workflow run deploy.yml"
   },
