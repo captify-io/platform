@@ -26,6 +26,8 @@
     "src/lib/**/*",
     "src/components/ui/**/*", 
     "src/components/theme/**/*",
+    "src/hooks/**/*",
+    "src/types/**/*", 
     "src/index.ts",
     "src/api.ts"
   ],

@@ -64,49 +64,49 @@
     "typescript": "5.9.2",
     "uuid": "^11.1.0"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./auth": {
-      "types": "./dist/auth.d.ts",
-      "import": "./dist/auth.mjs",
-      "require": "./dist/auth.js"
+      "types": "./dist/lib/auth.d.ts",
+      "import": "./dist/lib/auth.js",
+      "require": "./dist/lib/auth.cjs"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.mjs",
-      "require": "./dist/types.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/lib/types.js",
+      "require": "./dist/lib/types.cjs"
     },
     "./hooks": {
-      "types": "./dist/hooks/hooks.d.ts",
-      "import": "./dist/hooks/hooks.mjs",
-      "require": "./dist/hooks/hooks.js"
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/lib/hooks.js",
+      "require": "./dist/lib/hooks.cjs"
     },
     "./api": {
-      "types": "./dist/api.d.ts",
-      "import": "./dist/api.mjs",
-      "require": "./dist/api.js"
+      "types": "./dist/lib/api.d.ts",
+      "import": "./dist/lib/api.js",
+      "require": "./dist/lib/api.cjs"
     },
     "./utils": {
       "types": "./dist/lib/utils.d.ts",
-      "import": "./dist/lib/utils.mjs",
-      "require": "./dist/lib/utils.js"
+      "import": "./dist/lib/utils.js",
+      "require": "./dist/lib/utils.cjs"
     },
     "./ui": {
-      "types": "./dist/ui.d.ts",
-      "import": "./dist/ui.mjs",
-      "require": "./dist/ui.js"
+      "types": "./dist/components/ui.d.ts",
+      "import": "./dist/components/ui.js",
+      "require": "./dist/components/ui.cjs"
     },
     "./theme": {
-      "types": "./dist/theme.d.ts",
-      "import": "./dist/theme.mjs",
-      "require": "./dist/theme.js"
+      "types": "./dist/components/theme.d.ts",
+      "import": "./dist/components/theme.js",
+      "require": "./dist/components/theme.cjs"
     }
   },
   "files": [
