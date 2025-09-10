@@ -28,6 +28,7 @@ export * from "./theme/ThemeToggle";
 
 // Application components
 export * from "./ApplicationLauncher";
+export * from "./ClientCaptifyLayout";
 export * from "./UserRegistrationForm";
 
 // Re-export UI components

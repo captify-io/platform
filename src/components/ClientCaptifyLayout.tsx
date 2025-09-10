@@ -5,11 +5,13 @@ import { ThreePanelLayout } from "../components";
 interface ClientCaptifyLayoutProps {
   children: React.ReactNode;
   packageName: string;
+  packageSource?: string;
 }
 
 export function ClientCaptifyLayout({
   children,
   packageName,
+  packageSource,
 }: ClientCaptifyLayoutProps) {
   // Identity pool will be set by ThreePanelLayout based on DynamoDB app data
 
@@ -21,7 +23,7 @@ export function ClientCaptifyLayout({
       className="h-screen flex flex-col overflow-hidden"
     >
       <div className="flex-1 min-h-0">
-        <ThreePanelLayout>{children}</ThreePanelLayout>
+        <ThreePanelLayout packageSource={packageSource}>{children}</ThreePanelLayout>
       </div>
     </div>
   );

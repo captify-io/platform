@@ -56,6 +56,7 @@ import type { AppData, ThreePanelLayoutProps } from "../../types";
 const ThreePanelContent = React.memo(function ThreePanelContent({
   children,
   className,
+  packageSource,
 }: ThreePanelLayoutProps) {
   const { session } = useCaptify(); // Use our custom hook
   const { setCurrentApp } = useAppContext(); // Get setCurrentApp from context
@@ -145,13 +146,55 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   // Load app data when packageSlug changes
   useEffect(() => {
     if (packageSlug && typeof window !== "undefined") {
-      // Identity pool will be set from DynamoDB query results
-
-      // Then fetch from database for full app data
-      fetchAppData(packageSlug);
+      if (packageSource) {
+        // Load from config file instead of API
+        loadConfigData();
+      } else {
+        // Identity pool will be set from DynamoDB query results
+        // Then fetch from database for full app data
+        fetchAppData(packageSlug);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packageSlug]); // Use packageSlug instead of packageConfig.slug
+  }, [packageSlug, packageSource]); // Use packageSlug instead of packageConfig.slug
+
+  // Load config data from package similar to PackagePageRouter pattern
+  const loadConfigData = async () => {
+    if (!packageSource) return;
+    
+    try {
+      console.log(`[ThreePanelLayout] Loading config from @captify-io/${packageSlug}/${packageSource}`);
+      
+      // Dynamic import using the same pattern as PackagePageRouter
+      const configModule = await import(`@captify-io/${packageSlug}/${packageSource}`);
+      const configData = configModule.config || configModule.default;
+      
+      if (!configData) {
+        throw new Error(`No config found in @captify-io/${packageSlug}/${packageSource}`);
+      }
+      
+      console.log(`[ThreePanelLayout] ✅ Successfully loaded config for ${packageSlug}`);
+      
+      // Create appData-like object from config for compatibility
+      const configAppData: AppData = {
+        app: packageSlug || 'unknown',
+        menu: configData,  // Config already matches MenuItem interface
+        version: '1.0.0',
+        icon: 'package',
+        status: 'active',
+        visibility: 'public',
+        slug: packageSlug || 'unknown',
+        name: packageSlug || 'Unknown Package',
+        description: `Package loaded from ${packageSource}`,
+        id: packageSlug || 'unknown'
+      };
+      
+      setAppData(configAppData);
+    } catch (error) {
+      console.error(`[ThreePanelLayout] Failed to load config:`, error);
+      setAppData(null);
+    }
+  };
 
   // Update appData when API data changes
   useEffect(() => {
@@ -558,11 +601,12 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
 export function ThreePanelLayout({
   children,
   className,
+  packageSource,
 }: ThreePanelLayoutProps) {
   return (
     <TooltipProvider>
       <SidebarProvider defaultOpen={false}>
-        <ThreePanelContent className={className}>{children}</ThreePanelContent>
+        <ThreePanelContent className={className} packageSource={packageSource}>{children}</ThreePanelContent>
       </SidebarProvider>
     </TooltipProvider>
   );

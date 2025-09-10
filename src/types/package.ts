@@ -90,6 +90,7 @@ export interface AppData {
 export interface ThreePanelLayoutProps {
   children?: React.ReactNode;
   className?: string;
+  packageSource?: string;
 }
 
 // Props for PackageAgentPanel component

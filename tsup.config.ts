@@ -50,7 +50,20 @@ export default defineConfig({
     'lucide-react',
     'clsx',
     'tailwind-merge',
-    '@aws-sdk/*'
+    '@aws-sdk/*',
+    '@radix-ui/*',
+    'class-variance-authority',
+    'cmdk',
+    'embla-carousel-react',
+    'input-otp',
+    'react-day-picker',
+    'react-hook-form',
+    'react-resizable-panels',
+    'recharts',
+    'sonner',
+    'vaul',
+    '@hookform/resolvers',
+    'zod'
   ],
   
   // Splitting

@@ -15,7 +15,10 @@ export default async function CaptifyPageLayout({
   console.log("called [captify]/layout.tsx with package:", captify[0]);
 
   return (
-    <ClientCaptifyLayout packageName={captify[0] || ""}>
+    <ClientCaptifyLayout
+      packageName={captify[0] || ""}
+      packageSource="services/config"
+    >
       {children}
     </ClientCaptifyLayout>
   );
