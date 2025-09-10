@@ -14,7 +14,6 @@
       "Bash(NEXT_DEBUG_BUILD=1 pnpm run build)",
       "Bash(set NEXT_DEBUG_BUILD=1)",
       "Bash(pnpm list:*)",
-      "Bash(pnpm --filter @captify-io/core run build)",
       "Bash(set NODE_OPTIONS=--max-old-space-size=8192 --stack-size=10000)",
       "WebSearch",
       "Bash(do cp apps/admin/tsup.config.ts apps/$app/)",

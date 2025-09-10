@@ -2,7 +2,6 @@ import { dynamo } from "./aws/dynamodb";
 import { cognito } from "./aws/cognito";
 import { s3 } from "./aws/s3";
 import { debug } from "./debug";
-import { agent } from "./agent";
 
 // Service registry for server-side usage
 export const services = {
@@ -17,8 +16,6 @@ export const services = {
         return s3;
       case "debug":
         return debug;
-      case "agent":
-        return agent;
       default:
         throw new Error(`Unknown service: ${serviceName}`);
     }
@@ -30,7 +27,6 @@ export const services = {
   cognito,
   s3,
   debug,
-  agent,
 };
 
 // Export individual services for direct import
@@ -38,7 +34,6 @@ export { dynamo, dynamo as dynamodb } from "./aws/dynamodb";
 export { cognito } from "./aws/cognito";
 export { s3 } from "./aws/s3";
 export { debug } from "./debug";
-export { agent } from "./agent";
 
 // Export AWS utilities
 export * from "./aws";
