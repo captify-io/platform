@@ -99,12 +99,12 @@
       "require": "./dist/lib/utils.cjs"
     },
     "./ui": {
-      "types": "./dist/components/ui.d.ts",
+      "types": "./dist/components/ui/index.d.ts",
       "import": "./dist/components/ui.js",
       "require": "./dist/components/ui.cjs"
     },
     "./theme": {
-      "types": "./dist/components/theme.d.ts",
+      "types": "./dist/components/theme/index.d.ts",
       "import": "./dist/components/theme.js",
       "require": "./dist/components/theme.cjs"
     }
