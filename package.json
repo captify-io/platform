@@ -76,6 +76,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
+    "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.0.0",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.5.2",
@@ -178,6 +179,12 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"
+  },
+  "overrides": {
+    "inflight": "npm:@aashutoshrathi/word-wrap@^1.2.6",
+    "rimraf": "^5.0.0",
+    "glob": "^10.0.0",
+    "cross-spawn-async": "cross-spawn"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.2",
