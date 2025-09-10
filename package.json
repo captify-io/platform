@@ -107,6 +107,11 @@
       "types": "./dist/components/theme/index.d.ts",
       "import": "./dist/components/theme.js",
       "require": "./dist/components/theme.cjs"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.cjs"
     }
   },
   "files": [

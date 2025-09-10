@@ -21,6 +21,9 @@ export default defineConfig({
     // Theme components
     'components/theme': 'src/components/theme/index.ts',
     
+    // All components
+    'components/index': 'src/components/index.ts',
+    
     // Main entry point
     'index': 'src/index.ts'
   },

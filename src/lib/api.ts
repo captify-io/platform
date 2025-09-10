@@ -1,4 +1,3 @@
-"use client";
 import type { Session } from "next-auth";
 
 export interface CaptifyResponse<T = any> {
@@ -28,46 +27,55 @@ export interface ApiRequest {
 class ApiClient {
   private currentAppIdentityPoolId: string | undefined = undefined;
   private currentAppSlug: string | undefined = undefined;
-  
+
   // Set the current app's identity pool ID (called when app context changes)
   setAppIdentityPool(poolId: string | undefined, appSlug?: string) {
     // Only update if it's actually changing to prevent unnecessary logs
-    if (this.currentAppIdentityPoolId !== poolId || this.currentAppSlug !== appSlug) {
+    if (
+      this.currentAppIdentityPoolId !== poolId ||
+      this.currentAppSlug !== appSlug
+    ) {
       this.currentAppIdentityPoolId = poolId;
       this.currentAppSlug = appSlug;
-      console.log(`[ApiClient] Identity pool set for app '${appSlug || 'unknown'}':`, poolId || 'none');
+      console.log(
+        `[ApiClient] Identity pool set for app '${appSlug || "unknown"}':`,
+        poolId || "none"
+      );
     }
   }
-  
+
   // Get the current identity pool (for debugging)
   getCurrentIdentityPool(): string | undefined {
     return this.currentAppIdentityPoolId;
   }
-  
+
   async run<T = any>(request: ApiRequest): Promise<CaptifyResponse<T>> {
     try {
       // Use app from request, default to "core" if not specified
       const app = request.app || "core";
       const url = `/api/captify`;
-      
+
       // If no identity pool is explicitly provided, use the current app's pool
       const finalRequest = {
         ...request,
-        identityPoolId: request.identityPoolId || this.currentAppIdentityPoolId
+        identityPoolId: request.identityPoolId || this.currentAppIdentityPoolId,
       };
-      
+
       // Debug logging
-      console.log('[ApiClient] Request details:', {
+      console.log("[ApiClient] Request details:", {
         service: request.service,
         operation: request.operation,
         providedPoolId: request.identityPoolId,
         currentAppPoolId: this.currentAppIdentityPoolId,
-        finalPoolId: finalRequest.identityPoolId
+        finalPoolId: finalRequest.identityPoolId,
       });
-      
+
       // Log when using app's identity pool
       if (!request.identityPoolId && this.currentAppIdentityPoolId) {
-        console.log('[ApiClient] Using app identity pool for request:', this.currentAppIdentityPoolId);
+        console.log(
+          "[ApiClient] Using app identity pool for request:",
+          this.currentAppIdentityPoolId
+        );
       }
 
       const fetchOptions: RequestInit = {
@@ -81,7 +89,7 @@ class ApiClient {
 
       // Add native fetch caching if requested
       if (request.useCache) {
-        fetchOptions.cache = 'force-cache';
+        fetchOptions.cache = "force-cache";
       }
 
       const response = await fetch(url, fetchOptions);
@@ -113,13 +121,14 @@ export async function runCognitoAdminOperation<T = any>(
   params?: any
 ): Promise<CaptifyResponse<T>> {
   // Get admin Identity Pool ID from environment or use hardcoded value
-  const adminPoolId = process.env.NEXT_PUBLIC_COGNITO_ADMIN_IDENTITY_POOL_ID || 
-                      'us-east-1:52e865f2-4871-4a74-8976-edc945af0c0f';
-  
+  const adminPoolId =
+    process.env.NEXT_PUBLIC_COGNITO_ADMIN_IDENTITY_POOL_ID ||
+    "us-east-1:52e865f2-4871-4a74-8976-edc945af0c0f";
+
   return apiClient.run<T>({
-    service: 'cognito',
+    service: "cognito",
     operation,
-    app: 'core',
+    app: "core",
     identityPoolId: adminPoolId,
     forceRefresh: true, // Always refresh for admin operations
     data: params,

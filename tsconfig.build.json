@@ -24,8 +24,7 @@
   },
   "include": [
     "src/lib/**/*",
-    "src/components/ui/**/*", 
-    "src/components/theme/**/*",
+    "src/components/**/*",
     "src/hooks/**/*",
     "src/types/**/*", 
     "src/index.ts",

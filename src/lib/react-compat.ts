@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 
 // Ensure React is available in the global scope for monorepo compatibility
