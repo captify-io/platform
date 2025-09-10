@@ -10,4 +10,3 @@ export * from './tenant';
 export * from './icons';
 export * from './shared';
 export * from './user';
-export * from './agent';

@@ -86,7 +86,8 @@
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 17593127775 --repo captify-io/platform --log)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --repo captify-io/platform --limit 2)",
       "Bash(cat:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(robocopy:*)"
     ],
     "deny": [],
     "ask": []

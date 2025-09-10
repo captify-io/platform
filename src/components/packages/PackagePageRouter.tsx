@@ -84,11 +84,7 @@ export function PackagePageRouter({
           console.log(
             `[PackagePageRouter] Importing @captify-io/${packageSlug}/app`
           );
-          appModule = (await import("@captify-io/pmbook/app")) as AppModule;
-          console.log("[HomePage] ✅ Successfully imported @captify-io/pmbook");
-
-          moduleCache["pmbook"] = appModule;
-          console.log("[HomePage] Cached pmbook module");
+          appModule = (await import(`@captify-io/${packageSlug}/app`)) as AppModule;
 
           console.log(
             `[PackagePageRouter] ✅ Successfully imported @captify-io/${packageSlug}`
