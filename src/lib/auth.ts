@@ -119,7 +119,7 @@ const authConfig: NextAuthConfig = {
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.COGNITO_ISSUER,
-      checks: ["pkce", "state"], // no "nonce"
+      checks: ["pkce", "state", "nonce"], // no "nonce"
       authorization: {
         params: {
           scope: "openid email profile",
@@ -286,16 +286,6 @@ const authConfig: NextAuthConfig = {
     },
     state: {
       name: "next-auth.state",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 900, // 15 minutes
-      },
-    },
-    nonce: {
-      name: "next-auth.nonce",
       options: {
         httpOnly: true,
         sameSite: "lax",

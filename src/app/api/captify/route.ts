@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
-import { auth } from "../../../auth";
+import { auth } from "../../../lib/auth";
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
@@ -129,18 +129,24 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-      // Get service handler - simplified direct import
+      // Get service handler - conditional import based on app
       console.log("[API Route] ===== SERVICE LOADING =====");
       console.log(
         `[API Route] Loading service '${body.service}' from app '${app}'`
       );
-      console.log(`[API Route] This will import: @captify-io/${app}/services`);
 
       let serviceHandler;
+      let serviceModule;
       try {
-        // Dynamically import the module
-        console.log(`[API Route] Importing @captify-io/${app}/services`);
-        const serviceModule = await import(`@captify-io/${app}/services`);
+        // Conditional import: use local services for core/undefined, external packages for others
+        if (app === "core" || app === undefined) {
+          console.log(`[API Route] Importing from local src/services`);
+          serviceModule = await import("../../../services");
+        } else {
+          console.log(`[API Route] Importing @captify-io/${app}/services`);
+          serviceModule = await import(`@captify-io/${app}/services`);
+          console.log(serviceModule);
+        }
         console.log("[API Route] Service module imported successfully");
         console.log(
           "[API Route] Service module has 'services' property:",

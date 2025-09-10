@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { auth } from "../auth";
+import { auth } from "../lib/auth";
 import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
 import { UserRegistrationForm } from "../components";
 import { SignInForm } from "../components/navigation";

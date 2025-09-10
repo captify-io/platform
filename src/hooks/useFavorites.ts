@@ -19,6 +19,7 @@ export function useFavorites() {
   // Fetch user's favorite apps from DynamoDB
   const fetchFavoriteApps = useCallback(async () => {
     if (!session?.user || !(session.user as any)?.id) {
+      console.log('[useFavorites] No session or user ID, clearing favorites');
       setFavoriteApps([]);
       return;
     }
@@ -26,6 +27,8 @@ export function useFavorites() {
     setLoading(true);
     try {
       const userId = (session.user as any).id;
+      console.log('[useFavorites] Fetching favorites for user:', userId);
+      
       const response = await apiClient.run({
         service: "dynamo",
         operation: "query",
@@ -41,15 +44,20 @@ export function useFavorites() {
         },
       });
 
+      console.log('[useFavorites] UserState query response:', response);
+
       if (response.success && response.data?.Items?.length > 0) {
         const userState = response.data.Items[0] as UserState;
+        console.log('[useFavorites] Found UserState:', userState);
+        console.log('[useFavorites] Favorite apps:', userState.favoriteApps);
         // UserState has favoriteApps as a direct array property
         setFavoriteApps(userState.favoriteApps || []);
       } else {
+        console.log('[useFavorites] No UserState found, setting empty favorites');
         setFavoriteApps([]);
       }
     } catch (error) {
-      console.error("Error fetching favorite apps:", error);
+      console.error("[useFavorites] Error fetching favorite apps:", error);
       setFavoriteApps([]);
     } finally {
       setLoading(false);
@@ -59,17 +67,26 @@ export function useFavorites() {
   // Toggle favorite app
   const toggleFavorite = useCallback(
     async (appId: string): Promise<void> => {
-      if (!session?.user || !(session.user as any)?.id) return;
+      if (!session?.user || !(session.user as any)?.id) {
+        console.log('[useFavorites] No session for toggleFavorite');
+        return;
+      }
 
       const newFavorites = favoriteApps.includes(appId)
         ? favoriteApps.filter((id) => id !== appId)
         : [...favoriteApps, appId];
+
+      console.log('[useFavorites] Toggling favorite:', appId);
+      console.log('[useFavorites] Current favorites:', favoriteApps);
+      console.log('[useFavorites] New favorites:', newFavorites);
 
       // Update local state immediately for better UX
       setFavoriteApps(newFavorites);
 
       try {
         const userId = (session.user as any).id;
+        
+        console.log('[useFavorites] Saving favorites for user:', userId);
         
         // First, get the current UserState
         const userStatesResponse = await apiClient.run({
@@ -87,13 +104,17 @@ export function useFavorites() {
           },
         });
 
+        console.log('[useFavorites] UserState lookup response:', userStatesResponse);
+
         if (
           userStatesResponse.success &&
           userStatesResponse.data?.Items?.length > 0
         ) {
           // Update existing UserState
           const userState = userStatesResponse.data.Items[0] as UserState;
-          await apiClient.run({
+          console.log('[useFavorites] Updating existing UserState:', userState.id);
+          
+          const updateResponse = await apiClient.run({
             service: "dynamo",
             operation: "update",
             app: "core",
@@ -107,8 +128,12 @@ export function useFavorites() {
               },
             },
           });
+          
+          console.log('[useFavorites] Update response:', updateResponse);
         } else {
           // Create new UserState if none exists (matching Core interface)
+          console.log('[useFavorites] Creating new UserState for user:', userId);
+          
           const newUserState = {
             id: `userstate-${userId}-${Date.now()}`,
             slug: `userstate-${userId}`,
@@ -128,7 +153,7 @@ export function useFavorites() {
             preferences: {},
           };
 
-          await apiClient.run({
+          const createResponse = await apiClient.run({
             service: "dynamo",
             operation: "put",
             app: "core",
@@ -137,6 +162,8 @@ export function useFavorites() {
               item: newUserState,
             },
           });
+          
+          console.log('[useFavorites] Create UserState response:', createResponse);
         }
       } catch (error) {
         console.error("Error updating favorite apps:", error);

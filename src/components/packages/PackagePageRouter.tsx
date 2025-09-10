@@ -1,3 +1,31 @@
+/**
+ * Package Page Router Component
+ *
+ * Dynamically loads and renders pages from package modules based on URL hash.
+ *
+ * Features:
+ * - Hash-based routing (e.g., #dashboard, #settings, #reports)
+ * - Dynamic module loading with caching
+ * - Fallback to home page for missing routes
+ * - Complex hash parsing (handles #page/subpage, #page?param=value)
+ * - Error handling with helpful debugging information
+ *
+ * Usage:
+ * ```tsx
+ * <PackagePageRouter
+ *   packageSlug="pmbook"
+ *   packageName="PMBook"
+ *   currentHash="dashboard" // Optional: override URL hash
+ * />
+ * ```
+ *
+ * URL Examples:
+ * - example.com/#dashboard → loads "dashboard" page
+ * - example.com/#settings/profile → loads "settings" page
+ * - example.com/#reports?type=monthly → loads "reports" page
+ * - example.com/#invalid → falls back to "home" page
+ */
+
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
@@ -30,7 +58,9 @@ export function PackagePageRouter({
   useEffect(() => {
     const updateHash = () => {
       const raw = window.location.hash.replace(/^#/, "");
-      setHashFromUrl(raw || "home");
+      // Handle complex hash parsing (e.g., #page/subpage or #page?param=value)
+      const pageName = raw.split(/[\/\?]/)[0] || "home";
+      setHashFromUrl(pageName);
     };
     updateHash();
     window.addEventListener("hashchange", updateHash);
@@ -51,14 +81,18 @@ export function PackagePageRouter({
         // Load module from cache or import dynamically
         let appModule = moduleCache[packageSlug];
         if (!appModule) {
-          console.log(`[PackagePageRouter] Importing @captify-io/${packageSlug}/app`);
-          
-          // Import the package main export (which contains pageRegistry)
-          appModule = (await import(
-            /* webpackIgnore: true */ `@captify-io/${packageSlug}/app`
-          )) as AppModule;
-          
-          console.log(`[PackagePageRouter] ✅ Successfully imported @captify-io/${packageSlug}`);
+          console.log(
+            `[PackagePageRouter] Importing @captify-io/${packageSlug}/app`
+          );
+          appModule = (await import("@captify-io/pmbook/app")) as AppModule;
+          console.log("[HomePage] ✅ Successfully imported @captify-io/pmbook");
+
+          moduleCache["pmbook"] = appModule;
+          console.log("[HomePage] Cached pmbook module");
+
+          console.log(
+            `[PackagePageRouter] ✅ Successfully imported @captify-io/${packageSlug}`
+          );
           moduleCache[packageSlug] = appModule;
           console.log(`[PackagePageRouter] Cached module for ${packageSlug}`);
         }
@@ -74,26 +108,65 @@ export function PackagePageRouter({
 
         const loader = appModule.pageRegistry[currentHash];
         if (!loader) {
-          throw new Error(`Page "${currentHash}" not found in ${packageName}`);
+          // Try to fall back to home page if the requested page doesn't exist
+          const homeLoader = appModule.pageRegistry["home"];
+          if (homeLoader && currentHash !== "home") {
+            console.warn(
+              `[PackagePageRouter] Page "${currentHash}" not found, falling back to home`
+            );
+            const moduleResult = await homeLoader();
+            let Component: React.ComponentType | undefined;
+            if ("default" in moduleResult && moduleResult.default) {
+              Component = moduleResult.default;
+            } else {
+              const keys = Object.keys(moduleResult) as Array<
+                keyof typeof moduleResult
+              >;
+              Component = moduleResult[keys[0]] as React.ComponentType;
+            }
+
+            if (Component) {
+              console.log(
+                `[PackagePageRouter] ✅ Fallback to home component loaded successfully`
+              );
+              setPageComponent(() => Component);
+              setError(null);
+              return;
+            }
+          }
+
+          const availablePages = Object.keys(appModule.pageRegistry);
+          throw new Error(
+            `Page "${currentHash}" not found in ${packageName}. ` +
+              `Available pages: ${availablePages.join(", ")}`
+          );
         }
 
-        console.log(`[PackagePageRouter] Loading component for "${currentHash}"`);
+        console.log(
+          `[PackagePageRouter] Loading component for "${currentHash}"`
+        );
         const moduleResult = await loader();
-        
+
         let Component: React.ComponentType | undefined;
         if ("default" in moduleResult && moduleResult.default) {
           Component = moduleResult.default;
         } else {
-          const keys = Object.keys(moduleResult) as Array<keyof typeof moduleResult>;
+          const keys = Object.keys(moduleResult) as Array<
+            keyof typeof moduleResult
+          >;
           Component = moduleResult[keys[0]] as React.ComponentType;
         }
 
         if (Component) {
-          console.log(`[PackagePageRouter] ✅ Component loaded successfully for "${currentHash}"`);
+          console.log(
+            `[PackagePageRouter] ✅ Component loaded successfully for "${currentHash}"`
+          );
           setPageComponent(() => Component);
           setError(null);
         } else {
-          throw new Error(`No component found in module for page "${currentHash}"`);
+          throw new Error(
+            `No component found in module for page "${currentHash}"`
+          );
         }
       } catch (err) {
         console.error(`[PackagePageRouter] Failed to load page:`, err);
@@ -132,7 +205,9 @@ export function PackagePageRouter({
               <li>• Check browser console for detailed logs</li>
               <li>• Ensure @captify-io/{packageSlug} is installed</li>
               <li>• Verify package exports configuration</li>
-              <li>• Current route: {currentHash}</li>
+              <li>• Current route: #{currentHash}</li>
+              <li>• Package: {packageSlug}</li>
+              <li>• URL hash: {window.location.hash}</li>
             </ul>
           </div>
         </div>

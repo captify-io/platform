@@ -1,11 +1,9 @@
 name: Deploy to AWS Elastic Beanstalk
 
 on:
-  push:
-    branches: [master, main]
-  pull_request:
-    branches: [master, main]
-    types: [closed]
+  release:
+    types: [published]
+  workflow_dispatch:  # Manual deployment trigger
 
 env:
   AWS_REGION: us-east-1

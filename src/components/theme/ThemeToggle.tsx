@@ -13,7 +13,8 @@ export function ThemeToggle() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    console.log('[ThemeToggle] Mounted. Initial theme:', theme, 'Resolved:', resolvedTheme);
+  }, [theme, resolvedTheme]);
 
   if (!mounted) {
     return (
@@ -31,12 +32,17 @@ export function ThemeToggle() {
     // Use theme directly, not resolvedTheme for cycling
     const currentTheme = theme || "system";
     
+    console.log('[ThemeToggle] Current theme:', currentTheme);
+    
     // Cycle through: system -> light -> dark -> system
     if (currentTheme === "system") {
+      console.log('[ThemeToggle] Switching to light');
       setTheme("light");
     } else if (currentTheme === "light") {
+      console.log('[ThemeToggle] Switching to dark');
       setTheme("dark");
     } else {
+      console.log('[ThemeToggle] Switching to system');
       setTheme("system");
     }
   };

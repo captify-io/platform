@@ -81,18 +81,10 @@ export function FavoritesBar() {
   };
 
   return (
-    <div className="border-b border-border bg-background">
+    <div className="border-b border-gray-700 bg-black">
       <div className="flex items-center px-2 py-1 gap-2">
         {/* Favorites Section */}
         <div className="flex items-center flex-1 gap-1 overflow-hidden">
-          {/* Favorites Label */}
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-            <span className="text-xs font-medium text-muted-foreground">
-              Favorites
-            </span>
-          </div>
-
           {/* Favorite Apps */}
           <div className="flex items-center gap-1 overflow-x-auto">
             {favoriteAppObjects.map((app) => (
@@ -100,14 +92,14 @@ export function FavoritesBar() {
                 key={app.id}
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs hover:bg-accent/50 transition-colors"
+                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs bg-gray-800 hover:bg-gray-700 transition-colors text-white"
                 onClick={() => handleAppClick(app)}
               >
                 <DynamicIcon
                   name={(app as any).icon || "package"}
-                  className="h-3 w-3 text-muted-foreground"
+                  className="h-3 w-3 text-gray-300"
                 />
-                <span className="text-foreground">{app.name}</span>
+                <span className="text-white">{app.name}</span>
               </Button>
             ))}
 
@@ -116,7 +108,7 @@ export function FavoritesBar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs text-muted-foreground hover:bg-accent/50"
+                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs text-gray-300 hover:bg-gray-800"
                 onClick={() => {
                   // Could open the application launcher here
                   console.log("Show more favorites");
