@@ -60,13 +60,5 @@ export default function HomePage() {
       "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations.",
   };
 
-  return (
-    <div className="h-screen w-full bg-background">
-      <Agent
-        userState={userState}
-        initialSettings={initialSettings}
-        className="h-full"
-      />
-    </div>
-  );
+  return <div className="h-screen w-full bg-background"></div>;
 }

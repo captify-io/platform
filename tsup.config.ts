@@ -36,6 +36,7 @@ export default defineConfig({
     "clsx",
     "tailwind-merge",
     "lucide-react",
+    "lucide-react/dynamic",
     "zod",
     "@aws-sdk/*",
     "@radix-ui/*",
