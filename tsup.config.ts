@@ -79,7 +79,7 @@ export default defineConfig({
   // Target
   target: "es2020",
 
-  // Bundle mode - bundle barrel exports but not individual components
+  // Bundle mode - bundle for proper distribution
   bundle: true,
 
   // Tree shaking
@@ -87,4 +87,13 @@ export default defineConfig({
 
   // Minify for production
   minify: process.env.NODE_ENV === "production",
+  
+  // esbuild options to handle TypeScript properly
+  esbuildOptions(options) {
+    options.dropLabels = ["TYPE_ONLY"];
+    options.supported = {
+      ...options.supported,
+      "const-and-let": true,
+    };
+  },
 });
