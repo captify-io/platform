@@ -1,4 +1,5 @@
 // UI Components for Core Package
+export { DynamicIcon } from "lucide-react/dynamic";
 export {
   Accordion,
   AccordionContent,
