@@ -37,15 +37,11 @@ export function getSessionConfig(): SessionConfig {
 
   // Validation
   if (nextAuthDuration < 300) {
-    console.warn(
-      "⚠️ NEXTAUTH_SESSION_DURATION is very short (< 5 minutes). Consider increasing for better UX."
-    );
+    // NEXTAUTH_SESSION_DURATION is very short (< 5 minutes)
   }
 
   if (refreshBuffer >= nextAuthDuration) {
-    console.warn(
-      "⚠️ COGNITO_TOKEN_REFRESH_BUFFER is >= NEXTAUTH_SESSION_DURATION. Tokens will always appear expired."
-    );
+    // COGNITO_TOKEN_REFRESH_BUFFER is >= NEXTAUTH_SESSION_DURATION
   }
 
   return {
@@ -70,31 +66,5 @@ export function getAppIdentityPoolId(app: string): string | undefined {
  * Log current session configuration (useful for debugging)
  */
 export function logSessionConfig(): void {
-  const config = getSessionConfig();
-  console.log("📋 Session Configuration:");
-  console.log(
-    `  NextAuth Duration: ${config.nextAuthDuration}s (${Math.round(
-      config.nextAuthDuration / 60
-    )}min)`
-  );
-  console.log(
-    `  NextAuth Update Age: ${config.nextAuthUpdateAge}s (${Math.round(
-      config.nextAuthUpdateAge / 60
-    )}min)`
-  );
-  console.log(
-    `  Cognito Token Duration: ${config.cognitoTokenDuration}s (${Math.round(
-      config.cognitoTokenDuration / 60
-    )}min)`
-  );
-  console.log(
-    `  Identity Pool Duration: ${config.identityPoolDuration}s (${Math.round(
-      config.identityPoolDuration / 60
-    )}min)`
-  );
-  console.log(
-    `  Refresh Buffer: ${config.refreshBuffer}s (${Math.round(
-      config.refreshBuffer / 60
-    )}min)`
-  );
+  // Session config logging removed for production
 }

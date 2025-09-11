@@ -91,7 +91,6 @@ export async function execute(
     };
   }
 
-  console.log("🔐 Admin user authenticated:", session.user.email || session.user.id);
   
   const region = credentials.region || process.env.AWS_REGION || "us-east-1";
   

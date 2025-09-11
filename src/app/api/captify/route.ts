@@ -24,13 +24,6 @@ async function handleRequest(request: NextRequest, method: string) {
     const body = await request.json();
 
     // Log the incoming request
-    console.log("[API Route] ===== INCOMING REQUEST =====");
-    console.log("[API Route] Service:", body.service);
-    console.log("[API Route] Operation:", body.operation);
-    console.log(
-      "[API Route] Identity Pool in payload:",
-      body.identityPoolId || "none"
-    );
 
     // Check for x-app header or app in body
     const appFromHeader = request.headers.get("x-app");
@@ -49,7 +42,6 @@ async function handleRequest(request: NextRequest, method: string) {
     try {
       // Get session from NextAuth
       const session = await auth();
-      console.log("got the session", session);
       if (!session?.user) {
         return new Response(
           JSON.stringify({ error: "Not authenticated. Please log in." }),
@@ -86,35 +78,18 @@ async function handleRequest(request: NextRequest, method: string) {
         if (identityPoolId && app !== "core") {
           // Check if this is the base/admin identity pool
           if (identityPoolId === process.env.COGNITO_IDENTITY_POOL_ID) {
-            console.log(
-              `🔐 [API Route] Base Identity Pool requested: ${identityPoolId}`
-            );
           } else {
-            console.log(
-              `📦 [API Route] Custom Identity Pool requested: ${identityPoolId}`
-            );
           }
         } else {
           identityPoolId = process.env.COGNITO_IDENTITY_POOL_ID;
-          console.log(
-            `👤 [API Route] Using default Identity Pool for app '${app}': ${identityPoolId}`
-          );
         }
 
-        console.log(
-          `[API Route] Final Identity Pool being passed to credentials: ${identityPoolId}`
-        );
-        console.log("[API Route] ===== GETTING CREDENTIALS =====");
         credentials = await getAwsCredentialsFromIdentityPool(
           session,
           identityPoolId,
           forceRefresh
         );
       } catch (credentialError: any) {
-        console.error(
-          "❌ Failed to get AWS credentials:",
-          credentialError.message
-        );
 
         return new Response(
           JSON.stringify({
@@ -130,28 +105,16 @@ async function handleRequest(request: NextRequest, method: string) {
       }
 
       // Get service handler - conditional import based on app
-      console.log("[API Route] ===== SERVICE LOADING =====");
-      console.log(
-        `[API Route] Loading service '${body.service}' from app '${app}'`
-      );
 
       let serviceHandler;
       let serviceModule;
       try {
         // Conditional import: use local services for core/undefined, external packages for others
         if (app === "core" || app === undefined) {
-          console.log(`[API Route] Importing from local src/services`);
           serviceModule = await import("../../../services");
         } else {
-          console.log(`[API Route] Importing @captify-io/${app}/services`);
           serviceModule = await import(`@captify-io/${app}/services`);
-          console.log(serviceModule);
         }
-        console.log("[API Route] Service module imported successfully");
-        console.log(
-          "[API Route] Service module has 'services' property:",
-          "services" in serviceModule
-        );
 
         if (!serviceModule.services) {
           throw new Error(
@@ -159,14 +122,6 @@ async function handleRequest(request: NextRequest, method: string) {
           );
         }
 
-        console.log(
-          "[API Route] Services object type:",
-          typeof serviceModule.services
-        );
-        console.log(
-          "[API Route] Services has 'use' method:",
-          typeof serviceModule.services.use === "function"
-        );
 
         if (typeof serviceModule.services.use !== "function") {
           throw new Error(
@@ -175,12 +130,7 @@ async function handleRequest(request: NextRequest, method: string) {
         }
 
         // Get the service handler
-        console.log(`[API Route] Calling services.use('${body.service}')`);
         serviceHandler = serviceModule.services.use(body.service);
-        console.log(
-          "[API Route] Service handler result:",
-          serviceHandler ? "found" : "not found"
-        );
 
         if (!serviceHandler) {
           throw new Error(
@@ -194,19 +144,7 @@ async function handleRequest(request: NextRequest, method: string) {
           );
         }
 
-        console.log("[API Route] ✅ Service handler loaded successfully");
       } catch (importError) {
-        console.error("[API Route] ❌ Service loading error:", importError);
-        console.error(
-          "[API Route] Error name:",
-          importError instanceof Error ? importError.name : typeof importError
-        );
-        console.error(
-          "[API Route] Error message:",
-          importError instanceof Error
-            ? importError.message
-            : String(importError)
-        );
 
         return new Response(
           JSON.stringify({

@@ -22,10 +22,8 @@ const credentialsCacheMap = new Map<string, CachedCredentials>();
 
 export function clearCredentialsCache(poolId?: string) {
   if (poolId) {
-    console.log(`🗑️ Clearing AWS credentials cache for pool: ${poolId}`);
     credentialsCacheMap.delete(poolId);
   } else {
-    console.log("🗑️ Clearing all AWS credentials caches");
     credentialsCacheMap.clear();
   }
 }
@@ -84,28 +82,16 @@ export async function getAwsCredentialsFromIdentityPool(
   if (awsTokenExpiresAt) {
     const now = Math.floor(Date.now() / 1000);
     const timeUntilExpiry = awsTokenExpiresAt - now;
-    console.log(
-      `🕐 AWS tokens expire in ${timeUntilExpiry} seconds (${new Date(
-        awsTokenExpiresAt * 1000
-      ).toISOString()})`
-    );
 
     if (timeUntilExpiry <= 0) {
-      console.error(
-        `❌ AWS tokens expired ${Math.abs(timeUntilExpiry)} seconds ago`
-      );
       throw new Error(
         "Your AWS tokens have expired. Please refresh the page to get new tokens."
       );
     }
 
     if (timeUntilExpiry <= 300) {
-      console.warn(
-        `⚠️  AWS tokens expire in ${timeUntilExpiry} seconds - they should auto-refresh on next session call`
-      );
     }
   } else {
-    console.warn("⚠️  No AWS token expiration info available");
   }
 
   // Use the provided identity pool ID or fall back to environment
@@ -123,46 +109,22 @@ export async function getAwsCredentialsFromIdentityPool(
 
   // Force refresh if requested (e.g., for admin operations)
   if (forceRefresh) {
-    console.log(
-      `🔄 Force refresh requested for pool ${poolId}, clearing credentials cache`
-    );
     credentialsCacheMap.delete(poolId);
   }
 
   if (cachedCredentials && !forceRefresh) {
     if (cachedCredentials.expiration > now) {
-      console.log(`✅ Using cached AWS credentials for pool: ${poolId}`);
       return cachedCredentials;
     } else {
-      console.log(
-        `⏰ AWS credentials have expired for pool ${poolId}, refreshing...`
-      );
       credentialsCacheMap.delete(poolId);
     }
   }
 
   // Step 3: Create fresh AWS credentials using the ID token
-  console.log(`🔄 Getting fresh AWS credentials for Identity Pool: ${poolId}`);
 
   const region = process.env.AWS_REGION || "us-east-1";
   const userPoolId = process.env.COGNITO_USER_POOL_ID;
 
-  console.log("[Credentials] ============================================");
-  console.log("[Credentials] Identity Pool Resolution:");
-  console.log("[Credentials] - Provided:", identityPoolId || "none");
-  console.log(
-    "[Credentials] - Environment:",
-    process.env.COGNITO_IDENTITY_POOL_ID
-  );
-  console.log("[Credentials] - Final Pool ID:", poolId);
-
-  // Compare with environment variable instead of hardcoding
-  if (poolId === process.env.COGNITO_IDENTITY_POOL_ID) {
-    console.log("[Credentials] 🔐 This is the BASE Identity Pool");
-  } else {
-    console.log("[Credentials] 📦 This is a CUSTOM Identity Pool");
-  }
-  console.log("[Credentials] ============================================");
 
   if (!userPoolId) {
     throw new Error("Missing User Pool ID in environment configuration");
@@ -171,7 +133,6 @@ export async function getAwsCredentialsFromIdentityPool(
   try {
     const cognitoIdentity = new CognitoIdentityClient({ region });
 
-    console.log("🔑 Getting fresh AWS credentials from Identity Pool");
 
     // Get Identity ID from Cognito Identity Pool
     const getIdCommand = new GetIdCommand({
@@ -186,15 +147,10 @@ export async function getAwsCredentialsFromIdentityPool(
       throw new Error("Failed to get Identity ID from Cognito Identity Pool");
     }
 
-    console.log(`✅ Got Identity ID: ${identityResponse.IdentityId}`);
 
     // Log user groups for debugging role mapping
     if (session?.groups || session?.user?.groups) {
       const groups = session?.groups || session?.user?.groups || [];
-      console.log(`👥 User groups: ${groups.join(", ") || "none"}`);
-      if (groups.includes("Admins")) {
-        console.log("🔑 User is in Admins group - should get admin role");
-      }
     }
 
     // Get AWS credentials using the Identity ID
@@ -215,9 +171,6 @@ export async function getAwsCredentialsFromIdentityPool(
 
     // Use the AWS credential expiration directly
     const awsCredentialsExpiry = credentialsResponse.Credentials.Expiration;
-    console.log(
-      `✅ AWS credentials expire at: ${awsCredentialsExpiry?.toISOString()}`
-    );
 
     // Use AWS expiration or fallback to 1 hour
     const credentialExpiration =
@@ -235,9 +188,6 @@ export async function getAwsCredentialsFromIdentityPool(
 
     credentialsCacheMap.set(poolId, newCredentials);
 
-    console.log(
-      `💾 Cached AWS credentials for pool ${poolId} until: ${newCredentials.expiration.toISOString()}`
-    );
 
     // Try to decode the session token to see what role was assumed
     try {
@@ -248,11 +198,11 @@ export async function getAwsCredentialsFromIdentityPool(
           roleInfo.includes("CaptifyAdmin") ||
           roleInfo.includes("Cognito_CaptifyAdmin")
         ) {
-          console.log("✅ Using ADMIN role credentials");
+          // Using ADMIN role credentials
         } else if (roleInfo.includes("Captify_Default")) {
-          console.log("📦 Using DEFAULT role credentials");
+          // Using DEFAULT role credentials
         } else {
-          console.log(`ℹ️ Using role: ${roleInfo}`);
+          // Using role: ${roleInfo}
         }
       }
     } catch (e) {
@@ -264,7 +214,6 @@ export async function getAwsCredentialsFromIdentityPool(
     // Clear cache for this pool on error
     credentialsCacheMap.delete(poolId);
 
-    console.error("❌ AWS credentials error:", error);
 
     // Handle specific AWS errors
     if (
