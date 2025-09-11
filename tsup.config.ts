@@ -96,4 +96,11 @@ export default defineConfig({
       "const-and-let": true,
     };
   },
+
+  // Rollup output options for consistent exports
+  rollupOptions: {
+    output: {
+      exports: "named",
+    },
+  },
 });

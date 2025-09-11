@@ -26,4 +26,5 @@ export const useState = useSafeState;
 export const useRef = useSafeRef;
 export const useEffect = useSafeEffect;
 
-export default React;
+// Export React as named export instead of default to avoid mixed export issues
+export { default as React } from "react";
