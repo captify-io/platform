@@ -167,11 +167,6 @@
       "require": "./dist/lib/utils.cjs"
     },
     "./ui": {
-      "development": {
-        "types": "./src/components/ui/index.ts",
-        "import": "./src/components/ui/index.ts",
-        "require": "./src/components/ui/index.ts"
-      },
       "types": "./dist/components/ui/index.d.ts",
       "import": "./dist/components/ui.js",
       "require": "./dist/components/ui.cjs"
