@@ -79,8 +79,8 @@ export default defineConfig({
   // Target
   target: "es2020",
 
-  // Bundle mode - don't bundle everything into one file
-  bundle: false,
+  // Bundle mode - bundle barrel exports but not individual components
+  bundle: true,
 
   // Tree shaking
   treeshake: true,
