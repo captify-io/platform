@@ -9,6 +9,7 @@ export default async function CaptifyAppPage({ params }: CaptifyAppPageProps) {
 
   const packageSlug = captify[0] || "core";
   const pageRoute = captify[1] || "home";
+  console.log("teset");
 
   return (
     <PackagePageRouter

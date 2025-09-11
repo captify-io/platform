@@ -160,7 +160,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
 
   // Load config data from package similar to PackagePageRouter pattern
   const loadConfigData = async () => {
-    if (!packageSource) return;
+    if (!packageSource || !packageSlug) return;
     
     try {
       console.log(`[ThreePanelLayout] Loading config from @captify-io/${packageSlug}/${packageSource}`);

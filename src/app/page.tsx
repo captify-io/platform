@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChatPanel } from "@captify-io/agent";
+import { Agent } from "../components/agent/agent";
 import { useCaptify } from "../components/providers/CaptifyProvider";
 
 export default function HomePage() {
@@ -62,7 +62,7 @@ export default function HomePage() {
 
   return (
     <div className="h-screen w-full bg-background">
-      <ChatPanel
+      <Agent
         userState={userState}
         initialSettings={initialSettings}
         className="h-full"
