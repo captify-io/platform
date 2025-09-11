@@ -130,9 +130,6 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
 } from "./dropdown-menu";
-// Re-export DynamicIcon from lucide-react
-// @ts-ignore - DynamicIcon is available but may not have proper TS exports yet
-export { DynamicIcon } from "lucide-react/dynamic";
 export {
   useFormField,
   Form,
