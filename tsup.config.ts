@@ -20,7 +20,7 @@ export default defineConfig({
   // Build both CJS and ESM
   format: ["cjs", "esm"],
 
-  // Generate declarations via tsc, not tsup
+  // Skip tsup dts generation - use separate tsc command
   dts: false,
 
   outDir: "dist",
