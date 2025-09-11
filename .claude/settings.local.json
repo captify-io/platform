@@ -90,7 +90,8 @@
       "Bash(netstat:*)",
       "Bash(find:*)",
       "Bash(npx tsc:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(tsc:*)"
     ],
     "deny": [],
     "ask": []
