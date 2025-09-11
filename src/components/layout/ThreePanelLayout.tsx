@@ -146,55 +146,12 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   // Load app data when packageSlug changes
   useEffect(() => {
     if (packageSlug && typeof window !== "undefined") {
-      if (packageSource) {
-        // Load from config file instead of API
-        loadConfigData();
-      } else {
-        // Identity pool will be set from DynamoDB query results
-        // Then fetch from database for full app data
-        fetchAppData(packageSlug);
-      }
+      // Always fetch from database for app data
+      // packageSource is no longer used for dynamic imports to avoid webpack issues
+      fetchAppData(packageSlug);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packageSlug, packageSource]); // Use packageSlug instead of packageConfig.slug
-
-  // Load config data from package similar to PackagePageRouter pattern
-  const loadConfigData = async () => {
-    if (!packageSource || !packageSlug) return;
-    
-    try {
-      console.log(`[ThreePanelLayout] Loading config from @captify-io/${packageSlug}/${packageSource}`);
-      
-      // Dynamic import using the same pattern as PackagePageRouter
-      const configModule = await import(`@captify-io/${packageSlug}/${packageSource}`);
-      const configData = configModule.config || configModule.default;
-      
-      if (!configData) {
-        throw new Error(`No config found in @captify-io/${packageSlug}/${packageSource}`);
-      }
-      
-      console.log(`[ThreePanelLayout] ✅ Successfully loaded config for ${packageSlug}`);
-      
-      // Create appData-like object from config for compatibility
-      const configAppData: AppData = {
-        app: packageSlug || 'unknown',
-        menu: configData,  // Config already matches MenuItem interface
-        version: '1.0.0',
-        icon: 'package',
-        status: 'active',
-        visibility: 'public',
-        slug: packageSlug || 'unknown',
-        name: packageSlug || 'Unknown Package',
-        description: `Package loaded from ${packageSource}`,
-        id: packageSlug || 'unknown'
-      };
-      
-      setAppData(configAppData);
-    } catch (error) {
-      console.error(`[ThreePanelLayout] Failed to load config:`, error);
-      setAppData(null);
-    }
-  };
+  }, [packageSlug]); // Remove packageSource dependency
 
   // Update appData when API data changes
   useEffect(() => {

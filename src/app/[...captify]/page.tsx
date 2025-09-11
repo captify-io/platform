@@ -1,4 +1,4 @@
-import { PackagePageRouter } from "../../components";
+import { PackagePageRouter } from "../../components/packages/PackagePageRouter";
 
 interface CaptifyAppPageProps {
   params: Promise<{ captify: string[] }>;
@@ -9,7 +9,7 @@ export default async function CaptifyAppPage({ params }: CaptifyAppPageProps) {
 
   const packageSlug = captify[0];
   const pageRoute = captify[1] || "home";
-  
+
   console.log("[CaptifyAppPage] captify params:", captify);
   console.log("[CaptifyAppPage] packageSlug:", packageSlug);
 

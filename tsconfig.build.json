@@ -1,40 +1,23 @@
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["react", "react-dom"],
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "target": "ES2020",
+    "noEmit": false,
     "declaration": true,
-    "declarationMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "incremental": false
+    "emitDeclarationOnly": true,
+    "outDir": "dist"
   },
   "include": [
-    "src/lib/**/*",
-    "src/components/**/*",
-    "src/hooks/**/*",
-    "src/types/**/*", 
-    "src/index.ts",
-    "src/api.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
-    "src/app/**/*",
-    "src/**/*.test.*",
-    "src/**/*.spec.*",
-    "**/*.stories.*",
-    "node_modules"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts", 
+    "src/**/*.spec.tsx",
+    "src/**/*.stories.ts",
+    "src/**/*.stories.tsx",
+    "node_modules",
+    "dist"
   ]
 }

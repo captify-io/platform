@@ -66,22 +66,21 @@ export default defineConfig({
     "sonner",
     "vaul",
     "@hookform/resolvers",
+    "@captify-io/pmbook",
     "zod",
-    "@captify-io/agent",
-    /^@captify-io\/agent\/.*/
   ],
 
   // Splitting
-  splitting: true,
+  splitting: false,
 
   // Source maps for debugging
-  sourcemap: true,
+  sourcemap: false,
 
   // Target
   target: "es2020",
 
   // Bundle mode - don't bundle everything into one file
-  bundle: true,
+  bundle: false,
 
   // Tree shaking
   treeshake: true,

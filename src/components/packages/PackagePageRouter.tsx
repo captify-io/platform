@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { captifyApps } from "@/.captify.generated"; // <-- auto-generated file
 
-interface PackagePageRouterProps {
-  currentHash?: string;
-  packageSlug: string;
-  packageName?: string;
-}
+type LoaderResult<T = any> = { default?: T } & Record<string, any>;
+type PageLoader = () => Promise<LoaderResult<React.ComponentType>>;
+
+type CaptifyAppPackage = {
+  pageRegistry: Record<string, PageLoader>;
+};
 
 function parseHash(raw: string | null): string {
   if (!raw) return "home";
@@ -15,134 +18,123 @@ function parseHash(raw: string | null): string {
   return page || "home";
 }
 
+interface PackagePageRouterProps {
+  packageSlug?: string; // optional override; otherwise from URL (/pmbook)
+  packageName?: string;
+  currentHash?: string; // optional override for hash
+}
+
 export function PackagePageRouter({
-  currentHash: propCurrentHash,
-  packageSlug,
+  packageSlug: propPackageSlug,
   packageName = "App",
+  currentHash: propCurrentHash,
 }: PackagePageRouterProps) {
+  const pathname = usePathname();
+
+  // Determine slug from first path segment if not provided
+  const slug = useMemo(() => {
+    if (propPackageSlug) return propPackageSlug;
+    const parts = (pathname || "").split("/").filter(Boolean);
+    return parts[0] || "";
+  }, [propPackageSlug, pathname]);
+
   const [hashFromUrl, setHashFromUrl] = useState("home");
   const [PageComponent, setPageComponent] =
     useState<React.ComponentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("hash", hashFromUrl);
-
-  // Track hash changes from URL
   useEffect(() => {
-    const updateHash = () => {
-      const raw = window.location.hash.replace(/^#/, "");
-      const pageName = raw.split(/[/?]/)[0] || "home";
-      setHashFromUrl(pageName);
-    };
+    const updateHash = () => setHashFromUrl(parseHash(window.location.hash));
     updateHash();
     window.addEventListener("hashchange", updateHash);
     return () => window.removeEventListener("hashchange", updateHash);
   }, []);
 
-  // Use prop hash if provided, otherwise use URL hash
-  const currentHash = propCurrentHash || hashFromUrl;
+  const pageKey = useMemo(
+    () => (propCurrentHash ? parseHash(propCurrentHash) : hashFromUrl),
+    [propCurrentHash, hashFromUrl]
+  );
 
-  // Load page component when hash changes
   useEffect(() => {
-    const loadPage = async () => {
+    let cancelled = false;
+
+    const load = async () => {
       try {
         setLoading(true);
         setError(null);
+        setPageComponent(null);
 
-        console.log(
-          `[PackagePageRouter] Loading package: ${packageSlug}, page: ${currentHash}`
-        );
-
-        // Dynamic import of the package
-        const packageModule = await import(`@captify-io/${packageSlug}`);
-        console.log(
-          `[PackagePageRouter] Package module loaded:`,
-          packageModule
-        );
-
-        // Get the pageRegistry from the package
-        const { pageRegistry } = packageModule;
-
-        if (!pageRegistry) {
+        if (!slug) {
           throw new Error(
-            `Package "@captify-io/${packageSlug}" does not export a pageRegistry`
+            "No package slug found in URL (expected /<slug>) and none provided."
           );
         }
 
-        console.log(
-          `[PackagePageRouter] Available pages:`,
-          Object.keys(pageRegistry)
-        );
-
-        let pageLoader;
-
-        // Map hash to page registry keys
-        if (currentHash === "home" || currentHash === "dashboard") {
-          // Default to home page
-          pageLoader = pageRegistry["home"] || pageRegistry["dashboard"];
-        } else if (currentHash === "ops-insights") {
-          pageLoader = pageRegistry["ops-insights"];
-        } else {
-          // Try the hash directly as a key
-          pageLoader = pageRegistry[currentHash];
-        }
-
-        if (!pageLoader) {
+        // Get loader from generated registry
+        const pkgLoader = captifyApps[slug];
+        if (!pkgLoader) {
           throw new Error(
-            `Page "${currentHash}" not found in page registry. Available pages: ${Object.keys(
-              pageRegistry
-            ).join(", ")}`
+            `No captify app found for slug "${slug}". Is @captify-io/${slug} installed and exposing "./app"?`
           );
         }
 
-        console.log(
-          `[PackagePageRouter] Found page loader for: ${currentHash}`
-        );
+        // Load the package app entry
+        const mod = (await pkgLoader()) as CaptifyAppPackage;
 
-        // Load page dynamically
-        const { default: Component } = await pageLoader();
+        const { pageRegistry } = mod || {};
+        if (!pageRegistry || typeof pageRegistry !== "object") {
+          throw new Error(
+            `@captify-io/${slug}/app did not export a valid pageRegistry.`
+          );
+        }
 
-        console.log(
-          `[PackagePageRouter] ✅ Page loaded successfully: ${currentHash}`
-        );
+        const loader =
+          pageRegistry[pageKey] ??
+          pageRegistry["home"] ??
+          pageRegistry["dashboard"];
 
-        setPageComponent(() => Component);
+        if (!loader) {
+          const available = Object.keys(pageRegistry);
+          throw new Error(
+            `Page "${pageKey}" not found for "${slug}".` +
+              (available.length
+                ? ` Available: ${available.join(", ")}`
+                : " No pages exported.")
+          );
+        }
+
+        const pageMod = await loader();
+        const Component = pageMod.default as React.ComponentType | undefined;
+        if (!Component) {
+          throw new Error(
+            `Loaded page "${pageKey}" but it did not export a default React component.`
+          );
+        }
+
+        if (!cancelled) setPageComponent(() => Component);
       } catch (err) {
-        console.error(`[PackagePageRouter] Failed to load package/page:`, err);
-
-        const errorMessage = (err as Error).message;
-
-        // Provide helpful error messages for common issues
-        if (
-          errorMessage.includes("Cannot resolve module") ||
-          errorMessage.includes("Module not found")
-        ) {
-          setError(
-            `Package "@captify-io/${packageSlug}" is not installed or available. Please ensure the package is properly installed.`
-          );
-        } else {
-          setError(
-            `Failed to load ${packageSlug}/${currentHash}: ${errorMessage}`
-          );
-        }
+        if (!cancelled) setError((err as Error).message || "Unknown error");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadPage();
-  }, [currentHash, packageSlug]);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, pageKey]);
 
-  // Return early if no package slug
-  if (!packageSlug) {
+  // UI states
+  if (!slug) {
     return (
       <div className="h-full bg-background flex items-center justify-center">
         <div className="text-center max-w-2xl p-6">
-          <h2 className="text-2xl font-bold mb-4 text-destructive">
+          <h2 className="text-2xl font-bold mb-2 text-destructive">
             Error Loading {packageName}
           </h2>
-          <p className="text-muted-foreground">No package specified</p>
+          <p className="text-muted-foreground">No package slug found.</p>
         </div>
       </div>
     );
@@ -152,8 +144,10 @@ export function PackagePageRouter({
     return (
       <div className="h-full bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading {currentHash}...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            Loading {slug}#{pageKey}…
+          </p>
         </div>
       </div>
     );
@@ -170,9 +164,9 @@ export function PackagePageRouter({
           <div className="bg-muted p-4 rounded-lg text-left text-sm">
             <p className="font-medium mb-2">Debug Info:</p>
             <ul className="space-y-1 text-muted-foreground">
-              <li>• Package: {packageSlug}</li>
-              <li>• Page: {currentHash}</li>
-              <li>• Check browser console for detailed logs</li>
+              <li>• Package: @captify-io/{slug}/app</li>
+              <li>• Page: {pageKey}</li>
+              <li>• Check browser console for details</li>
             </ul>
           </div>
         </div>
@@ -183,7 +177,7 @@ export function PackagePageRouter({
   if (!PageComponent) {
     return (
       <div className="h-full bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Initializing page...</p>
+        <p className="text-muted-foreground">Initializing page…</p>
       </div>
     );
   }
