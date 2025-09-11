@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { componentRegistry, pageRegistry } from '@captify-io/pmbook';
 
 interface PackagePageRouterProps {
   currentHash?: string;
@@ -50,7 +49,20 @@ export function PackagePageRouter({
         setLoading(true);
         setError(null);
         
-        console.log(`[PackagePageRouter] Loading page for hash: ${currentHash}`);
+        console.log(`[PackagePageRouter] Loading package: ${packageSlug}, page: ${currentHash}`);
+        
+        // Dynamic import of the package
+        const packageModule = await import(`@captify-io/${packageSlug}`);
+        console.log(`[PackagePageRouter] Package module loaded:`, packageModule);
+        
+        // Get the pageRegistry from the package
+        const { pageRegistry } = packageModule;
+        
+        if (!pageRegistry) {
+          throw new Error(`Package "@captify-io/${packageSlug}" does not export a pageRegistry`);
+        }
+        
+        console.log(`[PackagePageRouter] Available pages:`, Object.keys(pageRegistry));
         
         let pageLoader;
         
@@ -66,7 +78,7 @@ export function PackagePageRouter({
         }
         
         if (!pageLoader) {
-          throw new Error(`Page "${currentHash}" not found in page registry`);
+          throw new Error(`Page "${currentHash}" not found in page registry. Available pages: ${Object.keys(pageRegistry).join(', ')}`);
         }
         
         console.log(`[PackagePageRouter] Found page loader for: ${currentHash}`);
@@ -78,15 +90,23 @@ export function PackagePageRouter({
         
         setPageComponent(() => Component);
       } catch (err) {
-        console.error(`[PackagePageRouter] Failed to load page:`, err);
-        setError(`Failed to load page: ${(err as Error).message}`);
+        console.error(`[PackagePageRouter] Failed to load package/page:`, err);
+        
+        const errorMessage = (err as Error).message;
+        
+        // Provide helpful error messages for common issues
+        if (errorMessage.includes('Cannot resolve module') || errorMessage.includes('Module not found')) {
+          setError(`Package "@captify-io/${packageSlug}" is not installed or available. Please ensure the package is properly installed.`);
+        } else {
+          setError(`Failed to load ${packageSlug}/${currentHash}: ${errorMessage}`);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadPage();
-  }, [currentHash]);
+  }, [currentHash, packageSlug]);
 
   // Return early if no package slug
   if (!packageSlug) {
