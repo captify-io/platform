@@ -91,7 +91,8 @@
       "Bash(find:*)",
       "Bash(npx tsc:*)",
       "Bash(sed:*)",
-      "Bash(tsc:*)"
+      "Bash(tsc:*)",
+      "Bash(npx shadcn:*)"
     ],
     "deny": [],
     "ask": []
