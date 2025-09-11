@@ -198,7 +198,13 @@ export function HelperPanel({ className }: HelperPanelProps) {
     { id: 'github', name: 'GitHub Repos', icon: Code2, status: 'available' },
   ];
 
-  const modelOptions = {
+  interface ModelOption {
+    value: string;
+    label: string;
+    description: string;
+  }
+
+  const modelOptions: Record<string, ModelOption[]> = {
     openai: [
       { value: 'gpt-4o', label: 'GPT-4o', description: 'Most capable model' },
       { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Faster, more economical' },

@@ -22,6 +22,7 @@ import {
   Clock
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import type { AgentMessage } from "../types/agent";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +67,7 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
   // Filter threads based on search query
   const filteredThreads = threads.filter(thread =>
     thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    thread.messages.some(msg => 
+    thread.messages.some((msg: AgentMessage) => 
       msg.content.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );

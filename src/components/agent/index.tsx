@@ -205,7 +205,7 @@ export function AgentProvider({
           );
 
           if (currentThread?.id === threadId) {
-            setCurrentThread((prev) => (prev ? { ...prev, title } : null));
+            setCurrentThread((prev: AgentThread | null) => (prev ? { ...prev, title } : null));
           }
         } else {
           console.error("Failed to update thread title:", result);
