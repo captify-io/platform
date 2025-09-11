@@ -9,11 +9,12 @@ export default defineConfig({
     "src/lib/auth.ts",
     "src/lib/api.ts",
     "src/lib/utils.ts",
-    "src/lib/hooks/index.ts",
+    "src/hooks/index.ts",
     "src/types/index.ts",
     "src/components/index.ts",
     "src/components/ui/index.ts",
     "src/components/theme/index.ts",
+    "src/services/index.ts",
   ],
 
   // Build both CJS and ESM
