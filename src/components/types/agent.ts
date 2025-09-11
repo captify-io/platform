@@ -13,6 +13,14 @@ export interface AgentMessage {
   content: string;
   timestamp: number;
   metadata?: Record<string, any>;
+  tools?: AgentTool[];
+  createdAt?: number;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  threadId?: string;
 }
 
 export interface AgentTool {
@@ -20,6 +28,9 @@ export interface AgentTool {
   description: string;
   parameters?: Record<string, any>;
   enabled: boolean;
+  type?: string;
+  input?: any;
+  output?: any;
 }
 
 export interface AgentResponse {
@@ -39,4 +50,6 @@ export interface AgentThread {
   settings: AgentSettings;
   createdAt: number;
   updatedAt: number;
+  metadata?: Record<string, any>;
+  provider?: string;
 }

@@ -183,7 +183,7 @@ export function HelperPanel({ className }: HelperPanelProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${currentThread.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    a.download = `${(currentThread.title || 'chat').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -386,7 +386,7 @@ export function HelperPanel({ className }: HelperPanelProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {modelOptions[settings.provider]?.map((model) => (
+                          {modelOptions[settings.provider || 'openai']?.map((model: ModelOption) => (
                             <SelectItem key={model.value} value={model.value}>
                               <div>
                                 <div className="font-medium">{model.label}</div>
@@ -409,7 +409,7 @@ export function HelperPanel({ className }: HelperPanelProps) {
                         <span className="text-sm text-muted-foreground">{settings.temperature}</span>
                       </div>
                       <Slider
-                        value={[settings.temperature]}
+                        value={[settings.temperature || 0.7]}
                         onValueChange={handleTemperatureChange}
                         max={2}
                         min={0}
@@ -427,7 +427,7 @@ export function HelperPanel({ className }: HelperPanelProps) {
                         <span className="text-sm text-muted-foreground">{settings.maxTokens}</span>
                       </div>
                       <Slider
-                        value={[settings.maxTokens]}
+                        value={[settings.maxTokens || 4000]}
                         onValueChange={handleMaxTokensChange}
                         max={8000}
                         min={100}

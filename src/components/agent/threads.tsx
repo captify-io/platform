@@ -66,7 +66,7 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
 
   // Filter threads based on search query
   const filteredThreads = threads.filter(thread =>
-    thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (thread.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     thread.messages.some((msg: AgentMessage) => 
       msg.content.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -271,14 +271,14 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDate(thread.updatedAt)}
+                            {formatDate(thread.updatedAt.toString())}
                           </div>
                           <div className="flex items-center gap-1">
                             <Hash className="h-3 w-3" />
-                            {thread.metadata.messageCount}
+                            {thread.metadata?.messageCount || thread.messages.length}
                           </div>
                           <Badge variant="outline" className="text-xs px-1 py-0">
-                            {thread.provider}
+                            {thread.provider || 'openai'}
                           </Badge>
                         </div>
                       </>
@@ -298,7 +298,7 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                                 className="h-6 w-6 p-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleStartEditTitle(thread.id, thread.title);
+                                  handleStartEditTitle(thread.id, thread.title || '');
                                 }}
                               >
                                 <Edit2 className="h-3 w-3" />
