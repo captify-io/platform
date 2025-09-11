@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import NextImage from "next/image";
 import { useAgent } from "./index";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -178,6 +179,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
       case "chart":
         return <BarChart3 className="h-4 w-4" />;
       case "image":
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
         return <Image className="h-4 w-4" />;
       case "file":
         return <FileText className="h-4 w-4" />;
@@ -218,10 +220,13 @@ export function ChatPanel({ className }: ChatPanelProps) {
         return (
           <div className="bg-background rounded border p-2">
             {tool.output ? (
-              <img
+              <NextImage
                 src={tool.output}
                 alt={tool.input.description || "Generated image"}
+                width={500}
+                height={300}
                 className="max-w-full h-auto rounded"
+                unoptimized
               />
             ) : (
               <div className="text-center text-sm text-muted-foreground py-8">

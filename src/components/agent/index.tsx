@@ -107,9 +107,35 @@ export function AgentProvider({
 
   // Load threads on mount
   useEffect(() => {
-    refreshThreads();
-    loadTokenUsage();
-  }, []);
+    const loadData = async () => {
+      try {
+        const threadsResult = await executeAgent("getThreads");
+        if (threadsResult && threadsResult.success && threadsResult.data) {
+          setThreads(threadsResult.data);
+        }
+      } catch (error) {
+        console.error("Failed to load threads:", error);
+        setThreadsError("Failed to load chat history");
+      }
+
+      try {
+        const usageResult = await executeAgent("getTokenUsage", { period: "month" });
+        if (usageResult && usageResult.usage) {
+          const usage = usageResult.usage;
+          setTokenUsage((prev) => ({
+            ...prev,
+            input: usage.input || 0,
+            output: usage.output || 0,
+            total: usage.total || 0,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load token usage:", error);
+      }
+    };
+
+    loadData();
+  }, [executeAgent]);
 
   // Actions
   const createThread = useCallback(
@@ -131,7 +157,29 @@ export function AgentProvider({
 
           // Send initial message if provided
           if (initialMessage) {
-            await sendMessage(initialMessage);
+            try {
+              setIsStreaming(true);
+              const messageResult = await executeAgent("sendMessage", {
+                threadId: newThread.id,
+                message: initialMessage,
+                settings,
+              });
+
+              if (messageResult && messageResult.success && messageResult.data) {
+                const { thread, tokenUsage: newTokenUsage } = messageResult.data;
+                setMessages(thread.messages);
+                setTokenUsage((prev) => ({
+                  ...prev,
+                  input: prev.input + (newTokenUsage?.input || 0),
+                  output: prev.output + (newTokenUsage?.output || 0),
+                  total: prev.total + (newTokenUsage?.total || 0),
+                }));
+              }
+            } catch (messageError) {
+              console.error("Failed to send initial message:", messageError);
+            } finally {
+              setIsStreaming(false);
+            }
           }
         } else {
           console.error("Failed to create thread:", result);

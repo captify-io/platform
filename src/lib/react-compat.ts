@@ -18,6 +18,7 @@ export function useSafeEffect(
   effect: React.EffectCallback,
   deps?: React.DependencyList
 ) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(effect, deps);
 }
 

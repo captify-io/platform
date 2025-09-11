@@ -89,7 +89,8 @@
       "Bash(robocopy:*)",
       "Bash(netstat:*)",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

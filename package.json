@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "next dev --turbo -p 3000",
     "dev:webpack": "next dev -p 3000",
-    "build": "npm run git:commit && npm run version:patch && npm run build:package && npm run git:push && npm run publish:package",
+    "build": "next build",
     "build:app": "next build",
     "build:package": "tsup && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "dist": "tsup && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "push": "npm run dist && npm run version:patch && git add -A && git commit -m 'chore: release v$npm_package_version' && git push origin master",
     "build:dev": "tsup --watch",
     "start": "next start -p 8081",
     "lint": "next lint",
@@ -111,55 +113,29 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./auth": {
-      "types": "./dist/lib/auth.d.ts",
-      "import": "./dist/lib/auth.js",
-      "require": "./dist/lib/auth.cjs"
-    },
-    "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/lib/types.js",
-      "require": "./dist/lib/types.cjs"
-    },
-    "./hooks": {
-      "types": "./dist/hooks/index.d.ts",
-      "import": "./dist/lib/hooks.js",
-      "require": "./dist/lib/hooks.cjs"
-    },
     "./api": {
-      "types": "./dist/lib/api.d.ts",
-      "import": "./dist/lib/api.js",
-      "require": "./dist/lib/api.cjs"
-    },
-    "./utils": {
-      "types": "./dist/lib/utils.d.ts",
-      "import": "./dist/lib/utils.js",
-      "require": "./dist/lib/utils.cjs"
-    },
-    "./ui": {
-      "types": "./dist/components/ui/index.d.ts",
-      "import": "./dist/components/ui.js",
-      "require": "./dist/components/ui.cjs"
-    },
-    "./theme": {
-      "types": "./dist/components/theme/index.d.ts",
-      "import": "./dist/components/theme.js",
-      "require": "./dist/components/theme.cjs"
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "require": "./dist/api/index.cjs"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
     },
-    "./lib": {
-      "types": "./dist/lib/index.d.ts",
-      "import": "./dist/lib/index.js",
-      "require": "./dist/lib/index.cjs"
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js",
+      "require": "./dist/ui/index.cjs"
+    },
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "import": "./dist/*/index.js",
+      "require": "./dist/*/index.cjs"
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "repository": {
     "type": "git",
