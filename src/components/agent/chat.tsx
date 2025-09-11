@@ -158,10 +158,10 @@ export function ChatPanel({ className }: ChatPanelProps) {
         {tools.map((tool, index) => (
           <div key={index} className="border rounded-lg p-3 bg-muted/50">
             <div className="flex items-center gap-2 mb-2">
-              {getToolIcon(tool.type)}
+              {getToolIcon(tool.type || 'function')}
               <span className="text-sm font-medium">{tool.name}</span>
               <Badge variant="outline" className="text-xs">
-                {tool.type}
+                {tool.type || 'function'}
               </Badge>
             </div>
             {renderToolOutput(tool)}
@@ -306,7 +306,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
           </TooltipProvider>
 
           <div className="text-xs text-muted-foreground">
-            {currentThread.metadata.messageCount} messages
+            {currentThread.metadata?.messageCount || currentThread.messages.length} messages
           </div>
         </div>
       </div>
@@ -357,12 +357,12 @@ export function ChatPanel({ className }: ChatPanelProps) {
                       )}
                     >
                       {formatTime(
-                        message.createdAt || new Date().toISOString()
+                        (message.createdAt || Date.now()).toString()
                       )}
                       {message.tokenUsage && (
                         <span className="ml-2">
                           •{" "}
-                          {message.tokenUsage.input + message.tokenUsage.output}{" "}
+                          {(message.tokenUsage.input || 0) + (message.tokenUsage.output || 0)}{" "}
                           tokens
                         </span>
                       )}

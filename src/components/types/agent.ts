@@ -11,7 +11,7 @@ export interface AgentMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp: number;
+  timestamp?: number;
   metadata?: Record<string, any>;
   tools?: AgentTool[];
   createdAt?: number;
@@ -19,6 +19,8 @@ export interface AgentMessage {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    input?: number;
+    output?: number;
   };
   threadId?: string;
 }

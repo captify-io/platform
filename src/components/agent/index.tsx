@@ -274,6 +274,7 @@ export function AgentProvider({
           threadId: currentThread.id,
           role: "user",
           content,
+          timestamp: Date.now(),
         };
 
         setMessages((prev) => [...prev, userMessage]);
@@ -330,6 +331,7 @@ export function AgentProvider({
             threadId: currentThread.id,
             role: "assistant",
             content: accumulatedText,
+            timestamp: Date.now(),
           };
 
           setMessages((prev) => [...prev, assistantMessage]);
