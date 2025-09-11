@@ -21,12 +21,13 @@ export function PackagePageRouter({
   packageName = "App",
 }: PackagePageRouterProps) {
   const [hashFromUrl, setHashFromUrl] = useState("home");
-  const [PageComponent, setPageComponent] = useState<React.ComponentType | null>(null);
+  const [PageComponent, setPageComponent] =
+    useState<React.ComponentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   console.log("hash", hashFromUrl);
-  
+
   // Track hash changes from URL
   useEffect(() => {
     const updateHash = () => {
@@ -48,57 +49,82 @@ export function PackagePageRouter({
       try {
         setLoading(true);
         setError(null);
-        
-        console.log(`[PackagePageRouter] Loading package: ${packageSlug}, page: ${currentHash}`);
-        
+
+        console.log(
+          `[PackagePageRouter] Loading package: ${packageSlug}, page: ${currentHash}`
+        );
+
         // Dynamic import of the package
         const packageModule = await import(`@captify-io/${packageSlug}`);
-        console.log(`[PackagePageRouter] Package module loaded:`, packageModule);
-        
+        console.log(
+          `[PackagePageRouter] Package module loaded:`,
+          packageModule
+        );
+
         // Get the pageRegistry from the package
         const { pageRegistry } = packageModule;
-        
+
         if (!pageRegistry) {
-          throw new Error(`Package "@captify-io/${packageSlug}" does not export a pageRegistry`);
+          throw new Error(
+            `Package "@captify-io/${packageSlug}" does not export a pageRegistry`
+          );
         }
-        
-        console.log(`[PackagePageRouter] Available pages:`, Object.keys(pageRegistry));
-        
+
+        console.log(
+          `[PackagePageRouter] Available pages:`,
+          Object.keys(pageRegistry)
+        );
+
         let pageLoader;
-        
+
         // Map hash to page registry keys
         if (currentHash === "home" || currentHash === "dashboard") {
           // Default to home page
-          pageLoader = pageRegistry['home'] || pageRegistry['dashboard'];
+          pageLoader = pageRegistry["home"] || pageRegistry["dashboard"];
         } else if (currentHash === "ops-insights") {
-          pageLoader = pageRegistry['ops-insights'];
+          pageLoader = pageRegistry["ops-insights"];
         } else {
           // Try the hash directly as a key
           pageLoader = pageRegistry[currentHash];
         }
-        
+
         if (!pageLoader) {
-          throw new Error(`Page "${currentHash}" not found in page registry. Available pages: ${Object.keys(pageRegistry).join(', ')}`);
+          throw new Error(
+            `Page "${currentHash}" not found in page registry. Available pages: ${Object.keys(
+              pageRegistry
+            ).join(", ")}`
+          );
         }
-        
-        console.log(`[PackagePageRouter] Found page loader for: ${currentHash}`);
-        
+
+        console.log(
+          `[PackagePageRouter] Found page loader for: ${currentHash}`
+        );
+
         // Load page dynamically
         const { default: Component } = await pageLoader();
-        
-        console.log(`[PackagePageRouter] ✅ Page loaded successfully: ${currentHash}`);
-        
+
+        console.log(
+          `[PackagePageRouter] ✅ Page loaded successfully: ${currentHash}`
+        );
+
         setPageComponent(() => Component);
       } catch (err) {
         console.error(`[PackagePageRouter] Failed to load package/page:`, err);
-        
+
         const errorMessage = (err as Error).message;
-        
+
         // Provide helpful error messages for common issues
-        if (errorMessage.includes('Cannot resolve module') || errorMessage.includes('Module not found')) {
-          setError(`Package "@captify-io/${packageSlug}" is not installed or available. Please ensure the package is properly installed.`);
+        if (
+          errorMessage.includes("Cannot resolve module") ||
+          errorMessage.includes("Module not found")
+        ) {
+          setError(
+            `Package "@captify-io/${packageSlug}" is not installed or available. Please ensure the package is properly installed.`
+          );
         } else {
-          setError(`Failed to load ${packageSlug}/${currentHash}: ${errorMessage}`);
+          setError(
+            `Failed to load ${packageSlug}/${currentHash}: ${errorMessage}`
+          );
         }
       } finally {
         setLoading(false);
@@ -142,11 +168,11 @@ export function PackagePageRouter({
           </h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <div className="bg-muted p-4 rounded-lg text-left text-sm">
-            <p className="font-medium mb-2">Available pages:</p>
+            <p className="font-medium mb-2">Debug Info:</p>
             <ul className="space-y-1 text-muted-foreground">
-              {Object.keys(pageRegistry).map(key => (
-                <li key={key}>• {key}</li>
-              ))}
+              <li>• Package: {packageSlug}</li>
+              <li>• Page: {currentHash}</li>
+              <li>• Check browser console for detailed logs</li>
             </ul>
           </div>
         </div>
