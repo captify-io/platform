@@ -2,7 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { captifyApps } from "@/.captify.generated"; // <-- auto-generated file
+// Static registry - update this manually when adding new packages
+const captifyApps: Record<string, () => Promise<any>> = {
+  // Add your packages here manually, e.g.:
+  // "pmbook": () => import("@captify-io/pmbook"),
+};
 
 type LoaderResult<T = any> = { default?: T } & Record<string, any>;
 type PageLoader = () => Promise<LoaderResult<React.ComponentType>>;
