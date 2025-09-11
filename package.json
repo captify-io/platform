@@ -107,61 +107,31 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "development": {
-        "types": "./src/index.ts",
-        "import": "./src/index.ts",
-        "require": "./src/index.ts"
-      },
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./auth": {
-      "development": {
-        "types": "./src/lib/auth.ts",
-        "import": "./src/lib/auth.ts",
-        "require": "./src/lib/auth.ts"
-      },
       "types": "./dist/lib/auth.d.ts",
       "import": "./dist/lib/auth.js",
       "require": "./dist/lib/auth.cjs"
     },
     "./types": {
-      "development": {
-        "types": "./src/types/index.ts",
-        "import": "./src/types/index.ts",
-        "require": "./src/types/index.ts"
-      },
       "types": "./dist/types/index.d.ts",
       "import": "./dist/lib/types.js",
       "require": "./dist/lib/types.cjs"
     },
     "./hooks": {
-      "development": {
-        "types": "./src/hooks/index.ts",
-        "import": "./src/hooks/index.ts",
-        "require": "./src/hooks/index.ts"
-      },
       "types": "./dist/hooks/index.d.ts",
       "import": "./dist/lib/hooks.js",
       "require": "./dist/lib/hooks.cjs"
     },
     "./api": {
-      "development": {
-        "types": "./src/lib/api.ts",
-        "import": "./src/lib/api.ts",
-        "require": "./src/lib/api.ts"
-      },
       "types": "./dist/lib/api.d.ts",
       "import": "./dist/lib/api.js",
       "require": "./dist/lib/api.cjs"
     },
     "./utils": {
-      "development": {
-        "types": "./src/lib/utils.ts",
-        "import": "./src/lib/utils.ts",
-        "require": "./src/lib/utils.ts"
-      },
       "types": "./dist/lib/utils.d.ts",
       "import": "./dist/lib/utils.js",
       "require": "./dist/lib/utils.cjs"
@@ -172,36 +142,20 @@
       "require": "./dist/components/ui.cjs"
     },
     "./theme": {
-      "development": {
-        "types": "./src/components/theme/index.ts",
-        "import": "./src/components/theme/index.ts",
-        "require": "./src/components/theme/index.ts"
-      },
       "types": "./dist/components/theme/index.d.ts",
       "import": "./dist/components/theme.js",
       "require": "./dist/components/theme.cjs"
     },
     "./components": {
-      "development": {
-        "types": "./src/components/index.ts",
-        "import": "./src/components/index.ts",
-        "require": "./src/components/index.ts"
-      },
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
       "require": "./dist/components/index.cjs"
     },
     "./lib": {
-      "development": {
-        "types": "./src/lib/index.ts",
-        "import": "./src/lib/index.ts",
-        "require": "./src/lib/index.ts"
-      },
       "types": "./dist/lib/index.d.ts",
       "import": "./dist/lib/index.js",
       "require": "./dist/lib/index.cjs"
-    },
-    "./src/*": "./src/*"
+    }
   },
   "files": [
     "dist",
