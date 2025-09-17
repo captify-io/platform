@@ -19,7 +19,11 @@ import {
   Loader2,
   Calendar,
   Hash,
-  Clock
+  Clock,
+  Bot,
+  Brain,
+  Zap,
+  Cpu
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { AgentMessage } from "../types/agent";
@@ -128,6 +132,23 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
     
     const preview = lastMessage.content.slice(0, 100);
     return preview + (lastMessage.content.length > 100 ? '...' : '');
+  };
+
+  const getProviderIcon = (provider: string, model?: string) => {
+    const iconProps = { className: "h-4 w-4" };
+    
+    switch (provider?.toLowerCase()) {
+      case 'openai':
+        return <Bot {...iconProps} className="h-4 w-4 text-green-500" />;
+      case 'anthropic':
+        return <Brain {...iconProps} className="h-4 w-4 text-orange-500" />;
+      case 'bedrock':
+        return <Cpu {...iconProps} className="h-4 w-4 text-blue-500" />;
+      case 'agent':
+        return <Zap {...iconProps} className="h-4 w-4 text-purple-500" />;
+      default:
+        return <MessageSquare {...iconProps} className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -262,13 +283,16 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                       </div>
                     ) : (
                       <>
-                        <h3 className="font-medium text-sm line-clamp-1 mb-1">
-                          {thread.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                        <div className="flex items-start gap-2 mb-1">
+                          {getProviderIcon(thread.provider || 'openai', thread.model)}
+                          <h3 className="font-medium text-sm line-clamp-1 flex-1">
+                            {thread.title}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2 ml-6">
                           {getThreadPreview(thread)}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground ml-6">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {formatDate(thread.updatedAt.toString())}
@@ -278,7 +302,7 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                             {thread.metadata?.messageCount || thread.messages.length}
                           </div>
                           <Badge variant="outline" className="text-xs px-1 py-0">
-                            {thread.provider || 'openai'}
+                            {thread.model || 'gpt-4'}
                           </Badge>
                         </div>
                       </>

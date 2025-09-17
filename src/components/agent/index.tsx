@@ -135,7 +135,8 @@ export function AgentProvider({
     };
 
     loadData();
-  }, [executeAgent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally excluding executeAgent to prevent infinite re-renders
 
   // Actions
   const createThread = useCallback(

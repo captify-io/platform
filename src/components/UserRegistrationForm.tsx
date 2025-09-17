@@ -326,7 +326,7 @@ export function UserRegistrationForm({
   return (
     <Card className="w-full max-w-2xl mx-auto relative">
       <Button
-        onClick={() => signOut()}
+        onClick={() => signOut({ redirectTo: "/" })}
         size="sm"
         className="absolute top-4 right-4 bg-black text-white hover:bg-gray-800"
       >

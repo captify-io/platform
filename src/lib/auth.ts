@@ -114,12 +114,25 @@ async function refreshAccessToken(refreshToken: string) {
 }
 
 const authConfig: NextAuthConfig = {
+  debug: process.env.NEXTAUTH_DEBUG === "true",
+  logger: {
+    error(error: Error, ...metadata: any[]) {
+      console.error(`[NextAuth Error]`, error, ...metadata);
+    },
+    warn(code) {
+      console.warn(`[NextAuth Warning] ${code}`);
+    },
+    debug(code, metadata) {
+      console.log(`[NextAuth Debug] ${code}:`, metadata);
+    },
+  },
   providers: [
     CognitoProvider({
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.COGNITO_ISSUER,
-      checks: ["pkce", "state", "nonce"], // no "nonce"
+      checks: ["pkce", "state"],
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           scope: "openid email profile",
@@ -127,7 +140,6 @@ const authConfig: NextAuthConfig = {
           response_mode: "query",
         },
       },
-      // Override the nonce check
       profile(profile) {
         return {
           id: profile.sub,
@@ -139,10 +151,17 @@ const authConfig: NextAuthConfig = {
     }),
   ],
   pages: {
-    signIn: "/auth/signin",
     error: "/auth/error",
+    signOut: "/",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Allow sign in for Cognito provider
+      if (account?.provider === "cognito") {
+        return true;
+      }
+      return false;
+    },
     async jwt({ token, account, profile }) {
       // Initial sign in
       if (account && profile) {
@@ -152,6 +171,7 @@ const authConfig: NextAuthConfig = {
         }
         return {
           ...token,
+          sub: profile.sub,
           accessToken: account.access_token,
           idToken: account.id_token,
           refreshToken: account.refresh_token,
@@ -268,12 +288,33 @@ const authConfig: NextAuthConfig = {
       // Always redirect to home after sign in
       return baseUrl;
     },
+    async signOut({ url, baseUrl }) {
+      // Handle Cognito logout URL if needed
+      if (process.env.COGNITO_DOMAIN) {
+        const cognitoLogoutUrl = `${process.env.COGNITO_DOMAIN}/logout?client_id=${process.env.COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent(baseUrl)}`;
+        if (process.env.NODE_ENV === "development") {
+          console.log("Cognito logout URL:", cognitoLogoutUrl);
+        }
+        return cognitoLogoutUrl;
+      }
+      return baseUrl;
+    },
   },
   session: {
     strategy: "jwt",
     maxAge: 60 * 60, // 1 hour
   },
   cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60, // 1 hour - matches session maxAge
+      },
+    },
     pkceCodeVerifier: {
       name: "next-auth.pkce.code_verifier",
       options: {

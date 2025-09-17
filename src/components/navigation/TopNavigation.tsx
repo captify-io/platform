@@ -106,42 +106,18 @@ export function TopNavigation({
   // Handle sign out
   const handleSignOut = async () => {
     try {
-      // Use the NextAuth API endpoint directly to avoid JSON parsing issues
-      const response = await fetch("/api/auth/signout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          csrfToken: await fetch("/api/auth/csrf").then(res => res.json()).then(data => data.csrfToken)
-        })
+      // NextAuth v5 signOut - redirects automatically to signout page
+      await signOut({
+        redirectTo: "/"
       });
-
-      // Don't parse response as JSON if it's not JSON
-      if (response.ok) {
-        // Successful signout, redirect manually
-        router.push("/");
-        router.refresh();
-      } else {
-        throw new Error(`SignOut failed with status: ${response.status}`);
-      }
     } catch (error) {
       console.error("Error signing out:", error);
-      
-      // Fallback: try the NextAuth signOut function with minimal config
-      try {
-        await signOut({ redirect: false });
-        router.push("/");
-        router.refresh();
-      } catch (fallbackError) {
-        console.error("Fallback signout failed:", fallbackError);
-        
-        // Final fallback: clear storage and force redirect
-        if (typeof window !== "undefined") {
-          window.localStorage.clear();
-          window.sessionStorage.clear();
-          window.location.href = "/";
-        }
+
+      // Fallback: force redirect and clear storage
+      if (typeof window !== "undefined") {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+        window.location.href = "/";
       }
     }
   };

@@ -54,4 +54,5 @@ export interface AgentThread {
   updatedAt: number;
   metadata?: Record<string, any>;
   provider?: string;
+  model?: string;
 }

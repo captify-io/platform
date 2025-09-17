@@ -29,6 +29,12 @@ import {
   Search,
   Sparkles,
   Plus,
+  Paperclip,
+  Settings,
+  ChevronDown,
+  Brain,
+  Zap,
+  Cpu,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui";
@@ -38,6 +44,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui";
+import { Input } from "../ui";
 import type { AgentMessage, AgentTool } from "../types/agent";
 
 export interface ChatPanelProps {
@@ -57,8 +72,10 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
   const [input, setInput] = useState("");
   const [isComposing, setIsComposing] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -107,6 +124,37 @@ export function ChatPanel({ className }: ChatPanelProps) {
       console.error("Failed to copy message:", error);
     }
   };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getProviderIcon = (provider: string) => {
+    switch (provider?.toLowerCase()) {
+      case 'openai':
+        return <Bot className="h-4 w-4 text-green-500" />;
+      case 'anthropic':
+        return <Brain className="h-4 w-4 text-orange-500" />;
+      case 'bedrock':
+        return <Cpu className="h-4 w-4 text-blue-500" />;
+      case 'agent':
+        return <Zap className="h-4 w-4 text-purple-500" />;
+      default:
+        return <Bot className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const availableProviders = [
+    { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+    { id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet', 'claude-3-haiku', 'claude-3-opus'] },
+    { id: 'bedrock', name: 'AWS Bedrock', models: ['claude-3-sonnet', 'titan-text', 'llama2-70b'] },
+    { id: 'agent', name: 'Custom Agent', models: ['captify-mi', 'captify-pmbook', 'captify-rmf'] },
+  ];
 
   const renderMessageContent = (message: AgentMessage) => {
     // Handle different content types
@@ -254,35 +302,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
     });
   };
 
-  if (!currentThread) {
-    return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center h-full bg-background",
-          className
-        )}
-      >
-        <div className="text-center max-w-md">
-          <Bot className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-semibold mb-2">
-            Welcome to AI Assistant
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Start a new conversation or select an existing chat from the
-            sidebar.
-          </p>
-          <Button
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("create-thread"))
-            }
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Start New Chat
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Always show the chat interface, even without a current thread
 
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
@@ -290,12 +310,48 @@ export function ChatPanel({ className }: ChatPanelProps) {
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold">{currentThread.title}</h2>
+            {getProviderIcon(settings.provider || 'openai')}
+            <h2 className="font-semibold">{currentThread?.title || "AI Assistant"}</h2>
           </div>
-          <Badge variant="outline" className="text-xs">
-            {settings.provider} · {settings.model}
-          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                {settings.provider} · {settings.model}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuLabel>Select Provider & Model</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {availableProviders.map((provider) => (
+                <div key={provider.id}>
+                  <DropdownMenuItem className="font-medium py-1 opacity-60">
+                    <div className="flex items-center gap-2">
+                      {getProviderIcon(provider.id)}
+                      {provider.name}
+                    </div>
+                  </DropdownMenuItem>
+                  {provider.models.map((model) => (
+                    <DropdownMenuItem
+                      key={model}
+                      className="pl-8 text-sm"
+                      onClick={() => {
+                        if (settings.provider !== provider.id || settings.model !== model) {
+                          // Update settings would go here
+                          console.log('Switching to:', provider.id, model);
+                        }
+                      }}
+                    >
+                      {model}
+                      {settings.provider === provider.id && settings.model === model && (
+                        <span className="ml-auto text-xs text-primary">●</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex items-center gap-2">
@@ -311,7 +367,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
           </TooltipProvider>
 
           <div className="text-xs text-muted-foreground">
-            {currentThread.metadata?.messageCount || currentThread.messages.length} messages
+            {currentThread ? (currentThread.metadata?.messageCount || currentThread.messages.length) : 0} messages
           </div>
         </div>
       </div>
@@ -319,6 +375,19 @@ export function ChatPanel({ className }: ChatPanelProps) {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-6">
+          {!currentThread && messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+              <Bot className="h-16 w-16 mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Welcome to AI Assistant</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                Ask me anything! I can help with analysis, writing, coding, and more.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Start typing below or create a new chat from the sidebar.
+              </p>
+            </div>
+          )}
+          
           {messages.map((message) => (
             <div
               key={message.id}
@@ -445,8 +514,48 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
       {/* Input Area */}
       <div className="p-4 border-t">
+        {/* Uploaded Files */}
+        {uploadedFiles.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {uploadedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg text-sm"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="truncate max-w-[200px]">{file.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeFile(index)}
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-2">
-          <div className="flex-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="px-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isStreaming}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Upload file</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <div className="flex-1 relative">
             <Textarea
               ref={inputRef}
               placeholder="Type your message..."
@@ -456,9 +565,45 @@ export function ChatPanel({ className }: ChatPanelProps) {
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               disabled={isStreaming}
-              className="min-h-[40px] max-h-[120px] resize-none"
+              className="min-h-[40px] max-h-[120px] resize-none pr-12"
             />
+            {/* Tools/Actions inside textarea */}
+            <div className="absolute right-2 top-2 flex gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-muted-foreground"
+                    disabled={isStreaming}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Tools</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/generate-ppt ')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate PPT
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/analytics ')}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Analytics
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/search ')}>
+                    <Search className="h-4 w-4 mr-2" />
+                    Search Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/code ')}>
+                    <Code className="h-4 w-4 mr-2" />
+                    Run Code
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+          
           <Button
             onClick={handleSendMessage}
             disabled={!input.trim() || isStreaming}
@@ -472,6 +617,16 @@ export function ChatPanel({ className }: ChatPanelProps) {
             )}
           </Button>
         </div>
+
+        {/* Hidden file input */}
+        <Input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileUpload}
+          accept=".txt,.doc,.docx,.pdf,.csv,.xlsx,.json,.md"
+        />
 
         <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
           <div>Press Enter to send, Shift+Enter for new line</div>

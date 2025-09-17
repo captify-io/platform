@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { auth } from "../lib/auth";
 import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
 import { UserRegistrationForm } from "../components";
-import { SignInForm } from "../components/navigation";
+import { AutoSignIn } from "../components/navigation/AutoSignIn";
 import "./globals.css";
 
 interface ServerCaptifyProviderProps {
@@ -18,9 +18,9 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
     console.log("Error getting server session:", error);
   }
 
-  // Check 1: Not authenticated - show SignInForm
+  // Check 1: Not authenticated - show auto signin component
   if (!session) {
-    return <SignInForm />;
+    return <AutoSignIn />;
   }
 
   // Check 2: User is authenticated - continue with status checks
