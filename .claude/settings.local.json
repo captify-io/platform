@@ -93,7 +93,10 @@
       "Bash(sed:*)",
       "Bash(tsc:*)",
       "Bash(npx shadcn:*)",
-      "Bash(aws:*)"
+      "Bash(aws:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []

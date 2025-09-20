@@ -1,13 +1,14 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import {
   CaptifyProvider,
   FavoritesBar,
   SignInForm,
   TopNavigation,
 } from "../components";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
+import { cognitoSignOut } from "../lib/cognito-signout";
 import { ThemeProvider } from "next-themes";
 import type { Session } from "next-auth";
 
@@ -16,18 +17,33 @@ interface ClientCaptifyProviderProps {
   session: Session | null;
 }
 
+function SessionMonitor({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    // Check for refresh errors in the session
+    if (session && (session as any).error === "RefreshAccessTokenError") {
+      console.log("🔄 Client detected token refresh error, signing out...");
+      cognitoSignOut();
+    }
+  }, [session]);
+
+  return <>{children}</>;
+}
+
 export function ClientCaptifyProvider({
   children,
   session,
 }: ClientCaptifyProviderProps) {
   return (
     <SessionProvider session={session}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-        storageKey="captify-theme"
+      <SessionMonitor>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="captify-theme"
       >
         <CaptifyProvider session={session ?? undefined}>
           {session ? (
@@ -40,7 +56,8 @@ export function ClientCaptifyProvider({
             <SignInForm />
           )}
         </CaptifyProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </SessionMonitor>
     </SessionProvider>
   );
 }

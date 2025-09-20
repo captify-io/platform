@@ -1,0 +1,59 @@
+{
+  "CaptifyPlatform": {
+    "entityTypes": {
+      "User": {
+        "memberOfTypes": ["Tenant"],
+        "shape": {
+          "type": "Record",
+          "attributes": {
+            "id": { "type": "String", "required": true },
+            "email": { "type": "String", "required": true },
+            "tenantId": { "type": "String", "required": true },
+            "groups": { "type": "Set", "element": { "type": "String" } }
+          }
+        }
+      },
+      "Tenant": {
+        "shape": {
+          "type": "Record",
+          "attributes": {
+            "id": { "type": "String", "required": true },
+            "name": { "type": "String", "required": true }
+          }
+        }
+      },
+      "UserRecord": {
+        "memberOfTypes": ["Tenant"],
+        "shape": {
+          "type": "Record",
+          "attributes": {
+            "id": { "type": "String", "required": true },
+            "ownerId": { "type": "String", "required": true },
+            "tenantId": { "type": "String", "required": true },
+            "tableName": { "type": "String", "required": true }
+          }
+        }
+      }
+    },
+    "actions": {
+      "view": {
+        "appliesTo": {
+          "principalTypes": ["User"],
+          "resourceTypes": ["UserRecord"]
+        }
+      },
+      "update": {
+        "appliesTo": {
+          "principalTypes": ["User"],
+          "resourceTypes": ["UserRecord"]
+        }
+      },
+      "create": {
+        "appliesTo": {
+          "principalTypes": ["User"],
+          "resourceTypes": ["UserRecord"]
+        }
+      }
+    }
+  }
+}

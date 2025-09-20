@@ -1,0 +1,6 @@
+{
+  "static": {
+    "description": "Allow captify users to read core tables",
+    "statement": "permit(principal in CognitoUserPool::\"captify\", action in [Action::\"dynamo:scan\", Action::\"dynamo:query\", Action::\"dynamo:get\"], resource) when { resource.tableName like \"captify-core-*\" };"
+  }
+}

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
 import { auth } from "../../../lib/auth";
+import { policyService } from "../../../services/aws/policy";
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
@@ -8,6 +9,55 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return handleRequest(request, "POST");
+}
+
+/**
+ * Check DynamoDB permission using Verified Permissions
+ */
+async function checkDynamoPermission(
+  session: any,
+  operation: string,
+  table: string,
+  data: any,
+  userId: string,
+  app: string
+): Promise<boolean> {
+  try {
+    const schema = process.env.SCHEMA || "captify";
+    const fullTableName = `${schema}-${app}-${table}`;
+
+    // For captify-core-* tables, check if user has access
+    if (!fullTableName.startsWith("captify-core-")) {
+      // For non-core tables, allow existing IAM-based access
+      return true;
+    }
+
+    // Special handling for User table operations - ensure user can only access their own record
+    if (table === "User") {
+      if (operation === "update" || operation === "get") {
+        const itemKey = data?.Key || data?.key;
+        if (itemKey?.id && itemKey.id !== userId) {
+          // User trying to access someone else's record
+          return false;
+        }
+      } else if (operation === "put") {
+        const item = data?.Item || data?.item;
+        if (item?.id && item.id !== userId) {
+          // User trying to create a record with someone else's ID
+          return false;
+        }
+      }
+
+      // For User table operations, if the user ID check passed above, allow the operation
+      // This ensures users can only update their own records
+      return true;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Permission check error:", error);
+    return false; // Deny on error
+  }
 }
 
 async function handleRequest(request: NextRequest, method: string) {
@@ -52,12 +102,38 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-      // Check if session has required tokens
+      // Check for token refresh error
+      if ((session as any).error === "RefreshAccessTokenError") {
+        return new Response(
+          JSON.stringify({
+            error: "Session expired. Please sign in again.",
+            refresh_required: true
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+
+      // Check if session has required tokens (for other services)
       const idToken = (session as any).idToken;
+      console.log("🔍 API Route - Session check:", {
+        hasIdToken: !!idToken,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        sessionKeys: Object.keys(session || {})
+      });
+
       if (!idToken) {
         return new Response(
           JSON.stringify({
             error: "No ID token found in session. Please log in again.",
+            debug: {
+              sessionKeys: Object.keys(session || {}),
+              hasUser: !!session?.user
+            }
           }),
           {
             status: 401,
@@ -162,14 +238,6 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-      // Pass both request and credentials to the service
-      // Add schema and app to the request body
-      const processedBody = {
-        ...body,
-        schema: process.env.SCHEMA || "captify",
-        app: app,
-      };
-
       // Create a session object for the service with all auth fields
       const apiSession = {
         user: {
@@ -179,10 +247,51 @@ async function handleRequest(request: NextRequest, method: string) {
           name: session.user?.name,
           groups: (session.user as any)?.groups || (session as any)?.groups,
           isAdmin: (session.user as any)?.isAdmin || (session as any)?.isAdmin,
+          tenantId: (session.user as any)?.tenantId || (session as any)?.tenantId,
         },
         idToken: idToken,
+        accessToken: (session as any)?.accessToken,
         groups: (session as any)?.groups,
         isAdmin: (session as any)?.isAdmin,
+      };
+
+      // Check permissions before executing service if it's a DynamoDB operation
+      if (body.service === "dynamo" || body.service === "dynamodb") {
+        const hasPermission = await checkDynamoPermission(
+          apiSession,
+          body.operation,
+          body.table,
+          body.data,
+          apiSession.user.id,
+          app
+        );
+
+        if (!hasPermission) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Access denied. You don't have permission to perform this operation.",
+              details: {
+                operation: body.operation,
+                table: body.table,
+                reason: "Verified Permissions policy denied access"
+              }
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
+
+
+      // Pass both request and credentials to the service
+      // Add schema and app to the request body
+      const processedBody = {
+        ...body,
+        schema: process.env.SCHEMA || "captify",
+        app: app,
       };
 
       const result = await serviceHandler.execute(

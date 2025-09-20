@@ -39,7 +39,20 @@ async function execute(
     app?: string;
     data?: any;
   },
-  credentials: AwsCredentials
+  credentials: AwsCredentials,
+  session?: {
+    user: {
+      id: string;
+      userId: string;
+      email?: string;
+      name?: string;
+      groups?: string[];
+      isAdmin?: boolean;
+    };
+    idToken?: string;
+    groups?: string[];
+    isAdmin?: boolean;
+  }
 ) {
   try {
     const {
@@ -52,6 +65,98 @@ async function execute(
 
     // Construct table name as schema-app-table
     const fullTableName = `${schema}-${app}-${table}`;
+
+    // Add user context validation for captify-core-User table operations
+    if (fullTableName === "captify-core-User" && session?.user) {
+      const userId = session.user.id;
+      const isAdmin = session.isAdmin || session.user.isAdmin;
+
+      // For non-admin users, ensure they can only access their own record
+      if (!isAdmin) {
+        switch (operation) {
+          case "get":
+          case "update": {
+            const itemKey = data?.Key || data?.key;
+            if (itemKey?.id && itemKey.id !== userId) {
+              return {
+                success: false,
+                error: "Access denied. You can only access your own user record.",
+                metadata: {
+                  requestId: `dynamo-access-denied-${Date.now()}`,
+                  timestamp: new Date().toISOString(),
+                  source: "dynamo.execute",
+                  userId: userId,
+                  attemptedAccess: itemKey?.id
+                },
+              };
+            }
+            break;
+          }
+          case "put": {
+            // Allow users to create their own User record
+            const item = data?.Item || data?.item;
+            if (item?.id && item.id !== userId) {
+              return {
+                success: false,
+                error: "Access denied. You can only create a User record with your own ID.",
+                metadata: {
+                  requestId: `dynamo-access-denied-${Date.now()}`,
+                  timestamp: new Date().toISOString(),
+                  source: "dynamo.execute",
+                  userId: userId,
+                  attemptedId: item.id
+                },
+              };
+            }
+            // If no ID in item, set it to the user's ID
+            if (item && !item.id) {
+              item.id = userId;
+            }
+            break;
+          }
+          case "delete": {
+            // Non-admin users cannot delete user records
+            return {
+              success: false,
+              error: "Access denied. Only administrators can delete user records.",
+              metadata: {
+                requestId: `dynamo-access-denied-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                source: "dynamo.execute",
+                userId: userId
+              },
+            };
+          }
+          case "scan":
+          case "query": {
+            // For read operations on User table, add filter to only return user's own record
+            if (!data.FilterExpression) {
+              data.FilterExpression = "#userId = :userId";
+              data.ExpressionAttributeNames = {
+                ...data.ExpressionAttributeNames,
+                "#userId": "id"
+              };
+              data.ExpressionAttributeValues = {
+                ...data.ExpressionAttributeValues,
+                ":userId": userId
+              };
+            } else {
+              // If there's already a filter, AND it with user restriction
+              data.FilterExpression = `(${data.FilterExpression}) AND #userId = :userId`;
+              data.ExpressionAttributeNames = {
+                ...data.ExpressionAttributeNames,
+                "#userId": "id"
+              };
+              data.ExpressionAttributeValues = {
+                ...data.ExpressionAttributeValues,
+                ":userId": userId
+              };
+            }
+            break;
+          }
+        }
+      }
+    }
 
     const client = await createDynamoClient(credentials);
 

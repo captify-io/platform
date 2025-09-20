@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { lazy, Suspense, useRef, useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
+import { cognitoSignOut } from "../../lib/cognito-signout";
 import type { Session } from "next-auth";
 import { useSafeRef } from "../../lib/react-compat";
 import { Button } from "../ui/button";
@@ -106,10 +106,8 @@ export function TopNavigation({
   // Handle sign out
   const handleSignOut = async () => {
     try {
-      // NextAuth v5 signOut - redirects automatically to signout page
-      await signOut({
-        redirectTo: "/"
-      });
+      // Use Cognito sign out to properly clear both Cognito and NextAuth sessions
+      await cognitoSignOut();
     } catch (error) {
       console.error("Error signing out:", error);
 

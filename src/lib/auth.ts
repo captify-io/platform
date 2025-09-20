@@ -35,11 +35,8 @@ async function refreshAccessToken(refreshToken: string) {
     const url = `${process.env.COGNITO_ISSUER}/oauth2/token`;
 
     // Debug logging only in development
-    if (
-      process.env.NODE_ENV === "development" &&
-      typeof window !== "undefined"
-    ) {
-      console.log("Attempting to refresh token at:", url);
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔄 Attempting to refresh token at:", url);
     }
 
     const response = await fetch(url, {
@@ -183,8 +180,22 @@ const authConfig: NextAuthConfig = {
 
       // Return previous token if the access token has not expired yet
       // Check 5 minutes before expiry to ensure smooth refresh
-      const refreshBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
-      if (Date.now() < (token.expiresAt as number) * 1000 - refreshBuffer) {
+      const refreshBuffer = parseInt(process.env.COGNITO_TOKEN_REFRESH_BUFFER || "300") * 1000; // Default 5 minutes
+      const currentTime = Date.now();
+      const expiryTime = (token.expiresAt as number) * 1000;
+      const timeUntilExpiry = expiryTime - currentTime;
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("🕐 Token expiry check:", {
+          currentTime: new Date(currentTime).toISOString(),
+          expiryTime: new Date(expiryTime).toISOString(),
+          timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + " seconds",
+          refreshBuffer: Math.round(refreshBuffer / 1000) + " seconds",
+          needsRefresh: timeUntilExpiry < refreshBuffer
+        });
+      }
+
+      if (timeUntilExpiry > refreshBuffer) {
         return token;
       }
 

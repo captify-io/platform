@@ -73,7 +73,17 @@ export async function getAwsCredentialsFromIdentityPool(
   }
 
   const idToken = session.idToken;
+
+  console.log("🔍 Credentials Debug:", {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    hasIdToken: !!idToken,
+    sessionKeys: Object.keys(session || {}),
+    poolId: identityPoolId || process.env.COGNITO_IDENTITY_POOL_ID
+  });
+
   if (!idToken) {
+    console.error("❌ No ID token in session:", session);
     throw new Error("No identity token found in session. Please log in again.");
   }
 
@@ -214,6 +224,13 @@ export async function getAwsCredentialsFromIdentityPool(
     // Clear cache for this pool on error
     credentialsCacheMap.delete(poolId);
 
+    console.error("❌ Identity Pool credential error:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      poolId,
+      hasIdToken: !!idToken
+    });
 
     // Handle specific AWS errors
     if (

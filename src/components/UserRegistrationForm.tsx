@@ -21,39 +21,64 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Loader2, UserPlus, AlertCircle, Building, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { cognitoSignOut } from "../lib/cognito-signout";
 
 interface UserRegistrationFormProps {
   onRegistrationComplete?: () => void;
-  captifyStatus?: string | null;
   userId?: string;
+  userEmail?: string | null;
+  userName?: string | null;
+  userGroups?: string[];
 }
 
 export function UserRegistrationForm({
   onRegistrationComplete,
-  captifyStatus,
   userId,
+  userEmail,
+  userName,
+  userGroups = [],
 }: UserRegistrationFormProps) {
   const [loading, setLoading] = useState(false);
   const [tenants, setTenants] = useState<any[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
-  const [isLocked, setIsLocked] = useState(captifyStatus === "registered");
+  const [isLocked, setIsLocked] = useState(false);
   const [loadingUser, setLoadingUser] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(captifyStatus);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    title: "",
-    department: "",
-    phone: "",
-    tenantId: "",
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
+  const [canAccessCorePool, setCanAccessCorePool] = useState<boolean | null>(null);
+  const [checkingCorePool, setCheckingCorePool] = useState(true);
+  // Initialize form data with session information
+  const [formData, setFormData] = useState(() => {
+    // Parse userName into first and last name if available
+    const nameparts = userName ? userName.split(' ') : [];
+    const firstName = nameparts[0] || "";
+    const lastName = nameparts.slice(1).join(' ') || "";
+
+    return {
+      firstName,
+      lastName,
+      email: userEmail || "",
+      title: "",
+      department: "",
+      phone: "",
+      tenantId: "",
+    };
   });
   const [registrationMessage, setRegistrationMessage] = useState<string | null>(
     null
   );
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+
+  // Check if user is in captify-authorized group
+  useEffect(() => {
+    console.log("🔍 Checking user groups:", userGroups);
+    const isAuthorized = userGroups.includes('captify-authorized');
+    console.log("🔍 User is authorized:", isAuthorized);
+
+    // If user is authorized, they shouldn't see the registration form
+    setCanAccessCorePool(isAuthorized);
+    setCheckingCorePool(false);
+  }, [userGroups]);
 
   // Fetch user data if userId is provided
   useEffect(() => {
@@ -78,15 +103,16 @@ export function UserRegistrationForm({
         });
 
         if (result.success && result.data) {
-          setFormData({
-            firstName: result.data.profile?.firstName || "",
-            lastName: result.data.profile?.lastName || "",
-            email: result.data.email || "",
-            title: result.data.profile?.title || "",
-            department: result.data.profile?.department || "",
-            phone: result.data.profile?.phone || "",
-            tenantId: result.data.tenantId || "",
-          });
+          // Use DynamoDB data first, fall back to session data for new users
+          setFormData(prev => ({
+            firstName: result.data.profile?.firstName || prev.firstName,
+            lastName: result.data.profile?.lastName || prev.lastName,
+            email: result.data.email || prev.email,
+            title: result.data.profile?.title || prev.title,
+            department: result.data.profile?.department || prev.department,
+            phone: result.data.profile?.phone || prev.phone,
+            tenantId: result.data.tenantId || prev.tenantId,
+          }));
 
           // Check the user's status and update the form state
           if (result.data.status === "registered") {
@@ -99,9 +125,14 @@ export function UserRegistrationForm({
             setIsLocked(false);
             setCurrentStatus("unregistered");
           }
+        } else {
+          // No existing record in DynamoDB - user is new, keep session data
+          console.log("No existing user record found, using session data for new user");
         }
       } catch (err) {
         console.error("Failed to fetch user data:", err);
+        // On error, keep the session data that was already set in formData
+        console.log("Error fetching user data, using session data as fallback");
       } finally {
         setLoadingUser(false);
       }
@@ -144,6 +175,39 @@ export function UserRegistrationForm({
     fetchTenants();
   }, []);
 
+  // Temporary approval function for testing
+  const handleApprove = async () => {
+    try {
+      setLoading(true);
+      console.log("Adding user to captify-authorized group...");
+
+      const result = await apiClient.run({
+        service: "cognito",
+        operation: "addToGroup",
+        app: "core",
+        data: {
+          Username: userId,
+          GroupName: "captify-authorized",
+        },
+      });
+
+      if (result.success) {
+        setRegistrationMessage("✅ User approved! You will be redirected shortly...");
+        // Refresh the page after a short delay to re-check group membership
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        setError(result.error || "Failed to approve user");
+      }
+    } catch (err) {
+      console.error("Failed to approve user:", err);
+      setError("Failed to approve user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -152,10 +216,23 @@ export function UserRegistrationForm({
       try {
         // Update user status to unregistered when they unlock to edit
         const result = await apiClient.run({
-          service: "user",
-          operation: "updateOwnStatus",
+          service: "dynamo",
+          operation: "update",
+          app: "core",
+          table: "User",
           data: {
-            status: "unregistered",
+            Key: {
+              id: userId,
+            },
+            UpdateExpression: "SET #status = :status, #updatedAt = :updatedAt",
+            ExpressionAttributeNames: {
+              "#status": "status",
+              "#updatedAt": "updatedAt",
+            },
+            ExpressionAttributeValues: {
+              ":status": "unregistered",
+              ":updatedAt": new Date().toISOString(),
+            },
           },
         });
 
@@ -177,85 +254,47 @@ export function UserRegistrationForm({
     setError(null);
     setLoading(true);
 
-    // For initial registration or updates - save data and update status to registered
+    // Save/update user profile data in DynamoDB User table
     try {
-      // First, save/update the user profile data
-      console.log("Saving profile data:", formData);
-
+      console.log("Updating user profile:", formData);
+      console.log("Saving user record to DynamoDB...");
       const profileResult = await apiClient.run({
         service: "dynamo",
-        operation: "update",
+        operation: "put",
         app: "core",
         table: "User",
         data: {
-          Key: {
+          Item: {
             id: userId,
-          },
-          UpdateExpression: "SET #profile = :profile, #email = :email, #tenantId = :tenantId, #updatedAt = :updatedAt",
-          ExpressionAttributeNames: {
-            "#profile": "profile",
-            "#email": "email",
-            "#tenantId": "tenantId",
-            "#updatedAt": "updatedAt",
-          },
-          ExpressionAttributeValues: {
-            ":profile": {
+            email: formData.email,
+            profile: {
               firstName: formData.firstName,
               lastName: formData.lastName,
               title: formData.title,
               department: formData.department,
               phone: formData.phone,
             },
-            ":email": formData.email,
-            ":tenantId": formData.tenantId || null,
-            ":updatedAt": new Date().toISOString(),
+            tenantId: formData.tenantId || null,
+            status: "registered",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           },
         },
       });
 
-      console.log("Profile update result:", profileResult);
+      console.log("DynamoDB update result:", profileResult);
 
       if (profileResult.success) {
-        // Then update status to registered
-        const statusResult = await apiClient.run({
-          service: "dynamo",
-          operation: "update",
-          app: "core",
-          table: "User",
-          data: {
-            Key: {
-              id: userId,
-            },
-            UpdateExpression: "SET #status = :status, #updatedAt = :updatedAt",
-            ExpressionAttributeNames: {
-              "#status": "status",
-              "#updatedAt": "updatedAt",
-            },
-            ExpressionAttributeValues: {
-              ":status": "registered",
-              ":updatedAt": new Date().toISOString(),
-            },
-          },
-        });
+        setRegistrationMessage("Registration complete! Your account is pending approval from an administrator.");
+        setIsLocked(true);
+        setCurrentStatus("registered");
 
-        console.log("Status update result:", statusResult);
-
-        if (statusResult.success) {
-          setRegistrationMessage(
-            "Registration complete! Your account is pending approval from an administrator."
-          );
-          setIsLocked(true);
-          setCurrentStatus("registered");
-
-          // Call the optional callback if provided
+        // Call the optional callback if provided
           if (onRegistrationComplete) {
             setTimeout(() => {
               onRegistrationComplete();
             }, 2000);
           }
-        } else {
-          setError("Failed to update registration status");
-        }
       } else {
         setError(profileResult.error || "Failed to save profile information");
       }
@@ -308,7 +347,7 @@ export function UserRegistrationForm({
         ...prev,
         [name]: value,
       }));
-      
+
       // Validate email and set error if invalid
       if (value && !validateEmail(value)) {
         setEmailError("Please enter a valid email address");
@@ -323,16 +362,75 @@ export function UserRegistrationForm({
     }
   };
 
+  // Show loading state while checking core pool access
+  if (checkingCorePool) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span>Checking access permissions...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If user HAS core pool access, they shouldn't see the registration form
+  // This should be handled at the layout level, but adding safety check here
+  if (canAccessCorePool === true) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto relative">
+        <Button
+          onClick={() => cognitoSignOut()}
+          size="sm"
+          className="absolute top-4 right-4 bg-black text-white hover:bg-gray-800"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-green-500" />
+            Already Authorized
+          </CardTitle>
+          <CardDescription>
+            You already have access to the Captify platform. Redirecting...
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert className="bg-green-50 border-green-200">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              You have core identity pool access. Please refresh the page to access the full application.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-2xl mx-auto relative">
-      <Button
-        onClick={() => signOut({ redirectTo: "/" })}
-        size="sm"
-        className="absolute top-4 right-4 bg-black text-white hover:bg-gray-800"
-      >
-        <LogOut className="h-4 w-4 mr-2" />
-        Sign Out
-      </Button>
+      <div className="absolute top-4 right-4 flex gap-2">
+        {currentStatus === "registered" && (
+          <Button
+            onClick={handleApprove}
+            size="sm"
+            disabled={loading}
+            className="bg-green-600 text-white hover:bg-green-700"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            {loading ? "Approving..." : "Approve"}
+          </Button>
+        )}
+        <Button
+          onClick={() => cognitoSignOut()}
+          size="sm"
+          className="bg-black text-white hover:bg-gray-800"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
+      </div>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UserPlus className="h-5 w-5" />
@@ -364,7 +462,29 @@ export function UserRegistrationForm({
             {emailError && (
               <p className="text-sm text-red-500">{emailError}</p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Email can be updated and will be synchronized with your authentication
+            </p>
           </div>
+
+          {userGroups.length > 0 && (
+            <div className="space-y-2">
+              <Label>Current Groups</Label>
+              <div className="flex flex-wrap gap-2">
+                {userGroups.map((group) => (
+                  <span
+                    key={group}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    {group}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your current authentication groups
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
