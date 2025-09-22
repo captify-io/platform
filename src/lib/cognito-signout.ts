@@ -23,14 +23,34 @@ export async function cognitoSignOut() {
       console.warn("Could not clear storage:", e);
     }
 
-    // First, clear the NextAuth session
-    await nextAuthSignOut({
-      redirectTo: "/",
-      redirect: true
-    });
+    // Check if we have Cognito configuration for logout
+    const cognitoIssuer = process.env.NEXT_PUBLIC_COGNITO_ISSUER;
+    const cognitoClientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
+    const currentUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-    // Note: The Cognito logout redirect will be handled in a future enhancement
-    // For now, NextAuth signout with storage clearing provides effective logout
+    if (cognitoIssuer && cognitoClientId && currentUrl) {
+      // Construct Cognito logout URL
+      const logoutUrl = new URL(`${cognitoIssuer}/logout`);
+      logoutUrl.searchParams.append("client_id", cognitoClientId);
+      logoutUrl.searchParams.append("logout_uri", `${currentUrl}/auth/signout`);
+      logoutUrl.searchParams.append("response_type", "code");
+
+      console.log("🔄 Redirecting to Cognito logout:", logoutUrl.toString());
+
+      // Sign out of NextAuth first, then redirect to Cognito logout
+      await nextAuthSignOut({
+        redirectTo: logoutUrl.toString(),
+        redirect: true
+      });
+    } else {
+      console.warn("⚠️ Cognito logout URL not available, using NextAuth-only signout");
+
+      // Fallback to NextAuth-only signout
+      await nextAuthSignOut({
+        redirectTo: "/",
+        redirect: true
+      });
+    }
 
   } catch (error) {
     console.error("❌ Error during sign out:", error);

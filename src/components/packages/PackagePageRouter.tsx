@@ -5,17 +5,40 @@ import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 
 // Dynamic import for pmbook PageRouter
-const PageRouter = dynamic(() => import("@captify-io/pmbook"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading...</p>
+const PageRouter = dynamic(
+  () => import("@captify-io/pmbook").catch((err) => {
+    console.error("Failed to load @captify-io/pmbook:", err);
+    // Return a fallback component
+    return {
+      default: ({ href }: { href: string }) => (
+        <div className="h-full bg-background flex items-center justify-center">
+          <div className="text-center max-w-2xl p-6">
+            <h2 className="text-2xl font-bold mb-4 text-destructive">
+              Package Not Available
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              The pmbook package is not available in development mode.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Route: {href}
+            </p>
+          </div>
+        </div>
+      )
+    };
+  }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
-    </div>
-  ),
-});
+    ),
+  }
+);
 
 function parseHash(raw: string | null): string {
   if (!raw) return "home";

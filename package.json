@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Core components, utilities, and services for the Captify platform",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3000 --turbo",
     "dev:webpack": "next dev -p 3000",
     "build": "next build",
     "build:app": "next build",
