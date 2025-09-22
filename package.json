@@ -182,9 +182,6 @@
     "api",
     "nextjs"
   ],
-  "peerDependencies": {
-    "lucide-react": "^0.544.0"
-  },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"
@@ -193,7 +190,8 @@
     "inflight": "npm:@aashutoshrathi/word-wrap@^1.2.6",
     "rimraf": "^5.0.0",
     "glob": "^10.0.0",
-    "cross-spawn-async": "cross-spawn"
+    "cross-spawn-async": "cross-spawn",
+    "prismjs": "^1.30.0"
   },
   "devDependencies": {
     "@captify-io/pmbook": "^1.0.23",

@@ -63,6 +63,32 @@ import { api } from "@captify-io/platform/services";
 
 ## Recent Changes
 
+### v1.0.65
+- **Security & Dependencies**
+  - Fixed moderate severity vulnerabilities in PrismJS dependency chain
+  - Added npm override for prismjs@^1.30.0 to resolve DOM Clobbering vulnerability
+  - Updated all dependencies to latest secure versions
+  - Added react-syntax-highlighter@15.6.6 for enhanced code highlighting
+
+- **DynamicIcon Component Fixes**
+  - Resolved TypeScript compilation errors with ForwardRefExoticComponent type
+  - Fixed JSX compatibility issues that were causing build failures
+  - Improved type definitions for better consuming application support
+  - Maintained React.lazy functionality for dynamic icon loading
+
+### v1.0.64
+- **TypeScript Compatibility**
+  - Fixed DynamicIcon component TypeScript compilation errors
+  - Resolved JSX compatibility issues with ForwardRef types
+  - Improved type exports for better consuming application support
+
+### v1.0.63
+- **DynamicIcon Implementation**
+  - Replaced problematic lucide-react/dynamic export with custom implementation
+  - Created self-contained DynamicIcon using React.lazy for dynamic imports
+  - Fixed "Can't resolve 'lucide-react/dynamic'" errors in consuming applications
+  - Added missing react-syntax-highlighter dependency
+
 ### v1.0.59
 - **Authentication & Authorization Improvements**
   - Fixed TypeScript compilation errors in auth.ts with explicit parameter types
@@ -80,11 +106,6 @@ import { api } from "@captify-io/platform/services";
   - Configured organization-level secrets for seamless package installation across repositories
   - Removed repository-level NODE_AUTH_TOKEN secrets in favor of organization-level token
   - Verified package access and installation works correctly with new token configuration
-
-### v1.0.55
-- Fixed lucide-react/dynamic module resolution for external apps
-- Added lucide-react as peer dependency
-- Updated tsup configuration to properly externalize lucide-react subpath imports
 
 ## GitHub Organization Token Setup
 
