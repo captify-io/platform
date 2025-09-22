@@ -1,5 +1,5 @@
 // UI Components for Core Package
-export { DynamicIcon } from "./dynamic-icon";
+// Note: DynamicIcon removed - consuming apps should use lucide-react directly
 export {
   Accordion,
   AccordionContent,

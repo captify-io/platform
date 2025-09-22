@@ -5,7 +5,18 @@ import { useMemo, useEffect, useCallback } from "react";
 import { useState } from "../../lib/react-compat";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { DynamicIcon } from "lucide-react/dynamic";
+import dynamic from "next/dynamic";
+import { LucideProps } from "lucide-react";
+
+// Use Next.js dynamic import for DynamicIcon
+const DynamicIcon = dynamic(() =>
+  import("lucide-react").then((mod) => ({
+    default: ({ name, ...props }: { name: string } & LucideProps) => {
+      const Icon = (mod as any)[name];
+      return Icon ? <Icon {...props} /> : null;
+    }
+  }))
+, { ssr: false });
 import { Star, ChevronRight, Bot } from "lucide-react";
 import { apiClient } from "../../lib/utils";
 import { useCaptify } from "../providers/CaptifyProvider";

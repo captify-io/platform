@@ -26,7 +26,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
 
-  // Don’t bundle peer deps or big externals
+  // Don't bundle peer deps or big externals
   external: [
     "react",
     "react-dom",
@@ -36,8 +36,9 @@ export default defineConfig({
     "clsx",
     "tailwind-merge",
     "lucide-react",
-    "lucide-react/dynamic",
+    "lucide-react/*",
     "zod",
+    "@captify-io/pmbook",
     "@aws-sdk/*",
     "@radix-ui/*",
     "@hookform/resolvers",

@@ -15,7 +15,18 @@ import {
   SheetTitle, 
   SheetTrigger 
 } from "./ui";
-import { DynamicIcon } from "lucide-react/dynamic";
+import dynamic from "next/dynamic";
+import { LucideProps } from "lucide-react";
+
+// Use Next.js dynamic import for DynamicIcon
+const DynamicIcon = dynamic(() =>
+  import("lucide-react").then((mod) => ({
+    default: ({ name, ...props }: { name: string } & LucideProps) => {
+      const Icon = (mod as any)[name];
+      return Icon ? <Icon {...props} /> : null;
+    }
+  }))
+, { ssr: false });
 import { Grid3X3, Star, Search } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import type { Session } from "next-auth";

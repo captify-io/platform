@@ -16,18 +16,22 @@ This package requires the following peer dependencies to be installed in your pr
 npm install lucide-react
 ```
 
-**Note**: `lucide-react` is required for the `DynamicIcon` component. If you're getting module resolution errors for `lucide-react/dynamic`, make sure `lucide-react` is installed in your consuming application.
+**Note**: `lucide-react` is required for icons in your application. The platform package no longer exports a `DynamicIcon` component - consuming applications should use `lucide-react` directly for better compatibility and smaller bundle sizes.
 
 ## Usage
 
 ### Components
 
 ```tsx
-import { DynamicIcon } from "@captify-io/platform/components/ui";
 import { Button } from "@captify-io/platform/components/ui";
+import { Home, Settings, User } from "lucide-react";
 
-// Use DynamicIcon with any lucide icon name
-<DynamicIcon name="home" className="w-4 h-4" />
+// Use lucide-react icons directly
+<Home className="w-4 h-4" />
+<Button>
+  <Settings className="w-4 h-4 mr-2" />
+  Settings
+</Button>
 ```
 
 ### Utilities
@@ -51,7 +55,7 @@ import { api } from "@captify-io/platform/services";
 ## Available Exports
 
 - `/components` - All React components
-- `/components/ui` - UI components (includes DynamicIcon)
+- `/components/ui` - UI components (Button, Card, Dialog, etc.)
 - `/components/theme` - Theme components
 - `/lib` - Utility functions
 - `/lib/auth` - Authentication utilities
@@ -63,18 +67,20 @@ import { api } from "@captify-io/platform/services";
 
 ## Recent Changes
 
+### v1.0.66
+- **Icon Management Simplification**
+  - **BREAKING CHANGE**: Removed DynamicIcon component from platform package
+  - Consuming applications should now use `lucide-react` directly for all icons
+  - This eliminates module resolution issues and reduces bundle size
+  - Updated tsup config to properly externalize all lucide-react imports
+  - Simplified icon usage pattern for better developer experience
+
 ### v1.0.65
 - **Security & Dependencies**
   - Fixed moderate severity vulnerabilities in PrismJS dependency chain
   - Added npm override for prismjs@^1.30.0 to resolve DOM Clobbering vulnerability
   - Updated all dependencies to latest secure versions
   - Added react-syntax-highlighter@15.6.6 for enhanced code highlighting
-
-- **DynamicIcon Component Fixes**
-  - Resolved TypeScript compilation errors with ForwardRefExoticComponent type
-  - Fixed JSX compatibility issues that were causing build failures
-  - Improved type definitions for better consuming application support
-  - Maintained React.lazy functionality for dynamic icon loading
 
 ### v1.0.64
 - **TypeScript Compatibility**

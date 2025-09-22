@@ -18,7 +18,18 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import { DynamicIcon } from "lucide-react/dynamic";
+import dynamic from "next/dynamic";
+import { LucideProps } from "lucide-react";
+
+// Use Next.js dynamic import for DynamicIcon
+const DynamicIcon = dynamic(() =>
+  import("lucide-react").then((mod) => ({
+    default: ({ name, ...props }: { name: string } & LucideProps) => {
+      const Icon = (mod as any)[name];
+      return Icon ? <Icon {...props} /> : null;
+    }
+  }))
+, { ssr: false });
 import {
   SidebarProvider,
   Sidebar,
