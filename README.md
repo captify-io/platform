@@ -61,6 +61,24 @@ import { api } from "@captify-io/platform/services";
 
 ## Recent Changes
 
+### v1.0.59
+- **Authentication & Authorization Improvements**
+  - Fixed TypeScript compilation errors in auth.ts with explicit parameter types
+  - Implemented organization-level GitHub NODE_AUTH_TOKEN for cross-repository package access
+  - Simplified user registration workflow to use DynamoDB as single source of truth
+  - Added approval workflow that updates user status directly in DynamoDB
+  - Enhanced authorization logic to check both Cognito groups and DynamoDB status
+
+- **Dynamic Package Loading**
+  - Removed static app registry dependency in PackagePageRouter
+  - Implemented dynamic package loading with explicit imports for better reliability
+  - Added proper error handling for missing packages and pages
+
+- **GitHub Integration**
+  - Configured organization-level secrets for seamless package installation across repositories
+  - Removed repository-level NODE_AUTH_TOKEN secrets in favor of organization-level token
+  - Verified package access and installation works correctly with new token configuration
+
 ### v1.0.55
 - Fixed lucide-react/dynamic module resolution for external apps
 - Added lucide-react as peer dependency
