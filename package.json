@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Core components, utilities, and services for the Captify platform",
   "scripts": {
-    "dev": "next dev --turbo -p 3000",
+    "dev": "next dev -p 3000",
     "dev:webpack": "next dev -p 3000",
     "build": "next build",
     "build:app": "next build",
@@ -91,7 +91,7 @@
     "prismjs": "^1.30.0",
     "react": "^19.1.1",
     "react-day-picker": "^9.9.0",
-    "react-dom": "^19.1.1",
+    "react-dom": "19.1.1",
     "react-hook-form": "^7.62.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^1.0.10",
@@ -191,10 +191,12 @@
     "rimraf": "^5.0.0",
     "glob": "^10.0.0",
     "cross-spawn-async": "cross-spawn",
-    "prismjs": "^1.30.0"
+    "prismjs": "^1.30.0",
+    "@types/react-dom": "^19.1.9",
+    "react-dom": "19.1.1"
   },
   "devDependencies": {
-    "@captify-io/pmbook": "^1.0.23",
+    "@captify-io/pmbook": "^1.0.29",
     "@next/bundle-analyzer": "^15.5.2",
     "@types/node": "^24.3.1",
     "@types/react": "^19.1.12",
@@ -204,7 +206,7 @@
     "cross-env": "^7.0.3",
     "next-auth": "5.0.0-beta.25",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react-dom": "19.1.1",
     "tsup": "^8.5.0",
     "tsx": "^4.7.1",
     "typescript": "5.9.2"

@@ -18,18 +18,7 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import dynamic from "next/dynamic";
-import { LucideProps } from "lucide-react";
-
-// Use Next.js dynamic import for DynamicIcon
-const DynamicIcon = dynamic(() =>
-  import("lucide-react").then((mod) => ({
-    default: ({ name, ...props }: { name: string } & LucideProps) => {
-      const Icon = (mod as any)[name];
-      return Icon ? <Icon {...props} /> : null;
-    }
-  }))
-, { ssr: false });
+import { DynamicIcon } from "lucide-react/dynamic";
 import {
   SidebarProvider,
   Sidebar,
@@ -62,6 +51,17 @@ import { useApi, useAppContext } from "../../hooks";
 import { useCaptify } from "../providers/CaptifyProvider";
 import { apiClient } from "../../lib/utils";
 import type { AppData, ThreePanelLayoutProps } from "../../types";
+
+// Dynamic import for pmbook config
+const loadPmbookConfig = async () => {
+  try {
+    const { config } = await import("@captify-io/pmbook");
+    return config;
+  } catch (error) {
+    console.error("Failed to load pmbook config:", error);
+    return null;
+  }
+};
 
 // Inner component that has access to SidebarProvider context
 const ThreePanelContent = React.memo(function ThreePanelContent({
@@ -157,12 +157,63 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   // Load app data when packageSlug changes
   useEffect(() => {
     if (packageSlug && typeof window !== "undefined") {
-      // Always fetch from database for app data
-      // packageSource is no longer used for dynamic imports to avoid webpack issues
-      fetchAppData(packageSlug);
+      if (packageSlug === "pmbook") {
+        // For pmbook, load config from the package itself
+        loadPmbookConfig().then((pmbookConfig) => {
+          if (pmbookConfig) {
+            // Transform pmbook config to AppData format
+            const transformedAppData: AppData = {
+              app: pmbookConfig.slug,
+              menu: pmbookConfig.menu.map((item: any) => ({
+                id: item.id,
+                label: item.label,
+                icon: item.icon,
+                href: item.children ? "/" : item.href || `/${item.id}`,
+                order: item.order,
+                children: item.children?.map((child: any) => ({
+                  id: child.id,
+                  label: child.label,
+                  icon: child.icon,
+                  href: child.href,
+                  order: child.order || 0,
+                })),
+              })),
+              version: pmbookConfig.version,
+              icon: "BookOpen",
+              status: "active",
+              visibility: "public",
+              slug: pmbookConfig.slug,
+              name: pmbookConfig.appName,
+              description: pmbookConfig.description,
+              id: pmbookConfig.slug,
+              agentId: pmbookConfig.agentId,
+              agentAliasId: pmbookConfig.agentAliasId,
+              identityPoolId: pmbookConfig.identityPoolId,
+            };
+            setAppData(transformedAppData);
+
+            // Set the app in the context
+            if (setCurrentApp) {
+              setCurrentApp(transformedAppData as any);
+            }
+
+            // Set the identity pool
+            if (pmbookConfig.identityPoolId) {
+              apiClient.setAppIdentityPool(pmbookConfig.identityPoolId, pmbookConfig.slug);
+              console.log(
+                `[ThreePanelLayout] Updated identity pool from pmbook config:`,
+                pmbookConfig.identityPoolId
+              );
+            }
+          }
+        });
+      } else {
+        // For other packages, fetch from database
+        fetchAppData(packageSlug);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packageSlug]); // Remove packageSource dependency
+  }, [packageSlug]);
 
   // Update appData when API data changes
   useEffect(() => {
@@ -190,20 +241,12 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
   }, [apiData, setCurrentApp]);
 
   // Handle navigation
-  const handleNavigation = (route: string) => {
+  const handleNavigation = (id: string) => {
     // Use the packageSlug from URL, with fallback to "core"
     const appSlug = packageSlug || "core";
 
-    // Extract the route ID from the route string
-    // Routes can be "/policies/ssp", "/access/users", etc.
-    // We need to convert them to route IDs for the PackagePageRouter
-    let routeId;
-
-    if (route === "/") {
-      routeId = "home";
-    } else {
-      routeId = route.substring(1).replace(/\//g, "-");
-    }
+    // Use the id directly as the route
+    const routeId = id;
 
     // Check if we're already on the correct path, if not navigate to it first
     const currentPath = window.location.pathname;
@@ -352,26 +395,28 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                               .map((child) => {
                                 const childButton = (
                                   <SidebarMenuButton
-                                    onClick={() => handleNavigation(child.href)}
-                                    className="flex items-center justify-center w-full h-10"
+                                    onClick={() => handleNavigation(child.id)}
+                                    className="flex items-center justify-center w-full h-10 p-0"
                                   >
                                     <DynamicIcon
-                                      name={child.icon as any}
-                                      className="h-4 w-4"
+                                      name={child.icon || 'Circle'}
+                                      className="h-4 w-4 shrink-0"
                                     />
                                   </SidebarMenuButton>
                                 );
 
                                 return (
                                   <SidebarMenuItem key={child.id}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        {childButton}
-                                      </TooltipTrigger>
-                                      <TooltipContent side="right">
-                                        {child.label}
-                                      </TooltipContent>
-                                    </Tooltip>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          {childButton}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right">
+                                          {child.label}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </SidebarMenuItem>
                                 );
                               });
@@ -389,7 +434,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                   <SidebarMenuButton className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-2 min-w-0">
                                       <DynamicIcon
-                                        name={menuItem.icon as any}
+                                        name={menuItem.icon || 'Circle'}
                                         className="h-4 w-4 flex-shrink-0"
                                       />
                                       <span className="truncate">
@@ -409,12 +454,12 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                         <SidebarMenuSubItem key={child.id}>
                                           <SidebarMenuSubButton
                                             onClick={() =>
-                                              handleNavigation(child.href)
+                                              handleNavigation(child.id)
                                             }
                                           >
                                             <div className="flex items-center gap-2 min-w-0">
                                               <DynamicIcon
-                                                name={child.icon as any}
+                                                name={child.icon || 'Circle'}
                                                 className="h-4 w-4 flex-shrink-0"
                                               />
                                               <span className="truncate">
@@ -433,17 +478,17 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                           // Simple structure: Direct button for menu items without children
                           const menuButton = (
                             <SidebarMenuButton
-                              onClick={() => handleNavigation(menuItem.href)}
+                              onClick={() => handleNavigation(menuItem.id)}
                               className={cn(
                                 "flex items-center w-full",
                                 state === "collapsed"
-                                  ? "justify-center h-10"
+                                  ? "justify-center h-10 p-0"
                                   : "gap-2"
                               )}
                             >
                               <DynamicIcon
-                                name={menuItem.icon as any}
-                                className="h-4 w-4 flex-shrink-0"
+                                name={menuItem.icon || 'Circle'}
+                                className="h-4 w-4 shrink-0"
                               />
                               {state !== "collapsed" && (
                                 <span className="truncate">
@@ -456,14 +501,16 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                           return (
                             <SidebarMenuItem key={menuItem.id}>
                               {state === "collapsed" ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    {menuButton}
-                                  </TooltipTrigger>
-                                  <TooltipContent side="right">
-                                    {menuItem.label}
-                                  </TooltipContent>
-                                </Tooltip>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      {menuButton}
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                      {menuItem.label}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               ) : (
                                 menuButton
                               )}

@@ -1,12 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import {
-  CaptifyProvider,
-  FavoritesBar,
-  SignInForm,
-  TopNavigation,
-} from "../components";
+import { CaptifyProvider, FavoritesBar, SignInForm, TopNavigation } from ".";
 import { SessionProvider, useSession } from "next-auth/react";
 import { cognitoSignOut } from "../lib/cognito-signout";
 import { ThemeProvider } from "next-themes";
@@ -44,18 +39,18 @@ export function ClientCaptifyProvider({
           enableSystem
           disableTransitionOnChange
           storageKey="captify-theme"
-      >
-        <CaptifyProvider session={session ?? undefined}>
-          {session ? (
-            <div className="h-full w-full bg-background flex flex-col">
-              <TopNavigation session={session} />
-              <FavoritesBar />
-              <main className="flex-1 overflow-hidden">{children}</main>
-            </div>
-          ) : (
-            <SignInForm />
-          )}
-        </CaptifyProvider>
+        >
+          <CaptifyProvider session={session ?? undefined}>
+            {session ? (
+              <div className="h-full w-full bg-background flex flex-col">
+                <TopNavigation session={session} />
+                <FavoritesBar />
+                <main className="flex-1 overflow-hidden">{children}</main>
+              </div>
+            ) : (
+              <SignInForm />
+            )}
+          </CaptifyProvider>
         </ThemeProvider>
       </SessionMonitor>
     </SessionProvider>

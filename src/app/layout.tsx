@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { auth } from "../lib/auth";
-import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
+import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider.tsx";
 import { UserRegistrationForm } from "../components";
 import { AutoSignIn } from "../components/navigation/AutoSignIn";
 import "./globals.css";
@@ -42,23 +42,29 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   let userStatus = null;
   try {
     // We need to import credentials helper for server-side DynamoDB access
-    const { getAwsCredentialsFromIdentityPool } = await import("./api/lib/credentials");
+    const { getAwsCredentialsFromIdentityPool } = await import(
+      "./api/lib/credentials"
+    );
 
     const credentials = await getAwsCredentialsFromIdentityPool(
       session,
       process.env.COGNITO_IDENTITY_POOL_ID
     );
 
-    const userRecord = await services.use("dynamo").execute({
-      service: "dynamo",
-      operation: "get",
-      table: "User",
-      schema: "captify",
-      app: "core",
-      data: {
-        Key: { id: userId }
-      }
-    } as any, credentials, session);
+    const userRecord = await services.use("dynamo").execute(
+      {
+        service: "dynamo",
+        operation: "get",
+        table: "User",
+        schema: "captify",
+        app: "core",
+        data: {
+          Key: { id: userId },
+        },
+      } as any,
+      credentials,
+      session
+    );
 
     if (userRecord.success && userRecord.data) {
       userStatus = userRecord.data.status;
@@ -71,7 +77,8 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   }
 
   // Check if user is authorized via Cognito groups OR has approved status
-  const isAuthorized = userGroups.includes('captify-authorized') || userStatus === 'approved';
+  const isAuthorized =
+    userGroups.includes("captify-authorized") || userStatus === "approved";
   console.log("🔍 User groups:", userGroups);
   console.log("🔍 User status:", userStatus);
   console.log("🔍 User is authorized:", isAuthorized);
@@ -104,9 +111,7 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
 
   // Check 4: User IS in captify-authorized group - show full application
   return (
-    <ClientCaptifyProvider session={session}>
-      {children}
-    </ClientCaptifyProvider>
+    <ClientCaptifyProvider session={session}>{children}</ClientCaptifyProvider>
   );
 }
 
