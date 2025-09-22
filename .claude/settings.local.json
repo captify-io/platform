@@ -96,7 +96,11 @@
       "Bash(aws:*)",
       "Bash(chmod:*)",
       "Bash(bash:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" secret list --org captify-io)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" workflow run deploy.yml --repo captify-io/platform)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 17915181358 --repo captify-io/platform --log)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --repo captify-io/platform --limit 1)"
     ],
     "deny": [],
     "ask": []

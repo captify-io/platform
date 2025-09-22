@@ -179,21 +179,35 @@ export function UserRegistrationForm({
   const handleApprove = async () => {
     try {
       setLoading(true);
-      console.log("Adding user to captify-authorized group...");
+      console.log("Approving user registration...");
 
       const result = await apiClient.run({
-        service: "cognito",
-        operation: "addToGroup",
+        service: "dynamo",
+        operation: "update",
         app: "core",
+        table: "User",
         data: {
-          Username: userId,
-          GroupName: "captify-authorized",
+          Key: {
+            id: userId,
+          },
+          UpdateExpression: "SET #status = :status, #updatedAt = :updatedAt",
+          ExpressionAttributeNames: {
+            "#status": "status",
+            "#updatedAt": "updatedAt",
+          },
+          ExpressionAttributeValues: {
+            ":status": "approved",
+            ":updatedAt": new Date().toISOString(),
+          },
         },
       });
 
       if (result.success) {
-        setRegistrationMessage("✅ User approved! You will be redirected shortly...");
-        // Refresh the page after a short delay to re-check group membership
+        setCurrentStatus("approved");
+        setRegistrationMessage("✅ User approved! Redirecting to platform...");
+        setIsLocked(true);
+
+        // Refresh the page after a short delay to re-check approval status
         setTimeout(() => {
           window.location.reload();
         }, 2000);

@@ -186,10 +186,18 @@ async function handleRequest(request: NextRequest, method: string) {
       let serviceModule;
       try {
         // Conditional import: use local services for core/undefined, external packages for others
+        console.log(`🔍 Loading services for app: "${app}"`);
         if (app === "core" || app === undefined) {
+          console.log("🔍 Using local services import");
           serviceModule = await import("../../../services");
         } else {
-          serviceModule = await import(`@captify-io/${app}/services`);
+          console.log(`🔍 Using external package @captify-io/${app}/services`);
+          // Try to import from the external package
+          try {
+            serviceModule = await import(`@captify-io/${app}/services`);
+          } catch (importError) {
+            throw new Error(`Failed to load @captify-io/${app}/services package. Make sure it's installed.`);
+          }
         }
 
         if (!serviceModule.services) {

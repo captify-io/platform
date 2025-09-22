@@ -2,11 +2,18 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-// Static registry - update this manually when adding new packages
-const captifyApps: Record<string, () => Promise<any>> = {
-  // Add your packages here manually, e.g.:
-  // "pmbook": () => import("@captify-io/pmbook"),
-};
+
+// Dynamic package loader function
+async function loadPackage(slug: string) {
+  // Try to load known packages
+  switch (slug) {
+    case 'pmbook':
+      // Import from the app entry point which has the pageRegistry
+      return await import('@captify-io/pmbook/app');
+    default:
+      throw new Error(`Unknown package: ${slug}`);
+  }
+}
 
 type LoaderResult<T = any> = { default?: T } & Record<string, any>;
 type PageLoader = () => Promise<LoaderResult<React.ComponentType>>;
@@ -75,16 +82,16 @@ export function PackagePageRouter({
           );
         }
 
-        // Get loader from generated registry
-        const pkgLoader = captifyApps[slug];
-        if (!pkgLoader) {
+        // Load the package using the safe loader
+        let mod: CaptifyAppPackage;
+        try {
+          mod = (await loadPackage(slug)) as CaptifyAppPackage;
+        } catch (importError) {
+          console.error(`Failed to import @captify-io/${slug}:`, importError);
           throw new Error(
-            `No captify app found for slug "${slug}". Is @captify-io/${slug} installed and exposing "./app"?`
+            `Package "${slug}" not found or failed to load. Available packages: pmbook`
           );
         }
-
-        // Load the package app entry
-        const mod = (await pkgLoader()) as CaptifyAppPackage;
 
         const { pageRegistry } = mod || {};
         if (!pageRegistry || typeof pageRegistry !== "object") {
@@ -93,10 +100,7 @@ export function PackagePageRouter({
           );
         }
 
-        const loader =
-          pageRegistry[pageKey] ??
-          pageRegistry["home"] ??
-          pageRegistry["dashboard"];
+        const loader = pageRegistry[pageKey] ?? pageRegistry["home"];
 
         if (!loader) {
           const available = Object.keys(pageRegistry);

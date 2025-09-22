@@ -159,7 +159,7 @@ const authConfig: NextAuthConfig = {
       }
       return false;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile }: { token: any; account: any; profile?: any }) {
       // Initial sign in
       if (account && profile) {
         // Debug logging only in development
@@ -175,7 +175,7 @@ const authConfig: NextAuthConfig = {
           expiresAt: account.expires_at,
           username: profile.preferred_username || profile.email,
           groups: (profile as any)["cognito:groups"] || [],
-        };
+        } as any;
       }
 
       // Return previous token if the access token has not expired yet
@@ -299,7 +299,7 @@ const authConfig: NextAuthConfig = {
       // Always redirect to home after sign in
       return baseUrl;
     },
-    async signOut({ url, baseUrl }) {
+    async signOut({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Handle Cognito logout URL if needed
       if (process.env.COGNITO_DOMAIN) {
         const cognitoLogoutUrl = `${process.env.COGNITO_DOMAIN}/logout?client_id=${process.env.COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent(baseUrl)}`;

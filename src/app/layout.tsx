@@ -5,6 +5,9 @@ import { UserRegistrationForm } from "../components";
 import { AutoSignIn } from "../components/navigation/AutoSignIn";
 import "./globals.css";
 
+// Import DynamoDB to check user status
+import { services } from "../services";
+
 interface ServerCaptifyProviderProps {
   children: ReactNode;
 }
@@ -35,12 +38,44 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   const userName = session?.user?.name;
   const userGroups = (session as any)?.groups || [];
 
-  // Check if user is in captify-authorized group
-  const isAuthorized = userGroups.includes('captify-authorized');
+  // Check user's approval status in DynamoDB
+  let userStatus = null;
+  try {
+    // We need to import credentials helper for server-side DynamoDB access
+    const { getAwsCredentialsFromIdentityPool } = await import("./api/lib/credentials");
+
+    const credentials = await getAwsCredentialsFromIdentityPool(
+      session,
+      process.env.COGNITO_IDENTITY_POOL_ID
+    );
+
+    const userRecord = await services.use("dynamo").execute({
+      operation: "get",
+      table: "User",
+      schema: "captify",
+      app: "core",
+      data: {
+        Key: { id: userId }
+      }
+    }, credentials, session);
+
+    if (userRecord.success && userRecord.data) {
+      userStatus = userRecord.data.status;
+      console.log("🔍 User status from DynamoDB:", userStatus);
+    } else {
+      console.log("🔍 No user record found or failed to fetch:", userRecord);
+    }
+  } catch (error) {
+    console.log("🔍 Could not fetch user status:", error);
+  }
+
+  // Check if user is authorized via Cognito groups OR has approved status
+  const isAuthorized = userGroups.includes('captify-authorized') || userStatus === 'approved';
   console.log("🔍 User groups:", userGroups);
+  console.log("🔍 User status:", userStatus);
   console.log("🔍 User is authorized:", isAuthorized);
 
-  // Check 3: User is NOT in captify-authorized group - show registration form
+  // Check 3: User is NOT authorized - show registration form
   if (!isAuthorized) {
     return (
       <div className="h-screen bg-background overflow-auto">
