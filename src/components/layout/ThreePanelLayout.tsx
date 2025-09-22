@@ -399,7 +399,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                     className="flex items-center justify-center w-full h-10 p-0"
                                   >
                                     <DynamicIcon
-                                      name={child.icon || 'Circle'}
+                                      name={(child.icon || 'Circle') as any}
                                       className="h-4 w-4 shrink-0"
                                     />
                                   </SidebarMenuButton>
@@ -434,7 +434,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                   <SidebarMenuButton className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-2 min-w-0">
                                       <DynamicIcon
-                                        name={menuItem.icon || 'Circle'}
+                                        name={(menuItem.icon || 'Circle') as any}
                                         className="h-4 w-4 flex-shrink-0"
                                       />
                                       <span className="truncate">
@@ -459,7 +459,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                                           >
                                             <div className="flex items-center gap-2 min-w-0">
                                               <DynamicIcon
-                                                name={child.icon || 'Circle'}
+                                                name={(child.icon || 'Circle') as any}
                                                 className="h-4 w-4 flex-shrink-0"
                                               />
                                               <span className="truncate">
@@ -487,7 +487,7 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
                               )}
                             >
                               <DynamicIcon
-                                name={menuItem.icon || 'Circle'}
+                                name={(menuItem.icon || 'Circle') as any}
                                 className="h-4 w-4 shrink-0"
                               />
                               {state !== "collapsed" && (

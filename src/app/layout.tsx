@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { auth } from "../lib/auth";
-import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider.tsx";
+import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
 import { UserRegistrationForm } from "../components";
 import { AutoSignIn } from "../components/navigation/AutoSignIn";
 import "./globals.css";
