@@ -1,13 +1,13 @@
-import { ComponentProps, forwardRef, lazy, Suspense } from "react";
+import React, { forwardRef, lazy, Suspense } from "react";
 import { LucideProps } from "lucide-react";
 
-// Create our own DynamicIcon implementation that doesn't rely on external exports
 export interface DynamicIconProps extends LucideProps {
   name: string;
   fallback?: React.ComponentType<LucideProps>;
 }
 
-export const DynamicIcon = forwardRef<SVGSVGElement, DynamicIconProps>(
+// Create a component that maintains proper JSX compatibility
+const DynamicIconComponent = forwardRef<SVGSVGElement, DynamicIconProps>(
   ({ name, fallback, ...props }, ref) => {
     const LucideIcon = lazy(() =>
       import("lucide-react").then((module) => ({
@@ -25,4 +25,7 @@ export const DynamicIcon = forwardRef<SVGSVGElement, DynamicIconProps>(
   }
 );
 
-DynamicIcon.displayName = "DynamicIcon";
+DynamicIconComponent.displayName = "DynamicIcon";
+
+// Export with proper JSX element type
+export const DynamicIcon = DynamicIconComponent as React.FC<DynamicIconProps & React.RefAttributes<SVGSVGElement>>;
