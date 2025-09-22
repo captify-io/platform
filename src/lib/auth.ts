@@ -299,17 +299,6 @@ const authConfig: NextAuthConfig = {
       // Always redirect to home after sign in
       return baseUrl;
     },
-    async signOut({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Handle Cognito logout URL if needed
-      if (process.env.COGNITO_DOMAIN) {
-        const cognitoLogoutUrl = `${process.env.COGNITO_DOMAIN}/logout?client_id=${process.env.COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent(baseUrl)}`;
-        if (process.env.NODE_ENV === "development") {
-          console.log("Cognito logout URL:", cognitoLogoutUrl);
-        }
-        return cognitoLogoutUrl;
-      }
-      return baseUrl;
-    },
   },
   session: {
     strategy: "jwt",

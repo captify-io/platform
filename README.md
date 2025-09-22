@@ -13,8 +13,10 @@ npm install @captify-io/platform
 This package requires the following peer dependencies to be installed in your project:
 
 ```bash
-npm install clsx tailwind-merge lucide-react
+npm install lucide-react
 ```
+
+**Note**: `lucide-react` is required for the `DynamicIcon` component. If you're getting module resolution errors for `lucide-react/dynamic`, make sure `lucide-react` is installed in your consuming application.
 
 ## Usage
 

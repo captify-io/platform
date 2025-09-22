@@ -2,14 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 
 // Dynamic package loader function
 async function loadPackage(slug: string) {
   // Try to load known packages
   switch (slug) {
     case 'pmbook':
-      // Import from the app entry point which has the pageRegistry
-      return await import('@captify-io/pmbook/app');
+      // Import from the main package entry point which re-exports pageRegistry
+      return await import('@captify-io/pmbook');
     default:
       throw new Error(`Unknown package: ${slug}`);
   }

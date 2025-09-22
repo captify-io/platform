@@ -50,6 +50,7 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
     );
 
     const userRecord = await services.use("dynamo").execute({
+      service: "dynamo",
       operation: "get",
       table: "User",
       schema: "captify",
@@ -57,7 +58,7 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
       data: {
         Key: { id: userId }
       }
-    }, credentials, session);
+    } as any, credentials, session);
 
     if (userRecord.success && userRecord.data) {
       userStatus = userRecord.data.status;
