@@ -110,6 +110,32 @@ async function refreshAccessToken(refreshToken: string) {
   }
 }
 
+// Validate required environment variables
+const requiredEnvVars = {
+  COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
+  COGNITO_CLIENT_SECRET: process.env.COGNITO_CLIENT_SECRET,
+  COGNITO_ISSUER: process.env.COGNITO_ISSUER,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+};
+
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([key, value]) => !value)
+  .map(([key]) => key);
+
+if (missingVars.length > 0) {
+  console.error("❌ Missing required environment variables:", missingVars);
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
+
+console.log("✅ NextAuth Configuration:", {
+  cognitoIssuer: process.env.COGNITO_ISSUER,
+  nextAuthUrl: process.env.NEXTAUTH_URL,
+  callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
+  clientId: process.env.COGNITO_CLIENT_ID ? `${process.env.COGNITO_CLIENT_ID.substring(0, 8)}...` : 'missing',
+  hasClientSecret: !!process.env.COGNITO_CLIENT_SECRET,
+});
+
 const authConfig: NextAuthConfig = {
   debug: process.env.NEXTAUTH_DEBUG === "true",
   logger: {
@@ -153,10 +179,21 @@ const authConfig: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log("SignIn callback triggered:", {
+        provider: account?.provider,
+        userId: user?.id,
+        userEmail: user?.email,
+        hasAccount: !!account,
+        hasProfile: !!profile
+      });
+
       // Allow sign in for Cognito provider
       if (account?.provider === "cognito") {
+        console.log("Cognito sign in successful for:", user?.email);
         return true;
       }
+
+      console.warn("Sign in rejected - unknown provider:", account?.provider);
       return false;
     },
     async jwt({ token, account, profile }: { token: any; account: any; profile?: any }) {
