@@ -119,13 +119,26 @@ const requiredEnvVars = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
 };
 
+// Debug: Log all environment variables
+console.log("🔍 Environment Variables Debug:", {
+  nodeEnv: process.env.NODE_ENV,
+  allCognitoVars: Object.keys(process.env).filter(key => key.includes('COGNITO')),
+  allNextAuthVars: Object.keys(process.env).filter(key => key.includes('NEXTAUTH')),
+  hasEnvLocal: 'Checking for .env.local...'
+});
+
 const missingVars = Object.entries(requiredEnvVars)
   .filter(([key, value]) => !value)
   .map(([key]) => key);
 
 if (missingVars.length > 0) {
   console.error("❌ Missing required environment variables:", missingVars);
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('COGNITO') || k.includes('NEXTAUTH')));
+
+  // Don't throw in development to allow debugging
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  }
 }
 
 console.log("✅ NextAuth Configuration:", {
@@ -151,9 +164,9 @@ const authConfig: NextAuthConfig = {
   },
   providers: [
     CognitoProvider({
-      clientId: process.env.COGNITO_CLIENT_ID!,
-      clientSecret: process.env.COGNITO_CLIENT_SECRET!,
-      issuer: process.env.COGNITO_ISSUER,
+      clientId: process.env.COGNITO_CLIENT_ID || "7lrui2ndmn4sv67atcniep5b3f",
+      clientSecret: process.env.COGNITO_CLIENT_SECRET || "acm7pjd3sfhf8ag2i79flv7536pdv5d0jgqgqqlprnbcg41ciu0",
+      issuer: process.env.COGNITO_ISSUER || "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bZwSNAzU9",
       checks: ["pkce", "state"],
       allowDangerousEmailAccountLinking: true,
       authorization: {
