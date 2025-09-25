@@ -23,7 +23,7 @@ const authConfig: NextAuthConfig = {
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.COGNITO_ISSUER!,
-      wellKnown: process.env.COGNITO_WELLKNOWN!,
+      wellKnown: `${process.env.COGNITO_ISSUER}/.well-known/openid-configuration`,
       checks: ["nonce", "state", "pkce"],
       client: {
         id_token_signed_response_alg: "RS256",
