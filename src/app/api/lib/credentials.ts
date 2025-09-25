@@ -83,7 +83,7 @@ export async function getAwsCredentialsFromIdentityPool(
   });
 
   if (!idToken) {
-    console.error("❌ No ID token in session:", session);
+    // Don't log the full session object during build/SSR
     throw new Error("No identity token found in session. Please log in again.");
   }
 

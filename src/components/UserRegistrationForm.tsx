@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Loader2, UserPlus, AlertCircle, Building, LogOut } from "lucide-react";
-import { cognitoSignOut } from "../lib/cognito-signout";
+import { signOut } from "next-auth/react";
 
 interface UserRegistrationFormProps {
   onRegistrationComplete?: () => void;
@@ -394,7 +394,7 @@ export function UserRegistrationForm({
     return (
       <Card className="w-full max-w-2xl mx-auto relative">
         <Button
-          onClick={() => cognitoSignOut()}
+          onClick={() => signOut({ redirect: false }).then(() => window.location.href = "/signout")}
           size="sm"
           className="absolute top-4 right-4 bg-black text-white hover:bg-gray-800"
         >
@@ -437,7 +437,7 @@ export function UserRegistrationForm({
           </Button>
         )}
         <Button
-          onClick={() => cognitoSignOut()}
+          onClick={() => signOut({ redirect: false }).then(() => window.location.href = "/signout")}
           size="sm"
           className="bg-black text-white hover:bg-gray-800"
         >

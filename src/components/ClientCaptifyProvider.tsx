@@ -3,7 +3,7 @@
 import { ReactNode, useEffect } from "react";
 import { CaptifyProvider, FavoritesBar, SignInForm, TopNavigation } from ".";
 import { SessionProvider, useSession } from "next-auth/react";
-import { cognitoSignOut } from "../lib/cognito-signout";
+import { signOut } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import type { Session } from "next-auth";
 
@@ -19,7 +19,9 @@ function SessionMonitor({ children }: { children: ReactNode }) {
     // Check for refresh errors in the session
     if (session && (session as any).error === "RefreshAccessTokenError") {
       console.log("🔄 Client detected token refresh error, signing out...");
-      cognitoSignOut();
+      signOut({ redirect: false }).then(() => {
+        window.location.href = "/signout";
+      });
     }
   }, [session]);
 

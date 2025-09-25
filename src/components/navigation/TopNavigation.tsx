@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { lazy, Suspense, useRef, useEffect, useState } from "react";
-import { cognitoSignOut } from "../../lib/cognito-signout";
+import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { useSafeRef } from "../../lib/react-compat";
 import { Button } from "../ui/button";
@@ -105,19 +105,21 @@ export function TopNavigation({
 
   // Handle sign out
   const handleSignOut = async () => {
-    try {
-      // Use Cognito sign out to properly clear both Cognito and NextAuth sessions
-      await cognitoSignOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
+    console.log("🚪 Signing out via NextAuth");
 
-      // Fallback: force redirect and clear storage
-      if (typeof window !== "undefined") {
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        window.location.href = "/";
-      }
+    // Clear client-side storage
+    if (typeof window !== "undefined") {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
     }
+
+    // Use NextAuth signOut with proper redirect
+    await signOut({
+      redirect: false // Don't auto-redirect, we'll handle it
+    });
+
+    // After signout completes, redirect to signout page
+    window.location.href = "/signout";
   };
 
   // Handle notification actions

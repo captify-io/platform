@@ -2,34 +2,60 @@ import { ReactNode } from "react";
 import { auth } from "../lib/auth";
 import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
 import { UserRegistrationForm } from "../components";
-import { AutoSignIn } from "../components/navigation/AutoSignIn";
 import "./globals.css";
 
-// Import DynamoDB to check user status
-import { services } from "../services";
 
 interface ServerCaptifyProviderProps {
   children: ReactNode;
 }
 
 async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
+  // Check if this is the signout page - allow it without authentication
+  const { headers } = await import("next/headers");
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+
+  // Allow public pages without authentication
+  if (pathname === "/signout") {
+    return <>{children}</>;
+  }
+
   let session = null;
 
   try {
-    session = await auth();
+    // Import getServerSession to get full session with tokens
+    const { getServerSession } = await import("../lib/auth");
+    session = await getServerSession();
   } catch (error) {
     console.log("Error getting server session:", error);
   }
 
-  // Check 1: Not authenticated - show auto signin component
+  // Check 1: Not authenticated
   if (!session) {
-    return <AutoSignIn />;
+    // If on signout page, allow access without authentication
+    if (pathname === "/signout") {
+      return <>{children}</>;
+    }
+    // Otherwise, redirect to signin
+    return (
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `window.location.href = "/api/auth/signin";`,
+        }}
+      />
+    );
   }
 
-  // Check 2: Token refresh error - show auto signin component to re-authenticate
+  // Check 2: Token refresh error - redirect to signin
   if ((session as any).error === "RefreshAccessTokenError") {
     console.log("🔄 Token refresh error detected, redirecting to sign in");
-    return <AutoSignIn />;
+    return (
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `window.location.href = "/api/auth/signin";`,
+        }}
+      />
+    );
   }
 
   // Check 2: User is authenticated - check core identity pool access
@@ -38,52 +64,22 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   const userName = session?.user?.name;
   const userGroups = (session as any)?.groups || [];
 
-  // Check user's approval status in DynamoDB
-  let userStatus = null;
-  try {
-    // We need to import credentials helper for server-side DynamoDB access
-    const { getAwsCredentialsFromIdentityPool } = await import(
-      "./api/lib/credentials"
-    );
-
-    const credentials = await getAwsCredentialsFromIdentityPool(
-      session,
-      process.env.COGNITO_IDENTITY_POOL_ID
-    );
-
-    const userRecord = await services.use("dynamo").execute(
-      {
-        service: "dynamo",
-        operation: "get",
-        table: "User",
-        schema: "captify",
-        app: "core",
-        data: {
-          Key: { id: userId },
-        },
-      } as any,
-      credentials,
-      session
-    );
-
-    if (userRecord.success && userRecord.data) {
-      userStatus = userRecord.data.status;
-      console.log("🔍 User status from DynamoDB:", userStatus);
-    } else {
-      console.log("🔍 No user record found or failed to fetch:", userRecord);
-    }
-  } catch (error) {
-    console.log("🔍 Could not fetch user status:", error);
-  }
+  // Get user status from session (set during authentication)
+  const userStatus = (session as any)?.captifyStatus;
 
   // Check if user is authorized via Cognito groups OR has approved status
   const isAuthorized =
-    userGroups.includes("captify-authorized") || userStatus === "approved";
+    userGroups.some(group => group.includes("CACProvider") || group.includes("captify-authorized")) || userStatus === "approved";
+
+  // Check if user has already registered (has any status, even if pending)
+  const hasRegistered = userStatus !== null && userStatus !== undefined;
+
   console.log("🔍 User groups:", userGroups);
   console.log("🔍 User status:", userStatus);
+  console.log("🔍 User has registered:", hasRegistered);
   console.log("🔍 User is authorized:", isAuthorized);
 
-  // Check 3: User is NOT authorized - show registration form
+  // Check 3: User is NOT authorized - show registration form (whether they've registered before or not)
   if (!isAuthorized) {
     return (
       <div className="h-screen bg-background overflow-auto">
@@ -109,7 +105,7 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
     );
   }
 
-  // Check 4: User IS in captify-authorized group - show full application
+  // Check 4: User IS authorized - show full application
   return (
     <ClientCaptifyProvider session={session}>{children}</ClientCaptifyProvider>
   );

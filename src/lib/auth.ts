@@ -2,114 +2,6 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import CognitoProvider from "next-auth/providers/cognito";
 
-/**
- * Refresh the access token using the refresh token
- * @param refreshToken - The refresh token from Cognito
- * @returns The new tokens
- */
-async function refreshAccessToken(refreshToken: string) {
-  try {
-    // Check if we have a refresh token
-    if (!refreshToken) {
-      // Log error without using console.error on server
-      if (typeof window !== "undefined") {
-        console.error("No refresh token available");
-      }
-      throw new Error("No refresh token available");
-    }
-
-    // Check if environment variables are set
-    if (
-      !process.env.COGNITO_ISSUER ||
-      !process.env.COGNITO_CLIENT_ID ||
-      !process.env.COGNITO_CLIENT_SECRET
-    ) {
-      // Server-side logging allowed here as this is configuration error
-      // But still check to avoid client-side errors
-      if (typeof window !== "undefined") {
-        console.error("Missing Cognito environment variables");
-      }
-      throw new Error("Missing Cognito configuration");
-    }
-
-    const url = `${process.env.COGNITO_ISSUER}/oauth2/token`;
-
-    // Debug logging only in development
-    if (process.env.NODE_ENV === "development") {
-      console.log("🔄 Attempting to refresh token at:", url);
-    }
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-        client_id: process.env.COGNITO_CLIENT_ID!,
-        client_secret: process.env.COGNITO_CLIENT_SECRET!,
-      }),
-    });
-
-    const responseText = await response.text();
-
-    // Try to parse as JSON
-    let refreshedTokens;
-    try {
-      refreshedTokens = JSON.parse(responseText);
-    } catch (parseError) {
-      // Log error without using console.error on server
-      if (typeof window !== "undefined") {
-        console.error("Failed to parse refresh response:", responseText);
-      }
-      throw new Error(`Invalid response from token endpoint: ${responseText}`);
-    }
-
-    if (!response.ok) {
-      // Log error without using console.error on server
-      if (typeof window !== "undefined") {
-        console.error("Token refresh failed:", {
-          status: response.status,
-          statusText: response.statusText,
-          error: refreshedTokens.error,
-          error_description: refreshedTokens.error_description,
-        });
-      }
-      throw new Error(
-        refreshedTokens.error_description ||
-          refreshedTokens.error ||
-          "Token refresh failed"
-      );
-    }
-
-    // Validate the response has required fields
-    if (!refreshedTokens.access_token) {
-      // Log error without using console.error on server
-      if (typeof window !== "undefined") {
-        console.error("No access token in refresh response:", refreshedTokens);
-      }
-      throw new Error("Invalid token refresh response - missing access_token");
-    }
-
-    return {
-      access_token: refreshedTokens.access_token,
-      id_token: refreshedTokens.id_token,
-      expires_in: refreshedTokens.expires_in ?? 3600, // Default to 1 hour
-      refresh_token: refreshedTokens.refresh_token,
-    };
-  } catch (error) {
-    // Log error without using console.error on server
-    if (typeof window !== "undefined") {
-      console.error("Error refreshing access token:", {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-    }
-    throw error;
-  }
-}
-
 // Validate required environment variables
 const requiredEnvVars = {
   COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
@@ -119,63 +11,18 @@ const requiredEnvVars = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
 };
 
-// Debug: Log all environment variables
-console.log("🔍 Environment Variables Debug:", {
-  nodeEnv: process.env.NODE_ENV,
-  allCognitoVars: Object.keys(process.env).filter(key => key.includes('COGNITO')),
-  allNextAuthVars: Object.keys(process.env).filter(key => key.includes('NEXTAUTH')),
-  hasEnvLocal: 'Checking for .env.local...'
-});
-
 const missingVars = Object.entries(requiredEnvVars)
   .filter(([key, value]) => !value)
   .map(([key]) => key);
 
-if (missingVars.length > 0) {
-  console.error("❌ Missing required environment variables:", missingVars);
-  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('COGNITO') || k.includes('NEXTAUTH')));
-
-  // Don't throw in development to allow debugging
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-  }
-}
-
-console.log("✅ NextAuth Configuration:", {
-  cognitoIssuer: process.env.COGNITO_ISSUER,
-  nextAuthUrl: process.env.NEXTAUTH_URL,
-  callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/cognito`,
-  clientId: process.env.COGNITO_CLIENT_ID ? `${process.env.COGNITO_CLIENT_ID.substring(0, 8)}...` : 'missing',
-  hasClientSecret: !!process.env.COGNITO_CLIENT_SECRET,
-});
-
 const authConfig: NextAuthConfig = {
   debug: process.env.NEXTAUTH_DEBUG === "true",
-  logger: {
-    error(error: Error, ...metadata: any[]) {
-      console.error(`[NextAuth Error]`, error, ...metadata);
-    },
-    warn(code) {
-      console.warn(`[NextAuth Warning] ${code}`);
-    },
-    debug(code, metadata) {
-      console.log(`[NextAuth Debug] ${code}:`, metadata);
-    },
-  },
   providers: [
     CognitoProvider({
-      clientId: process.env.COGNITO_CLIENT_ID || "7lrui2ndmn4sv67atcniep5b3f",
-      clientSecret: process.env.COGNITO_CLIENT_SECRET || "acm7pjd3sfhf8ag2i79flv7536pdv5d0jgqgqqlprnbcg41ciu0",
-      issuer: process.env.COGNITO_ISSUER || "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_bZwSNAzU9",
-      checks: ["pkce", "state"],
-      allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          scope: "openid email profile",
-          response_type: "code",
-          response_mode: "query",
-        },
-      },
+      clientId: process.env.COGNITO_CLIENT_ID!,
+      clientSecret: process.env.COGNITO_CLIENT_SECRET!,
+      issuer: process.env.COGNITO_ISSUER!,
+      checks: ["state"],
       profile(profile) {
         return {
           id: profile.sub,
@@ -188,208 +35,169 @@ const authConfig: NextAuthConfig = {
   ],
   pages: {
     error: "/auth/error",
-    signOut: "/",
+    signOut: "/signout",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log("SignIn callback triggered:", {
-        provider: account?.provider,
-        userId: user?.id,
-        userEmail: user?.email,
-        hasAccount: !!account,
-        hasProfile: !!profile
-      });
-
       // Allow sign in for Cognito provider
       if (account?.provider === "cognito") {
-        console.log("Cognito sign in successful for:", user?.email);
         return true;
       }
-
-      console.warn("Sign in rejected - unknown provider:", account?.provider);
+      console.error("[Cognito Callback] Unknown provider:", account?.provider);
       return false;
     },
-    async jwt({ token, account, profile }: { token: any; account: any; profile?: any }) {
-      // Initial sign in
+    async jwt({ token, account, profile }) {
+      // Initial sign in - store tokens in JWT
       if (account && profile) {
-        // Debug logging only in development
-        if (process.env.NODE_ENV === "development") {
-          console.log("JWT Callback - Initial sign in", { account, profile });
+        // Validate that we have the required tokens
+        if (!account.access_token || !account.id_token) {
+          console.error(
+            "[Cognito Callback] Missing required tokens from account:",
+            {
+              hasAccessToken: !!account.access_token,
+              hasIdToken: !!account.id_token,
+              hasRefreshToken: !!account.refresh_token,
+            }
+          );
+          throw new Error("Missing required Cognito tokens");
         }
+
+        // Store tokens in JWT token (NextAuth will handle encryption)
+        const groups = (profile as any)["cognito:groups"] || [];
+
         return {
           ...token,
-          sub: profile.sub,
           accessToken: account.access_token,
           idToken: account.id_token,
           refreshToken: account.refresh_token,
           expiresAt: account.expires_at,
           username: profile.preferred_username || profile.email,
-          groups: (profile as any)["cognito:groups"] || [],
-        } as any;
+          groups: groups,
+          captifyStatus: groups.some(
+            (group: string | string[]) =>
+              group.includes("CACProvider") ||
+              group.includes("captify-authorized")
+          )
+            ? "approved"
+            : "pending",
+        };
       }
 
-      // Return previous token if the access token has not expired yet
-      // Check 5 minutes before expiry to ensure smooth refresh
-      const refreshBuffer = parseInt(process.env.COGNITO_TOKEN_REFRESH_BUFFER || "300") * 1000; // Default 5 minutes
-      const currentTime = Date.now();
-      const expiryTime = (token.expiresAt as number) * 1000;
-      const timeUntilExpiry = expiryTime - currentTime;
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🕐 Token expiry check:", {
-          currentTime: new Date(currentTime).toISOString(),
-          expiryTime: new Date(expiryTime).toISOString(),
-          timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + " seconds",
-          refreshBuffer: Math.round(refreshBuffer / 1000) + " seconds",
-          needsRefresh: timeUntilExpiry < refreshBuffer
-        });
-      }
-
-      if (timeUntilExpiry > refreshBuffer) {
+      // Return existing token if not expired
+      if (token.expiresAt && Date.now() < (token.expiresAt as number) * 1000) {
         return token;
       }
 
-      // Access token has expired or is about to expire, refresh it
-      // Debug logging only in development
-      if (process.env.NODE_ENV === "development") {
-        console.log("Token expired or expiring soon, refreshing...");
+      // Token has expired, try to refresh it
+      if (token.refreshToken) {
+        try {
+          const refreshedTokens = await refreshAccessToken(
+            token.refreshToken as string
+          );
+
+          return {
+            ...token,
+            accessToken: refreshedTokens.access_token,
+            idToken: refreshedTokens.id_token,
+            refreshToken: refreshedTokens.refresh_token || token.refreshToken,
+            expiresAt:
+              Math.floor(Date.now() / 1000) +
+              (refreshedTokens.expires_in || 3600),
+          };
+        } catch (error) {
+          console.error("Error refreshing access token:", error);
+          // Return token with error flag
+          return {
+            ...token,
+            error: "RefreshAccessTokenError",
+          };
+        }
       }
 
-      // Check if we have a refresh token
-      if (!token.refreshToken) {
-        // Log error without using console.error on server
-        if (typeof window !== "undefined") {
-          console.error("No refresh token available in JWT token");
-        }
-        return { ...token, error: "RefreshAccessTokenError" };
-      }
-
-      // Refresh the access token using the refresh token
-      try {
-        const refreshedTokens = await refreshAccessToken(
-          token.refreshToken as string
-        );
-
-        // Debug logging only in development
-        if (process.env.NODE_ENV === "development") {
-          console.log("Token refreshed successfully");
-        }
-
-        return {
-          ...token,
-          accessToken: refreshedTokens.access_token,
-          idToken: refreshedTokens.id_token,
-          refreshToken: refreshedTokens.refresh_token || token.refreshToken, // Use new refresh token if provided
-          expiresAt: Math.floor(Date.now() / 1000) + refreshedTokens.expires_in,
-        };
-      } catch (error) {
-        // Log error without using console.error on server
-        if (typeof window !== "undefined") {
-          console.error("Failed to refresh access token:", {
-            error: error instanceof Error ? error.message : error,
-            hasRefreshToken: !!token.refreshToken,
-            tokenExpiry: token.expiresAt
-              ? new Date((token.expiresAt as number) * 1000).toISOString()
-              : "unknown",
-          });
-        }
-        // Return the old token and let the session expire
-        // The user will be redirected to sign in
-        return { ...token, error: "RefreshAccessTokenError" };
-      }
+      return token;
     },
     async session({ session, token }) {
-      // Send properties to the client
-      // Debug logging only in development
-      if (process.env.NODE_ENV === "development") {
-        console.log("Session Callback", { token });
-      }
-
       // Check for token refresh error
-      if ((token as any).error === "RefreshAccessTokenError") {
-        // Log error without using console.error on server
-        if (typeof window !== "undefined") {
-          console.error(
-            "Session has a refresh error, user needs to re-authenticate"
-          );
-        }
-        // Return a session with an error flag
+      if (token.error === "RefreshAccessTokenError") {
         return {
           ...session,
           error: "RefreshAccessTokenError",
         };
       }
 
-      session.user = {
-        ...session.user,
-        id: token.sub!,
+      // Add custom properties to session
+      return {
+        ...session,
+        accessToken: token.accessToken,
+        idToken: token.idToken,
+        username: token.username,
+        groups: token.groups,
+        captifyStatus: token.captifyStatus,
+        user: {
+          ...session.user,
+          id: token.sub!,
+        },
       };
-      (session as any).username = token.username;
-      (session as any).accessToken = token.accessToken;
-      (session as any).idToken = token.idToken;
-      (session as any).expiresAt = token.expiresAt;
-      (session as any).groups = token.groups || [];
-
-      // Set captifyStatus based on groups
-      const groups = (token.groups as string[]) || [];
-      if (groups.includes("Admins") || groups.includes("Administrators")) {
-        (session as any).captifyStatus = "approved";
-      } else {
-        (session as any).captifyStatus = "pending";
-      }
-
-      return session;
     },
     async redirect({ url, baseUrl }) {
       // Handle redirect after sign in
-      // Debug logging only in development
-      if (process.env.NODE_ENV === "development") {
-        console.log("Redirect callback", { url, baseUrl });
-      }
-      // Always redirect to home after sign in
       return baseUrl;
-    },
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 60 * 60, // 1 hour
-  },
-  cookies: {
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60, // 1 hour - matches session maxAge
-      },
-    },
-    pkceCodeVerifier: {
-      name: "next-auth.pkce.code_verifier",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 900, // 15 minutes
-      },
-    },
-    state: {
-      name: "next-auth.state",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 900, // 15 minutes
-      },
     },
   },
 };
 
-const authResult = NextAuth(authConfig);
-export const handlers = authResult.handlers;
-export const auth = authResult.auth;
-export const signIn: typeof authResult.signIn = authResult.signIn;
-export const signOut = authResult.signOut;
+/**
+ * Refresh the access token using the refresh token
+ */
+async function refreshAccessToken(refreshToken: string) {
+  try {
+    // Get token endpoint from well-known configuration
+    const wellKnownResponse = await fetch(
+      `${process.env.COGNITO_ISSUER}/.well-known/openid-configuration`
+    );
+    const wellKnown = await wellKnownResponse.json();
+    const tokenEndpoint = wellKnown.token_endpoint;
+
+    const response = await fetch(tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(
+          `${process.env.COGNITO_CLIENT_ID}:${process.env.COGNITO_CLIENT_SECRET}`
+        ).toString("base64")}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: process.env.COGNITO_CLIENT_ID!,
+      }),
+    });
+
+    const refreshedTokens = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        refreshedTokens.error_description ||
+          refreshedTokens.error ||
+          "Token refresh failed"
+      );
+    }
+
+    // Validate the response has required fields
+    if (!refreshedTokens.access_token) {
+      throw new Error("Invalid token refresh response - missing access_token");
+    }
+
+    return {
+      access_token: refreshedTokens.access_token,
+      id_token: refreshedTokens.id_token,
+      expires_in: refreshedTokens.expires_in ?? 3600, // Default to 1 hour
+      refresh_token: refreshedTokens.refresh_token,
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+export const getServerSession = auth;

@@ -90,7 +90,7 @@ async function handleRequest(request: NextRequest, method: string) {
     }
 
     try {
-      // Get session from NextAuth
+      // Get minimal session from NextAuth
       const session = await auth();
       if (!session?.user) {
         return new Response(
@@ -116,14 +116,13 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-
-      // Check if session has required tokens (for other services)
+      // Tokens are available directly in session
       const idToken = (session as any).idToken;
       console.log("🔍 API Route - Session check:", {
         hasIdToken: !!idToken,
         hasUser: !!session?.user,
         userId: session?.user?.id,
-        sessionKeys: Object.keys(session || {})
+        hasTokens: !!((session as any).accessToken && (session as any).idToken)
       });
 
       if (!idToken) {
@@ -131,8 +130,8 @@ async function handleRequest(request: NextRequest, method: string) {
           JSON.stringify({
             error: "No ID token found in session. Please log in again.",
             debug: {
-              sessionKeys: Object.keys(session || {}),
-              hasUser: !!session?.user
+              hasUser: !!session?.user,
+              hasTokens: !!((session as any).accessToken && (session as any).idToken)
             }
           }),
           {
@@ -249,18 +248,18 @@ async function handleRequest(request: NextRequest, method: string) {
       // Create a session object for the service with all auth fields
       const apiSession = {
         user: {
-          id: (session.user as any)?.id || (session as any)?.user?.id,
-          userId: (session.user as any)?.id || (session as any)?.user?.id,
+          id: session.user?.id,
+          userId: session.user?.id,
           email: session.user?.email,
           name: session.user?.name,
-          groups: (session.user as any)?.groups || (session as any)?.groups,
-          isAdmin: (session.user as any)?.isAdmin || (session as any)?.isAdmin,
-          tenantId: (session.user as any)?.tenantId || (session as any)?.tenantId,
+          groups: (session as any).groups,
+          isAdmin: (session as any).groups?.includes('Admins'),
+          tenantId: (session.user as any)?.tenantId,
         },
-        idToken: idToken,
-        accessToken: (session as any)?.accessToken,
-        groups: (session as any)?.groups,
-        isAdmin: (session as any)?.isAdmin,
+        idToken: (session as any).idToken,
+        accessToken: (session as any).accessToken,
+        groups: (session as any).groups,
+        isAdmin: (session as any).groups?.includes('Admins'),
       };
 
       // Check permissions before executing service if it's a DynamoDB operation

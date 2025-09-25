@@ -101,7 +101,11 @@
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" workflow run deploy.yml --repo captify-io/platform)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 17915181358 --repo captify-io/platform --log)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --repo captify-io/platform --limit 1)",
-      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" workflow run deploy.yml)"
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" workflow run deploy.yml)",
+      "Bash(PORT=3001 npm run dev)",
+      "Bash(npx next dev:*)",
+      "WebFetch(domain:auth.captify.io)",
+      "WebFetch(domain:cognito-idp.us-east-1.amazonaws.com)"
     ],
     "deny": [],
     "ask": []
