@@ -7,6 +7,7 @@ const requiredEnvVars = {
   COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
   COGNITO_CLIENT_SECRET: process.env.COGNITO_CLIENT_SECRET,
   COGNITO_ISSUER: process.env.COGNITO_ISSUER,
+  COGNITO_WELLKNOWN: process.env.COGNITO_WELLKNOWN,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
 };
@@ -22,7 +23,19 @@ const authConfig: NextAuthConfig = {
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: process.env.COGNITO_ISSUER!,
-      checks: ["state"],
+      wellKnown: process.env.COGNITO_WELLKNOWN!,
+      checks: ["nonce", "state", "pkce"],
+      client: {
+        id_token_signed_response_alg: "RS256",
+        response_types: ["code"],
+      },
+      authorization: {
+        params: {
+          response_type: "code",
+          scope: "openid email profile",
+          nonce: true,
+        },
+      },
       profile(profile) {
         return {
           id: profile.sub,
