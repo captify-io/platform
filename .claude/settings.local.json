@@ -105,7 +105,11 @@
       "Bash(PORT=3001 npm run dev)",
       "Bash(npx next dev:*)",
       "WebFetch(domain:auth.captify.io)",
-      "WebFetch(domain:cognito-idp.us-east-1.amazonaws.com)"
+      "WebFetch(domain:cognito-idp.us-east-1.amazonaws.com)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 3)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 1)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 18042848003 --log)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 2)"
     ],
     "deny": [],
     "ask": []
