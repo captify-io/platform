@@ -67,6 +67,19 @@ import { api } from "@captify-io/platform/services";
 
 ## Recent Changes
 
+### v1.0.67
+- **Agent Chat Interface Improvements**
+  - Streamlined chat interface with cleaner layout and reduced padding
+  - Removed borders between header, content, and footer areas
+  - Helper panel now closed by default for maximum conversation space
+  - Moved thread statistics (temperature, tokens, provider, model) to footer under textarea
+  - Redesigned message display with time/token info outside message bubbles
+  - Simplified datasets UI with prominent "+ New Dataset" button and clean list view
+  - Enhanced Knowledge Base functionality with drag-and-drop file upload
+  - Added proper share functionality in chat header between refresh and settings
+  - Improved helper panel with Datasets, Ontology, and Usage tabs
+  - Fixed helper panel close/open functionality with proper state management
+
 ### v1.0.66
 - **Icon Management Simplification**
   - **BREAKING CHANGE**: Removed DynamicIcon component from platform package
