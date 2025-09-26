@@ -12,9 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '../ui/scroll-area';
-import { Slider } from '../ui/slider';
-import { Switch } from '../ui/switch';
-import { 
+import {
   Upload,
   Database,
   Settings,
@@ -31,17 +29,20 @@ import {
   EyeOff,
   Copy,
   ExternalLink,
-  Palette
+  Palette,
+  X,
+  FolderPlus,
+  BookOpen,
+  Users,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Edit3,
+  MoreVertical,
+  PanelRightClose
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import {
   Tabs,
   TabsContent,
@@ -56,23 +57,35 @@ import {
   CardTitle,
 } from '../ui/card';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '../ui/accordion';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
 } from '../ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export interface HelperPanelProps {
   className?: string;
+  onClose?: () => void;
+  isMobile?: boolean;
 }
 
-export function HelperPanel({ className }: HelperPanelProps) {
+export function HelperPanel({ className, onClose, isMobile = false }: HelperPanelProps) {
   const {
     currentThread,
     settings,
@@ -83,7 +96,27 @@ export function HelperPanel({ className }: HelperPanelProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+
+  // Dataset management state
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [isCreateDatasetOpen, setIsCreateDatasetOpen] = useState(false);
+  const [newDatasetName, setNewDatasetName] = useState('');
+  const [newDatasetDescription, setNewDatasetDescription] = useState('');
+  const [datasetFiles, setDatasetFiles] = useState<File[]>([]);
+  const [isCreatingDataset, setIsCreatingDataset] = useState(false);
+  const [datasetDragOver, setDatasetDragOver] = useState(false);
+
+  // Dataset interface
+  interface Dataset {
+    id: string;
+    name: string;
+    description?: string;
+    status: 'creating' | 'indexing' | 'ready' | 'error';
+    fileCount: number;
+    totalSize: number;
+    createdAt: number;
+    updatedAt: number;
+  }
 
   // File upload handling
   const handleFileUpload = (files: FileList | null) => {
@@ -126,26 +159,181 @@ export function HelperPanel({ className }: HelperPanelProps) {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Settings handlers
-  const handleModelChange = (model: string) => {
-    updateSettings({ model });
+  // Dataset management functions
+  const handleDatasetFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const supportedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'text/markdown',
+      'text/csv',
+      'application/json',
+      'image/jpeg',
+      'image/png'
+    ];
+
+    const validFiles = files.filter(file => {
+      if (!supportedTypes.includes(file.type)) {
+        console.warn(`Unsupported file type: ${file.type}`);
+        return false;
+      }
+      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+        console.warn(`File too large: ${file.name}`);
+        return false;
+      }
+      return true;
+    });
+
+    setDatasetFiles(prev => [...prev, ...validFiles]);
   };
 
-  const handleProviderChange = (provider: 'openai' | 'anthropic' | 'bedrock') => {
-    updateSettings({ provider });
+  const removeDatasetFile = (index: number) => {
+    setDatasetFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleTemperatureChange = (temperature: number[]) => {
-    updateSettings({ temperature: temperature[0] });
+  // Dataset drag and drop handlers
+  const handleDatasetDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDatasetDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const supportedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'text/markdown',
+      'text/csv',
+      'application/json',
+      'image/jpeg',
+      'image/png'
+    ];
+
+    const validFiles = files.filter(file => {
+      if (!supportedTypes.includes(file.type)) {
+        console.warn(`Unsupported file type: ${file.type}`);
+        return false;
+      }
+      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+        console.warn(`File too large: ${file.name}`);
+        return false;
+      }
+      return true;
+    });
+
+    setDatasetFiles(prev => [...prev, ...validFiles]);
   };
 
-  const handleMaxTokensChange = (maxTokens: number[]) => {
-    updateSettings({ maxTokens: maxTokens[0] });
+  const handleDatasetDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDatasetDragOver(true);
   };
 
-  const handleSystemPromptChange = (systemPrompt: string) => {
-    updateSettings({ systemPrompt });
+  const handleDatasetDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDatasetDragOver(false);
   };
+
+  const handleCreateDataset = async () => {
+    if (!newDatasetName.trim() || datasetFiles.length === 0) return;
+
+    setIsCreatingDataset(true);
+
+    try {
+      // Create new dataset
+      const newDataset: Dataset = {
+        id: `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: newDatasetName.trim(),
+        description: newDatasetDescription.trim() || undefined,
+        status: 'creating',
+        fileCount: datasetFiles.length,
+        totalSize: datasetFiles.reduce((total, file) => total + file.size, 0),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      // Add to datasets list
+      setDatasets(prev => [newDataset, ...prev]);
+
+      // TODO: Upload files to S3 and trigger processing
+      console.log('Creating dataset:', newDataset);
+      console.log('Files to upload:', datasetFiles);
+
+      // Reset form
+      setNewDatasetName('');
+      setNewDatasetDescription('');
+      setDatasetFiles([]);
+      setDatasetDragOver(false);
+      setIsCreateDatasetOpen(false);
+
+      // Simulate processing (remove this when backend is implemented)
+      setTimeout(() => {
+        setDatasets(prev => prev.map(d =>
+          d.id === newDataset.id
+            ? { ...d, status: 'indexing' as const }
+            : d
+        ));
+      }, 2000);
+
+      setTimeout(() => {
+        setDatasets(prev => prev.map(d =>
+          d.id === newDataset.id
+            ? { ...d, status: 'ready' as const }
+            : d
+        ));
+      }, 8000);
+
+    } catch (error) {
+      console.error('Failed to create dataset:', error);
+    } finally {
+      setIsCreatingDataset(false);
+    }
+  };
+
+  const deleteDataset = (datasetId: string) => {
+    setDatasets(prev => prev.filter(d => d.id !== datasetId));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getStatusIcon = (status: Dataset['status']) => {
+    switch (status) {
+      case 'creating':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'indexing':
+        return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'ready':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusText = (status: Dataset['status']) => {
+    switch (status) {
+      case 'creating':
+        return 'Creating...';
+      case 'indexing':
+        return 'Indexing...';
+      case 'ready':
+        return 'Ready';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
+  };
+
 
   // Share conversation
   const handleShareConversation = async () => {
@@ -198,386 +386,406 @@ export function HelperPanel({ className }: HelperPanelProps) {
     { id: 'github', name: 'GitHub Repos', icon: Code2, status: 'available' },
   ];
 
-  interface ModelOption {
-    value: string;
-    label: string;
-    description: string;
-  }
-
-  const modelOptions: Record<string, ModelOption[]> = {
-    openai: [
-      { value: 'gpt-4o', label: 'GPT-4o', description: 'Most capable model' },
-      { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Faster, more economical' },
-      { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and affordable' },
-    ],
-    anthropic: [
-      { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet', description: 'Most capable' },
-      { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku', description: 'Fast and efficient' },
-    ],
-    bedrock: [
-      { value: 'anthropic.claude-3-sonnet-20240229-v1:0', label: 'Claude 3 Sonnet', description: 'Bedrock model' },
-      { value: 'amazon.titan-text-express-v1', label: 'Titan Text Express', description: 'AWS model' },
-    ],
-  };
 
   return (
-    <div className={cn("flex flex-col h-full bg-background border-l", className)}>
-      {/* Header */}
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Brain className="h-5 w-5" />
-          Assistant
-        </h2>
-      </div>
+    <div className={cn("flex flex-col h-full bg-muted/20", className)}>
 
       <ScrollArea className="flex-1">
         <div className="p-4">
-          <Tabs defaultValue="files" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="files">Files</TabsTrigger>
-              <TabsTrigger value="data">Data</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="share">Share</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="datasets" className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <TabsList className={cn(
+                "grid flex-1 mr-3",
+                isMobile ? "grid-cols-2" : "grid-cols-3"
+              )}>
+                <TabsTrigger value="datasets" className={cn(isMobile && "text-xs")}>
+                  {isMobile ? "Datasets" : "Datasets"}
+                </TabsTrigger>
+                <TabsTrigger value="ontology" className={cn(isMobile && "text-xs")}>
+                  {isMobile ? "Ontology" : "Ontology"}
+                </TabsTrigger>
+                <TabsTrigger value="usage" className={cn(isMobile && "text-xs")}>
+                  Usage
+                </TabsTrigger>
+              </TabsList>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                className="h-8 w-8 p-0 flex-shrink-0"
+              >
+                <PanelRightClose className="h-4 w-4" />
+              </Button>
+            </div>
 
-            {/* Files Tab */}
-            <TabsContent value="files" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Document Upload
-                  </CardTitle>
-                  <CardDescription>
-                    Upload files to enhance conversations with context
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className={cn(
-                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                      dragOver ? "border-primary bg-primary/10" : "border-muted-foreground/25"
-                    )}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                  >
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drop files here or click to browse
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      className="hidden"
-                      id="file-upload"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                    />
-                    <label htmlFor="file-upload">
-                      <Button variant="outline" size="sm" className="cursor-pointer">
-                        Choose Files
-                      </Button>
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Supports PDF, TXT, MD, CSV, JSON, Images (max 10MB)
-                    </p>
-                  </div>
+            {/* Datasets Tab */}
+            <TabsContent value="datasets" className="space-y-4">
+              <div className="space-y-4">
+                {/* New Dataset Button */}
+                <Dialog
+                  open={isCreateDatasetOpen}
+                  onOpenChange={(open) => {
+                    setIsCreateDatasetOpen(open);
+                    if (!open) setDatasetDragOver(false);
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button className="w-full gap-2">
+                      <Plus className="h-4 w-4" />
+                      New Dataset
+                    </Button>
+                  </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Create New Dataset</DialogTitle>
+                          <DialogDescription>
+                            Upload documents to create a searchable knowledge base
+                          </DialogDescription>
+                        </DialogHeader>
 
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <Label className="text-sm font-medium">Uploaded Files</Label>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <FileText className="h-4 w-4 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-sm truncate">{file.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {(file.size / 1024).toFixed(1)}KB
+                        <div className="space-y-4">
+                          {/* Dataset Name */}
+                          <div className="space-y-2">
+                            <Label htmlFor="dataset-name">Dataset Name</Label>
+                            <Input
+                              id="dataset-name"
+                              placeholder="e.g., Company Policies, Product Documentation"
+                              value={newDatasetName}
+                              onChange={(e) => setNewDatasetName(e.target.value)}
+                            />
+                          </div>
+
+                          {/* Dataset Description */}
+                          <div className="space-y-2">
+                            <Label htmlFor="dataset-description">Description (optional)</Label>
+                            <Textarea
+                              id="dataset-description"
+                              placeholder="Describe what this dataset contains..."
+                              value={newDatasetDescription}
+                              onChange={(e) => setNewDatasetDescription(e.target.value)}
+                              className="min-h-[80px]"
+                            />
+                          </div>
+
+                          {/* File Upload */}
+                          <div className="space-y-2">
+                            <Label>Documents</Label>
+                            <div
+                              className={cn(
+                                "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                                datasetDragOver ? "border-primary bg-primary/10" : "border-muted-foreground/25"
+                              )}
+                              onDrop={handleDatasetDrop}
+                              onDragOver={handleDatasetDragOver}
+                              onDragLeave={handleDatasetDragLeave}
+                            >
+                              <Upload className={cn(
+                                "h-8 w-8 mx-auto mb-2 transition-colors",
+                                datasetDragOver ? "text-primary" : "text-muted-foreground"
+                              )} />
+                              <p className={cn(
+                                "text-sm mb-2 transition-colors",
+                                datasetDragOver ? "text-primary font-medium" : "text-muted-foreground"
+                              )}>
+                                {datasetDragOver ? "Drop files here" : "Drop files here or click to browse"}
+                              </p>
+                              <input
+                                type="file"
+                                multiple
+                                accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.jpg,.jpeg,.png"
+                                className="hidden"
+                                id="dataset-file-upload"
+                                onChange={handleDatasetFileUpload}
+                              />
+                              <label htmlFor="dataset-file-upload">
+                                <Button
+                                  variant={datasetDragOver ? "default" : "outline"}
+                                  size="sm"
+                                  className="cursor-pointer transition-all"
+                                >
+                                  Choose Files
+                                </Button>
+                              </label>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Supports PDF, Word, Text, Markdown, CSV, JSON, Images (max 100MB each)
                               </p>
                             </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeFile(index)}
-                            className="h-8 w-8 p-0 flex-shrink-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            {/* Data Sources Tab */}
-            <TabsContent value="data" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Database className="h-4 w-4" />
-                    Data Sources
-                  </CardTitle>
-                  <CardDescription>
-                    Connect and manage data sources for enhanced AI capabilities
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {dataSources.map((source) => (
-                      <div key={source.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <source.icon className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="text-sm font-medium">{source.name}</p>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {source.status}
-                            </p>
+                            {/* Selected Files */}
+                            {datasetFiles.length > 0 && (
+                              <div className="space-y-2 max-h-32 overflow-y-auto">
+                                <Label className="text-sm font-medium">Selected Files ({datasetFiles.length})</Label>
+                                {datasetFiles.map((file, index) => (
+                                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                      <div className="min-w-0">
+                                        <p className="text-sm truncate">{file.name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {formatFileSize(file.size)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => removeDatasetFile(index)}
+                                      className="h-8 w-8 p-0 flex-shrink-0"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <Badge 
-                          variant={source.status === 'connected' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {source.status}
-                        </Badge>
+
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsCreateDatasetOpen(false);
+                              setDatasetDragOver(false);
+                            }}
+                            disabled={isCreatingDataset}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleCreateDataset}
+                            disabled={!newDatasetName.trim() || datasetFiles.length === 0 || isCreatingDataset}
+                            className="gap-2"
+                          >
+                            {isCreatingDataset ? (
+                              <>
+                                <Clock className="h-4 w-4 animate-spin" />
+                                Creating...
+                              </>
+                            ) : (
+                              <>
+                                <FolderPlus className="h-4 w-4" />
+                                Create Dataset
+                              </>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
+                {/* Datasets List */}
+                {datasets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BookOpen className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      No datasets yet. Create your first dataset to get started.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {datasets.map((dataset) => (
+                      <div key={dataset.id} className="border rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium truncate text-sm">{dataset.name}</h3>
+                              <div className="flex items-center gap-1">
+                                {getStatusIcon(dataset.status)}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{dataset.fileCount} files</span>
+                              <span>{formatFileSize(dataset.totalSize)}</span>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Edit3 className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Add Files
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => deleteDataset(dataset.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  
-                  <Button variant="outline" className="w-full mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Data Source
-                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Ontology Tab */}
+            <TabsContent value="ontology" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Brain className="h-4 w-4" />
+                    Ontology
+                  </CardTitle>
+                  <CardDescription>
+                    Define relationships and structure for your knowledge
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium mb-2">Knowledge Structure</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Coming soon - define entities, relationships, and knowledge graphs
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="space-y-4">
-              <Accordion type="single" collapsible defaultValue="model">
-                <AccordionItem value="model">
-                  <AccordionTrigger>Model Configuration</AccordionTrigger>
-                  <AccordionContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Provider</Label>
-                      <Select 
-                        value={settings.provider} 
-                        onValueChange={(value: 'openai' | 'anthropic' | 'bedrock') => handleProviderChange(value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="openai">OpenAI</SelectItem>
-                          <SelectItem value="anthropic">Anthropic</SelectItem>
-                          <SelectItem value="bedrock">AWS Bedrock</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label>Model</Label>
-                      <Select value={settings.model} onValueChange={handleModelChange}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {modelOptions[settings.provider || 'openai']?.map((model: ModelOption) => (
-                            <SelectItem key={model.value} value={model.value}>
-                              <div>
-                                <div className="font-medium">{model.label}</div>
-                                <div className="text-xs text-muted-foreground">{model.description}</div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+            {/* Usage Tab */}
+            <TabsContent value="usage" className="space-y-4">
+              {/* Current Month Usage */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Brain className="h-4 w-4" />
+                    Token Usage
+                  </CardTitle>
+                  <CardDescription>
+                    Your AI token consumption across different time periods
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="month" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="day">Daily</TabsTrigger>
+                      <TabsTrigger value="month">Monthly</TabsTrigger>
+                      <TabsTrigger value="year">Yearly</TabsTrigger>
+                    </TabsList>
 
-                <AccordionItem value="parameters">
-                  <AccordionTrigger>Parameters</AccordionTrigger>
-                  <AccordionContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Temperature</Label>
-                        <span className="text-sm text-muted-foreground">{settings.temperature}</span>
-                      </div>
-                      <Slider
-                        value={[settings.temperature || 0.7]}
-                        onValueChange={handleTemperatureChange}
-                        max={2}
-                        min={0}
-                        step={0.1}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Controls randomness. Lower = more focused, Higher = more creative
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Max Tokens</Label>
-                        <span className="text-sm text-muted-foreground">{settings.maxTokens}</span>
-                      </div>
-                      <Slider
-                        value={[settings.maxTokens || 4000]}
-                        onValueChange={handleMaxTokensChange}
-                        max={8000}
-                        min={100}
-                        step={100}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Maximum length of AI responses
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="prompt">
-                  <AccordionTrigger>System Prompt</AccordionTrigger>
-                  <AccordionContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Custom Instructions</Label>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-                        >
-                          {showSystemPrompt ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <Textarea
-                        placeholder="Enter custom system prompt..."
-                        value={settings.systemPrompt || ''}
-                        onChange={(e) => handleSystemPromptChange(e.target.value)}
-                        className="min-h-[100px] resize-none"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Customize how the AI behaves and responds
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="usage">
-                  <AccordionTrigger>Usage & Limits</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
+                    {/* Daily Usage */}
+                    <TabsContent value="day" className="space-y-4">
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <Label>Monthly Usage</Label>
+                          <Label className="text-sm">Today's Usage</Label>
                           <Badge variant="outline">
-                            {Math.round((tokenUsage.total / tokenUsage.limit) * 100)}%
+                            {Math.round((tokenUsage.total / 10000) * 100)}%
                           </Badge>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div 
-                            className="bg-primary h-2 rounded-full transition-all" 
-                            style={{ 
-                              width: `${Math.min((tokenUsage.total / tokenUsage.limit) * 100, 100)}%` 
+                        <div className="w-full bg-muted rounded-full h-3">
+                          <div
+                            className="bg-green-500 h-3 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min((tokenUsage.total / 10000) * 100, 100)}%`
                             }}
                           />
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{tokenUsage.total.toLocaleString()} tokens used</span>
+                          <span>{Math.floor(tokenUsage.total * 0.1).toLocaleString()} tokens today</span>
+                          <span>10K daily limit</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{Math.floor(tokenUsage.input * 0.1).toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Input</div>
+                          </div>
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{Math.floor(tokenUsage.output * 0.1).toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Output</div>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Monthly Usage */}
+                    <TabsContent value="month" className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Monthly Usage</Label>
+                          <Badge variant="outline">
+                            {Math.round((tokenUsage.total / tokenUsage.limit) * 100)}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-3">
+                          <div
+                            className="bg-blue-500 h-3 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min((tokenUsage.total / tokenUsage.limit) * 100, 100)}%`
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{tokenUsage.total.toLocaleString()} tokens this month</span>
                           <span>{tokenUsage.limit.toLocaleString()} limit</span>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-lg font-semibold">{tokenUsage.input.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Input Tokens</div>
-                        </div>
-                        <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-lg font-semibold">{tokenUsage.output.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Output Tokens</div>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </TabsContent>
-
-            {/* Share Tab */}
-            <TabsContent value="share" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share Conversation
-                  </CardTitle>
-                  <CardDescription>
-                    Share this conversation with others or export for later use
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!currentThread ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No active conversation to share
-                    </p>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={handleShareConversation} 
-                          className="w-full"
-                          disabled={!currentThread}
-                        >
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Create Share Link
-                        </Button>
-                        
-                        {shareUrl && (
-                          <div className="flex gap-2">
-                            <Input 
-                              value={shareUrl} 
-                              readOnly 
-                              className="text-xs"
-                            />
-                            <Button size="sm" variant="outline" onClick={copyShareUrl}>
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" asChild>
-                              <a href={shareUrl} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            </Button>
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{tokenUsage.input.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Input</div>
                           </div>
-                        )}
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{tokenUsage.output.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Output</div>
+                          </div>
+                        </div>
                       </div>
+                    </TabsContent>
 
-                      <div className="border-t pt-4">
-                        <Button 
-                          variant="outline" 
-                          onClick={handleExportConversation}
-                          className="w-full"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Export as JSON
-                        </Button>
-                      </div>
+                    {/* Yearly Usage */}
+                    <TabsContent value="year" className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Yearly Usage</Label>
+                          <Badge variant="outline">
+                            {Math.round((tokenUsage.total * 12 / 1000000) * 100)}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-3">
+                          <div
+                            className="bg-purple-500 h-3 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min((tokenUsage.total * 12 / 1000000) * 100, 100)}%`
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{(tokenUsage.total * 12).toLocaleString()} tokens estimated yearly</span>
+                          <span>1M yearly limit</span>
+                        </div>
 
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p>• Share links expire after 30 days</p>
-                        <p>• Exported files contain full conversation history</p>
-                        <p>• Shared conversations are read-only</p>
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{(tokenUsage.input * 12).toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Input</div>
+                          </div>
+                          <div className="text-center p-3 bg-muted rounded-lg">
+                            <div className="text-base font-semibold">{(tokenUsage.output * 12).toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Output</div>
+                          </div>
+                        </div>
                       </div>
-                    </>
-                  )}
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </TabsContent>
+
           </Tabs>
         </div>
       </ScrollArea>

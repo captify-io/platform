@@ -12,7 +12,7 @@ import type { UserState } from "../../types";
 // Define AgentSettings type locally if the module does not exist
 export type AgentSettings = {
   model: string;
-  provider: string;
+  provider: "openai" | "anthropic" | "bedrock";
   temperature: number;
   maxTokens: number;
   systemPrompt: string;
@@ -29,9 +29,9 @@ export function ChatLayout({
   userState,
   initialSettings = {},
 }: ChatLayoutProps) {
-  const defaultSettings = {
+  const defaultSettings: AgentSettings = {
     model: "gpt-4o",
-    provider: "openai" as const,
+    provider: "openai",
     temperature: 0.7,
     maxTokens: 4000,
     systemPrompt:

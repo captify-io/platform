@@ -62,7 +62,7 @@ export default function HomePage() {
 
   return (
     <Agent
-      className="h-screen w-full"
+      className="h-full w-full"
       userState={userState}
       initialSettings={initialSettings}
     />

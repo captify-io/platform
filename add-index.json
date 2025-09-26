@@ -1,0 +1,37 @@
+{
+  "TableName": "captify-core-Threads",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "userId",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "updatedAt",
+      "AttributeType": "N"
+    }
+  ],
+  "GlobalSecondaryIndexUpdates": [
+    {
+      "Create": {
+        "IndexName": "userId-updatedAt-index",
+        "KeySchema": [
+          {
+            "AttributeName": "userId",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "updatedAt",
+            "KeyType": "RANGE"
+          }
+        ],
+        "Projection": {
+          "ProjectionType": "ALL"
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        }
+      }
+    }
+  ]
+}

@@ -13,7 +13,7 @@ import React, {
   useEffect,
 } from "react";
 import { UIMessage } from "ai";
-import type { AgentThread, AgentSettings, AgentMessage } from "../types";
+import type { AgentThread, AgentSettings, AgentMessage } from "../../types/agent";
 import type { UserState } from "../../types";
 import { useApi } from "../../hooks";
 
@@ -93,16 +93,18 @@ export function AgentProvider({
     limit: 100000, // Default limit
   });
 
-  // API hooks
-  const { execute: executeAgent } = useApi(
-    async (client, operation: string, data?: any) => {
-      return client.run({
+  // Use apiClient directly
+  const executeAgent = useCallback(
+    async (operation: string, data?: any) => {
+      const { apiClient } = await import('../../lib/api');
+      return apiClient.run({
         service: "agent",
         operation,
         app: "core",
         data,
       });
-    }
+    },
+    []
   );
 
   // Load threads on mount
@@ -120,8 +122,8 @@ export function AgentProvider({
 
       try {
         const usageResult = await executeAgent("getTokenUsage", { period: "month" });
-        if (usageResult && usageResult.usage) {
-          const usage = usageResult.usage;
+        if (usageResult && usageResult.success && usageResult.data) {
+          const usage = usageResult.data.usage;
           setTokenUsage((prev) => ({
             ...prev,
             input: usage.input || 0,
@@ -136,13 +138,12 @@ export function AgentProvider({
 
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally excluding executeAgent to prevent infinite re-renders
+  }, []);
 
   // Actions
   const createThread = useCallback(
     async (title?: string, initialMessage?: string) => {
       try {
-        setIsLoadingThreads(true);
         const result = await executeAgent("createThread", {
           title: title || "New Chat",
           model: settings.model,
@@ -168,7 +169,7 @@ export function AgentProvider({
 
               if (messageResult && messageResult.success && messageResult.data) {
                 const { thread, tokenUsage: newTokenUsage } = messageResult.data;
-                setMessages(thread.messages);
+                setMessages(thread.messages || []);
                 setTokenUsage((prev) => ({
                   ...prev,
                   input: prev.input + (newTokenUsage?.input || 0),
@@ -189,8 +190,6 @@ export function AgentProvider({
       } catch (error) {
         console.error("Failed to create thread:", error);
         setThreadsError("Failed to create new chat");
-      } finally {
-        setIsLoadingThreads(false);
       }
     },
     [settings, executeAgent]
@@ -328,7 +327,7 @@ export function AgentProvider({
 
         setMessages((prev) => [...prev, userMessage]);
 
-        // Use fetch with streaming for real-time response
+        // Use the new API endpoint for streaming
         const response = await fetch("/api/captify", {
           method: "POST",
           headers: {
@@ -337,7 +336,7 @@ export function AgentProvider({
           },
           body: JSON.stringify({
             service: "agent",
-            operation: "streamMessage",
+            operation: "sendMessage", // Use regular sendMessage for now since streaming needs special handling
             data: {
               threadId: currentThread.id,
               message: content,
@@ -346,53 +345,30 @@ export function AgentProvider({
           }),
         });
 
-        if (response.body) {
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let accumulatedText = "";
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const { thread, tokenUsage: newTokenUsage, assistantMessage } = result.data;
 
-          while (true) {
-            const { done, value } = await reader.read();
+            // Update messages with the complete thread
+            setMessages(thread.messages || []);
 
-            if (done) break;
+            // Update token usage
+            setTokenUsage((prev) => ({
+              ...prev,
+              input: prev.input + (newTokenUsage?.input || 0),
+              output: prev.output + (newTokenUsage?.output || 0),
+              total: prev.total + (newTokenUsage?.total || 0),
+            }));
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split("\n");
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.content) {
-                    accumulatedText += data.content;
-                    setStreamingMessage(accumulatedText);
-                  }
-                } catch (e) {
-                  // Ignore parsing errors
-                }
-              }
-            }
+            // Update thread in state
+            setThreads((prev) =>
+              prev.map((t) => (t.id === currentThread.id ? thread : t))
+            );
+            setCurrentThread(thread);
           }
-
-          // Add final assistant message
-          const assistantMessage: AgentMessage = {
-            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            threadId: currentThread.id,
-            role: "assistant",
-            content: accumulatedText,
-            timestamp: Date.now(),
-          };
-
-          setMessages((prev) => [...prev, assistantMessage]);
-          setStreamingMessage("");
-
-          // Update thread in backend
-          await executeAgent("updateThread", {
-            threadId: currentThread.id,
-            updates: {
-              messages: [...messages, userMessage, assistantMessage],
-            },
-          });
+        } else {
+          console.error("Failed to send message:", response.statusText);
         }
       } catch (error) {
         console.error("Failed to stream message:", error);
@@ -401,7 +377,7 @@ export function AgentProvider({
         setStreamingMessage("");
       }
     },
-    [currentThread, settings, messages, executeAgent, createThread]
+    [currentThread, settings, executeAgent, createThread]
   );
 
   const updateSettings = useCallback(
@@ -434,22 +410,14 @@ export function AgentProvider({
       const result = await executeAgent("getThreads", { limit: 50 });
       console.log("[AgentProvider] executeAgent result:", result);
 
-      if (Array.isArray(result)) {
-        // useApi returns response.data directly, which is an array for getThreads
-        console.log("[AgentProvider] Successfully loaded threads:", result);
-        setThreads(result as AgentThread[]);
-      } else if (result === null) {
-        // API call failed, useApi returned null
-        console.error(
-          "[AgentProvider] API call failed - executeAgent returned null"
-        );
-        setThreadsError("Failed to load chat history");
+      if (result && result.success && result.data) {
+        console.log("[AgentProvider] Successfully loaded threads:", result.data);
+        setThreads(result.data as AgentThread[]);
+      } else if (result && !result.success) {
+        console.error("[AgentProvider] API call failed:", result.error);
+        setThreadsError(result.error || "Failed to load chat history");
       } else {
-        console.error(
-          "[AgentProvider] Unexpected result type:",
-          typeof result,
-          result
-        );
+        console.error("[AgentProvider] Unexpected result:", result);
         setThreadsError("Failed to load chat history");
       }
     } catch (error) {
@@ -464,9 +432,8 @@ export function AgentProvider({
     try {
       const result = await executeAgent("getTokenUsage", { period: "month" });
 
-      if (result && result.usage) {
-        // useApi returns response.data directly, which contains { period, usage, threadCount, startDate }
-        const usage = result.usage;
+      if (result && result.success && result.data && result.data.usage) {
+        const usage = result.data.usage;
         setTokenUsage((prev) => ({
           ...prev,
           input: usage.input || 0,

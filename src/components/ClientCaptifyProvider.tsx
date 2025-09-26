@@ -47,7 +47,9 @@ export function ClientCaptifyProvider({
               <div className="h-full w-full bg-background flex flex-col">
                 <TopNavigation session={session} />
                 <FavoritesBar />
-                <main className="flex-1 overflow-hidden">{children}</main>
+                <main className="h-[calc(100vh-100px)] flex-1 overflow-hidden">
+                  {children}
+                </main>
               </div>
             ) : (
               <SignInForm />

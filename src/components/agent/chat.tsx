@@ -13,10 +13,8 @@ import remarkGfm from "remark-gfm";
 import { PrismAsyncLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { tomorrow } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "../ui";
-import { Textarea } from "../ui";
 import { ScrollArea } from "../ui";
 import {
-  Send,
   Bot,
   User,
   Loader2,
@@ -35,6 +33,11 @@ import {
   Brain,
   Zap,
   Cpu,
+  PanelLeftOpen,
+  PanelRightOpen,
+  PanelLeftClose,
+  PanelRightClose,
+  Share2,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui";
@@ -53,13 +56,28 @@ import {
   DropdownMenuTrigger,
 } from "../ui";
 import { Input } from "../ui";
-import type { AgentMessage, AgentTool } from "../types/agent";
+import { Slider } from "../ui/slider";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui";
+import type { AgentMessage, AgentToolCall } from "../../types/agent";
 
 export interface ChatPanelProps {
   className?: string;
+  onToggleThreads?: () => void;
+  onToggleHelper?: () => void;
+  showThreads?: boolean;
+  showHelper?: boolean;
+  isMobile?: boolean;
 }
 
-export function ChatPanel({ className }: ChatPanelProps) {
+export function ChatPanel({
+  className,
+  onToggleThreads,
+  onToggleHelper,
+  showThreads = true,
+  showHelper = true,
+  isMobile = false,
+}: ChatPanelProps) {
   const {
     currentThread,
     messages,
@@ -68,11 +86,14 @@ export function ChatPanel({ className }: ChatPanelProps) {
     sendMessage,
     streamMessage,
     settings,
+    tokenUsage,
+    updateSettings,
   } = useAgent();
 
   const [input, setInput] = useState("");
   const [isComposing, setIsComposing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [shareUrl, setShareUrl] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +128,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
     setInput("");
 
     // Use streaming for better UX
+    // This will auto-create a thread if none exists
     await streamMessage(messageContent);
   };
 
@@ -127,22 +149,65 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
+    setUploadedFiles((prev) => [...prev, ...files]);
   };
 
   const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Share conversation handlers
+  const handleShareConversation = async () => {
+    if (!currentThread) return;
+
+    // Generate shareable link
+    const shareId = `share_${currentThread.id}_${Date.now()}`;
+    setShareUrl(`${window.location.origin}/share/${shareId}`);
+  };
+
+  const copyShareUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+    }
+  };
+
+  // Export conversation
+  const handleExportConversation = () => {
+    if (!currentThread) return;
+
+    const exportData = {
+      title: currentThread.title,
+      messages: currentThread.messages,
+      settings: currentThread.settings,
+      createdAt: currentThread.createdAt,
+      exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(currentThread.title || 'chat').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const getProviderIcon = (provider: string) => {
     switch (provider?.toLowerCase()) {
-      case 'openai':
+      case "openai":
         return <Bot className="h-4 w-4 text-green-500" />;
-      case 'anthropic':
+      case "anthropic":
         return <Brain className="h-4 w-4 text-orange-500" />;
-      case 'bedrock':
+      case "bedrock":
         return <Cpu className="h-4 w-4 text-blue-500" />;
-      case 'agent':
+      case "agent":
         return <Zap className="h-4 w-4 text-purple-500" />;
       default:
         return <Bot className="h-4 w-4 text-gray-500" />;
@@ -150,10 +215,26 @@ export function ChatPanel({ className }: ChatPanelProps) {
   };
 
   const availableProviders = [
-    { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
-    { id: 'anthropic', name: 'Anthropic', models: ['claude-3-5-sonnet', 'claude-3-haiku', 'claude-3-opus'] },
-    { id: 'bedrock', name: 'AWS Bedrock', models: ['claude-3-sonnet', 'titan-text', 'llama2-70b'] },
-    { id: 'agent', name: 'Custom Agent', models: ['captify-mi', 'captify-pmbook', 'captify-rmf'] },
+    {
+      id: "openai",
+      name: "OpenAI",
+      models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+    },
+    {
+      id: "anthropic",
+      name: "Anthropic",
+      models: ["claude-3-5-sonnet", "claude-3-haiku", "claude-3-opus"],
+    },
+    {
+      id: "bedrock",
+      name: "AWS Bedrock",
+      models: ["claude-3-sonnet", "titan-text", "llama2-70b"],
+    },
+    {
+      id: "agent",
+      name: "Custom Agent",
+      models: ["captify-mi", "captify-pmbook", "captify-rmf"],
+    },
   ];
 
   const renderMessageContent = (message: AgentMessage) => {
@@ -199,7 +280,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
     return <div className="text-sm">{String(message.content)}</div>;
   };
 
-  const renderTools = (tools: AgentTool[]) => {
+  const renderTools = (tools: AgentToolCall[]) => {
     if (!tools || tools.length === 0) return null;
 
     return (
@@ -207,10 +288,10 @@ export function ChatPanel({ className }: ChatPanelProps) {
         {tools.map((tool, index) => (
           <div key={index} className="border rounded-lg p-3 bg-muted/50">
             <div className="flex items-center gap-2 mb-2">
-              {getToolIcon(tool.type || 'function')}
+              {getToolIcon(tool.type || "function")}
               <span className="text-sm font-medium">{tool.name}</span>
               <Badge variant="outline" className="text-xs">
-                {tool.type || 'function'}
+                {tool.type || "function"}
               </Badge>
             </div>
             {renderToolOutput(tool)}
@@ -227,7 +308,9 @@ export function ChatPanel({ className }: ChatPanelProps) {
       case "chart":
         return <BarChart3 className="h-4 w-4" />;
       case "image":
-        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        {
+          /* eslint-disable-next-line jsx-a11y/alt-text */
+        }
         return <Image className="h-4 w-4" />;
       case "file":
         return <FileText className="h-4 w-4" />;
@@ -238,7 +321,7 @@ export function ChatPanel({ className }: ChatPanelProps) {
     }
   };
 
-  const renderToolOutput = (tool: AgentTool) => {
+  const renderToolOutput = (tool: AgentToolCall) => {
     switch (tool.type) {
       case "code":
         return (
@@ -295,8 +378,17 @@ export function ChatPanel({ className }: ChatPanelProps) {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], {
+  const formatTime = (timestamp: string | number) => {
+    const date = new Date(
+      typeof timestamp === "string" ? parseInt(timestamp) : timestamp
+    );
+    if (isNaN(date.getTime())) {
+      return new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -305,139 +397,359 @@ export function ChatPanel({ className }: ChatPanelProps) {
   // Always show the chat interface, even without a current thread
 
   return (
-    <div className={cn("flex flex-col h-full bg-background", className)}>
+    <div className={cn("flex flex-col h-full bg-background relative", className)}>
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            {getProviderIcon(settings.provider || 'openai')}
-            <h2 className="font-semibold">{currentThread?.title || "AI Assistant"}</h2>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                {settings.provider} · {settings.model}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64">
-              <DropdownMenuLabel>Select Provider & Model</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {availableProviders.map((provider) => (
-                <div key={provider.id}>
-                  <DropdownMenuItem className="font-medium py-1 opacity-60">
-                    <div className="flex items-center gap-2">
-                      {getProviderIcon(provider.id)}
-                      {provider.name}
-                    </div>
-                  </DropdownMenuItem>
-                  {provider.models.map((model) => (
-                    <DropdownMenuItem
-                      key={model}
-                      className="pl-8 text-sm"
-                      onClick={() => {
-                        if (settings.provider !== provider.id || settings.model !== model) {
-                          // Update settings would go here
-                          console.log('Switching to:', provider.id, model);
-                        }
-                      }}
-                    >
-                      {model}
-                      {settings.provider === provider.id && settings.model === model && (
-                        <span className="ml-auto text-xs text-primary">●</span>
-                      )}
+      <div className="h-12 flex-shrink-0 flex items-center justify-between px-2">
+        {/* Left: Thread toggle + Title + Model */}
+        <div className="flex items-center gap-3 flex-1">
+          {(isMobile || !showThreads) && onToggleThreads && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={onToggleThreads}
+                  >
+                    {showThreads ? (
+                      <PanelLeftClose className="h-4 w-4" />
+                    ) : (
+                      <PanelLeftOpen className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {showThreads ? "Hide" : "Show"} threads
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+
+          {!isMobile && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  {settings.model}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuLabel>Select Provider & Model</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableProviders.map((provider) => (
+                  <div key={provider.id}>
+                    <DropdownMenuItem className="font-medium py-1 opacity-60">
+                      <div className="flex items-center gap-2">
+                        {getProviderIcon(provider.id)}
+                        {provider.name}
+                      </div>
                     </DropdownMenuItem>
-                  ))}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    {provider.models.map((model) => (
+                      <DropdownMenuItem
+                        key={model}
+                        className="pl-8 text-sm"
+                        onClick={() => {
+                          if (
+                            settings.provider !== provider.id ||
+                            settings.model !== model
+                          ) {
+                            // Update settings would go here
+                            console.log("Switching to:", provider.id, model);
+                          }
+                        }}
+                      >
+                        {model}
+                        {settings.provider === provider.id &&
+                          settings.model === model && (
+                            <span className="ml-auto text-xs text-primary">
+                              ●
+                            </span>
+                          )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Refresh chat</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
 
-          <div className="text-xs text-muted-foreground">
-            {currentThread ? (currentThread.metadata?.messageCount || currentThread.messages.length) : 0} messages
-          </div>
+        {/* Right: Refresh + Settings + Helper toggle */}
+        <div className="flex items-center gap-1">
+          {/* Mobile Model/Settings Selector */}
+          {isMobile && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Model & Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableProviders.map((provider) => (
+                  <div key={provider.id}>
+                    <DropdownMenuItem className="font-medium py-1 opacity-60">
+                      <div className="flex items-center gap-2">
+                        {getProviderIcon(provider.id)}
+                        {provider.name}
+                      </div>
+                    </DropdownMenuItem>
+                    {provider.models.map((model) => (
+                      <DropdownMenuItem
+                        key={model}
+                        className="pl-8 text-sm"
+                        onClick={() => {
+                          if (
+                            settings.provider !== provider.id ||
+                            settings.model !== model
+                          ) {
+                            console.log("Switching to:", provider.id, model);
+                          }
+                        }}
+                      >
+                        {model}
+                        {settings.provider === provider.id &&
+                          settings.model === model && (
+                            <span className="ml-auto text-xs text-primary">
+                              ●
+                            </span>
+                          )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {!isMobile && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh chat</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Share Dropdown */}
+          {!isMobile && currentThread && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Share Conversation</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <div className="p-3 space-y-3">
+                  <Button
+                    onClick={handleShareConversation}
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    variant="ghost"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Create Share Link
+                  </Button>
+
+                  <Button
+                    onClick={handleExportConversation}
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    variant="ghost"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Export as JSON
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Settings Dropdown */}
+          {!isMobile && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-80">
+                <DropdownMenuLabel>AI Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                {/* Temperature */}
+                <div className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Temperature</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {settings.temperature}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[settings.temperature || 0.7]}
+                    onValueChange={(value) =>
+                      updateSettings({ temperature: value[0] })
+                    }
+                    max={2}
+                    min={0}
+                    step={0.1}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Lower = focused, Higher = creative
+                  </p>
+                </div>
+
+                <DropdownMenuSeparator />
+
+                {/* Max Tokens */}
+                <div className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Max Tokens</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {settings.maxTokens}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[settings.maxTokens || 4000]}
+                    onValueChange={(value) =>
+                      updateSettings({ maxTokens: value[0] })
+                    }
+                    max={8000}
+                    min={100}
+                    step={100}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum response length
+                  </p>
+                </div>
+
+                <DropdownMenuSeparator />
+
+                {/* System Prompt */}
+                <div className="p-3 space-y-2">
+                  <Label className="text-sm">System Prompt</Label>
+                  <Textarea
+                    placeholder="Custom instructions..."
+                    value={settings.systemPrompt || ""}
+                    onChange={(e) =>
+                      updateSettings({ systemPrompt: e.target.value })
+                    }
+                    className="min-h-[80px] resize-none text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    How the AI should behave
+                  </p>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {(isMobile || !showHelper) && onToggleHelper && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={onToggleHelper}
+                  >
+                    {showHelper ? (
+                      <PanelRightClose className="h-4 w-4" />
+                    ) : (
+                      <PanelRightOpen className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {showHelper ? "Hide" : "Show"} assistant
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-6">
-          {!currentThread && messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-              <Bot className="h-16 w-16 mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Welcome to AI Assistant</h3>
-              <p className="text-muted-foreground mb-4 max-w-md">
-                Ask me anything! I can help with analysis, writing, coding, and more.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Start typing below or create a new chat from the sidebar.
-              </p>
-            </div>
-          )}
-          
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              {message.role === "assistant" && (
+      <div className="overflow-hidden" style={{ height: "calc(100% - 164px)" }}>
+        <ScrollArea className="h-full p-3" ref={scrollAreaRef}>
+          <div className="space-y-4">
+            {!currentThread && messages.length === 0 && (
+              <div className="flex gap-3 mb-6">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                    <Bot className="h-4 w-4" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-primary" />
                   </div>
                 </div>
-              )}
+                <div className="flex-1">
+                  <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-2 max-w-2xl">
+                    <p className="text-sm text-foreground">
+                      Hello, I'm your AI assistant. How can I help you?
+                    </p>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Just now
+                  </div>
+                </div>
+              </div>
+            )}
 
+            {messages.map((message) => (
               <div
+                key={message.id}
                 className={cn(
-                  "max-w-[80%] group",
-                  message.role === "user" ? "order-1" : "order-2"
+                  "flex gap-3",
+                  message.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
+                {message.role === "assistant" && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={cn(
-                    "rounded-lg p-4",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    "max-w-[80%] group",
+                    message.role === "user" ? "order-1" : "order-2"
                   )}
                 >
-                  {renderMessageContent(message)}
-                  {message.tools && renderTools(message.tools)}
+                  <div
+                    className={cn(
+                      "rounded-lg p-2",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    )}
+                  >
+                    {renderMessageContent(message)}
+                    {/* Tool calls would be rendered here if present */}
+                  </div>
 
-                  <div className="flex items-center justify-between mt-2 gap-2">
-                    <div
-                      className={cn(
-                        "text-xs opacity-70",
-                        message.role === "user"
-                          ? "text-primary-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    >
+                  {/* Time and tokens outside message box */}
+                  <div className="flex items-center justify-between mt-1 px-1">
+                    <div className="text-xs text-muted-foreground">
                       {formatTime(
                         (message.createdAt || Date.now()).toString()
                       )}
-                      {message.tokenUsage && (
+                      {(message as any).tokenUsage && (message as any).tokenUsage.total > 0 && (
                         <span className="ml-2">
-                          •{" "}
-                          {(message.tokenUsage.input || 0) + (message.tokenUsage.output || 0)}{" "}
-                          tokens
+                          • {(message as any).tokenUsage.total.toLocaleString()} tokens
                         </span>
                       )}
                     </div>
@@ -458,62 +770,62 @@ export function ChatPanel({ className }: ChatPanelProps) {
                     </Button>
                   </div>
                 </div>
-              </div>
 
-              {message.role === "user" && (
+                {message.role === "user" && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-4 w-4" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Streaming Message */}
+            {isStreaming && streamingMessage && (
+              <div className="flex gap-3 justify-start">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <User className="h-4 w-4" />
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Bot className="h-4 w-4" />
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
 
-          {/* Streaming Message */}
-          {isStreaming && streamingMessage && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                  <Bot className="h-4 w-4" />
-                </div>
-              </div>
-
-              <div className="max-w-[80%]">
-                <div className="rounded-lg p-4 bg-muted">
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    {streamingMessage}
-                    <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                <div className="max-w-[80%]">
+                  <div className="rounded-lg p-2 bg-muted">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      {streamingMessage}
+                      <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Loading indicator */}
-          {isStreaming && !streamingMessage && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-              </div>
-
-              <div className="max-w-[80%]">
-                <div className="rounded-lg p-4 bg-muted">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {/* Loading indicator */}
+            {isStreaming && !streamingMessage && (
+              <div className="flex gap-3 justify-start">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Thinking...
+                  </div>
+                </div>
+
+                <div className="max-w-[80%]">
+                  <div className="rounded-lg p-2 bg-muted">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Thinking...
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t">
+      <div className="h-[100px] flex-shrink-0 px-4 py-3 bg-background">
         {/* Uploaded Files */}
         {uploadedFiles.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
@@ -537,85 +849,71 @@ export function ChatPanel({ className }: ChatPanelProps) {
           </div>
         )}
 
-        <div className="flex gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+        <div className="relative">
+          <Textarea
+            ref={inputRef}
+            placeholder="Ask anything"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            disabled={isStreaming}
+            className="min-h-[48px] max-h-[72px] resize-none pr-12"
+            rows={3}
+          />
+          {/* Tools/Actions inside textarea */}
+          <div className="absolute right-2 top-2 flex gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="px-2"
-                  onClick={() => fileInputRef.current?.click()}
+                  variant="ghost"
+                  className="h-6 w-6 p-0 text-muted-foreground"
                   disabled={isStreaming}
                 >
-                  <Paperclip className="h-4 w-4" />
+                  <Plus className="h-3 w-3" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Upload file</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <div className="flex-1 relative">
-            <Textarea
-              ref={inputRef}
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onCompositionStart={() => setIsComposing(true)}
-              onCompositionEnd={() => setIsComposing(false)}
-              disabled={isStreaming}
-              className="min-h-[40px] max-h-[120px] resize-none pr-12"
-            />
-            {/* Tools/Actions inside textarea */}
-            <div className="absolute right-2 top-2 flex gap-1">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 text-muted-foreground"
-                    disabled={isStreaming}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Tools</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/generate-ppt ')}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate PPT
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/analytics ')}>
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Analytics
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/search ')}>
-                    <Search className="h-4 w-4 mr-2" />
-                    Search Data
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setInput(prev => prev + '\n\n/code ')}>
-                    <Code className="h-4 w-4 mr-2" />
-                    Run Code
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="h-4 w-4 mr-2" />
+                  Add photo & files
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    setInput((prev) => prev + "\n\n/deep-research ")
+                  }
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Deep research
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setInput((prev) => prev + "\n\n/create-image ")
+                  }
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Create image
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setInput((prev) => prev + "\n\n/agent-mode ")}
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  Agent mode
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setInput((prev) => prev + "\n\n/data-connections ")
+                  }
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Data Connections
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          <Button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isStreaming}
-            size="sm"
-            className="px-3"
-          >
-            {isStreaming ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
         </div>
 
         {/* Hidden file input */}
@@ -630,11 +928,15 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
         <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
           <div>Press Enter to send, Shift+Enter for new line</div>
-          <div>
-            {settings.temperature}° · {settings.maxTokens} max tokens
+          <div className="flex items-center gap-3">
+            <span>{settings.temperature}° temp</span>
+            <span>{tokenUsage.total.toLocaleString()} tokens</span>
+            <span>{settings.provider}</span>
+            <span>{settings.model}</span>
           </div>
         </div>
       </div>
+
     </div>
   );
 }

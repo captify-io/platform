@@ -38,10 +38,16 @@ function createS3Client(
  * Execute S3 operations
  */
 export async function execute(
-  operation: string,
-  params: any,
-  credentials: AwsCredentials & { region: string }
+  request: {
+    service: string;
+    operation: string;
+    app?: string;
+    data?: any;
+  },
+  credentials: AwsCredentials & { region: string },
+  session?: any
 ): Promise<any> {
+  const { operation, data = {} } = request;
   try {
     // Validate operation
     const validOperations = ["get", "put", "delete", "list"];
@@ -53,9 +59,9 @@ export async function execute(
       );
     }
 
-    // Extract bucket and key from params
-    const bucket = params?.bucket;
-    const key = params?.key;
+    // Extract bucket and key from data
+    const bucket = data?.bucket;
+    const key = data?.key;
 
     if (!bucket) {
       throw new Error("Bucket is required for S3 operations");
@@ -67,18 +73,66 @@ export async function execute(
     // Route to specific operation
     switch (operation) {
       case "get":
-        return await executeGet(client, bucket, key, params);
+        return {
+          success: true,
+          data: await executeGet(client, bucket, key, data),
+          metadata: {
+            requestId: `s3-get-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            source: "s3.get",
+          },
+        };
       case "put":
-        return await executePut(client, bucket, key, params);
+        return {
+          success: true,
+          data: await executePut(client, bucket, key, data),
+          metadata: {
+            requestId: `s3-put-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            source: "s3.put",
+          },
+        };
       case "delete":
-        return await executeDelete(client, bucket, key, params);
+        return {
+          success: true,
+          data: await executeDelete(client, bucket, key, data),
+          metadata: {
+            requestId: `s3-delete-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            source: "s3.delete",
+          },
+        };
       case "list":
-        return await executeList(client, bucket, params);
+        return {
+          success: true,
+          data: await executeList(client, bucket, data),
+          metadata: {
+            requestId: `s3-list-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            source: "s3.list",
+          },
+        };
       default:
-        throw new Error(`Unsupported operation: ${operation}`);
+        return {
+          success: false,
+          error: `Unsupported operation: ${operation}`,
+          metadata: {
+            requestId: `s3-error-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            source: "s3.execute",
+          },
+        };
     }
   } catch (error) {
-    throw error;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "S3 operation failed",
+      metadata: {
+        requestId: `s3-error-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        source: "s3.execute",
+      },
+    };
   }
 }
 

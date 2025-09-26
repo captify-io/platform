@@ -248,8 +248,8 @@ async function handleRequest(request: NextRequest, method: string) {
       // Create a session object for the service with all auth fields
       const apiSession = {
         user: {
-          id: session.user?.id,
-          userId: session.user?.id,
+          id: session.user?.id || '',
+          userId: session.user?.id || '',
           email: session.user?.email,
           name: session.user?.name,
           groups: (session as any).groups,

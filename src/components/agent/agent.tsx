@@ -19,24 +19,102 @@ export interface AgentProps {
   initialSettings?: any;
 }
 
-// Inner component that uses the ThreePanelLayout structure
+// Inner component with responsive layout
 function AgentInterface({ className }: { className?: string }) {
+  const [showThreads, setShowThreads] = React.useState(true);
+  const [showHelper, setShowHelper] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Handle responsive behavior
+  React.useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+
+      // Auto-hide panels on mobile
+      if (mobile) {
+        setShowThreads(false);
+        setShowHelper(false);
+      } else {
+        setShowThreads(true);
+        // Keep helper closed by default on desktop too
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   return (
     <div className={cn("flex h-full w-full", className)}>
       {/* Left Panel - Threads */}
-      <div className="w-80 flex-shrink-0">
-        <ThreadsPanel />
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out flex-shrink-0",
+          showThreads ? "w-80" : "w-0",
+          isMobile &&
+            showThreads &&
+            "absolute left-0 top-0 z-30 w-80 h-full bg-background border-r shadow-lg"
+        )}
+      >
+        <div
+          className={cn(
+            "h-full overflow-hidden",
+            showThreads ? "opacity-100" : "opacity-0"
+          )}
+        >
+          <ThreadsPanel
+            onClose={() => isMobile && setShowThreads(false)}
+            isMobile={isMobile}
+          />
+        </div>
       </div>
 
       {/* Middle Panel - Chat */}
-      <div className="flex-1">
-        <ChatPanel />
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
+        <ChatPanel
+          onToggleThreads={() => setShowThreads(!showThreads)}
+          onToggleHelper={() => setShowHelper(!showHelper)}
+          showThreads={showThreads}
+          showHelper={showHelper}
+          isMobile={isMobile}
+        />
       </div>
 
       {/* Right Panel - Helper */}
-      <div className="w-80 flex-shrink-0">
-        <HelperPanel />
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out flex-shrink-0",
+          showHelper ? "w-80" : "w-0",
+          isMobile &&
+            showHelper &&
+            "absolute right-0 top-0 z-30 w-80 h-full bg-background border-l shadow-lg"
+        )}
+      >
+        <div
+          className={cn(
+            "h-full overflow-hidden",
+            showHelper ? "opacity-100" : "opacity-0"
+          )}
+        >
+          <HelperPanel
+            onClose={() => setShowHelper(false)}
+            isMobile={isMobile}
+          />
+        </div>
       </div>
+
+      {/* Mobile Overlay */}
+      {isMobile && (showThreads || showHelper) && (
+        <div
+          className="absolute inset-0 bg-black/20 z-20"
+          onClick={() => {
+            setShowThreads(false);
+            setShowHelper(false);
+          }}
+        />
+      )}
     </div>
   );
 }

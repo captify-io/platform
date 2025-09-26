@@ -1,4 +1,5 @@
 import { dynamo } from "./aws/dynamodb";
+import { aurora } from "./aws/aurora";
 import { cognito } from "./aws/cognito";
 import { s3 } from "./aws/s3";
 import { debug } from "./debug";
@@ -11,6 +12,8 @@ export const services = {
       case "dynamodb":
       case "dynamo":
         return dynamo;
+      case "aurora":
+        return aurora;
       case "cognito":
         return cognito;
       case "s3":
@@ -27,6 +30,7 @@ export const services = {
   // Direct access to services
   dynamodb: dynamo,
   dynamo,
+  aurora,
   cognito,
   s3,
   debug,
@@ -35,6 +39,7 @@ export const services = {
 
 // Export individual services for direct import
 export { dynamo, dynamo as dynamodb } from "./aws/dynamodb";
+export { aurora } from "./aws/aurora";
 export { cognito } from "./aws/cognito";
 export { s3 } from "./aws/s3";
 export { debug } from "./debug";

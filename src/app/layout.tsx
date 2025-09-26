@@ -1,9 +1,7 @@
 import { ReactNode } from "react";
-import { auth } from "../lib/auth";
 import { ClientCaptifyProvider } from "../components/ClientCaptifyProvider";
 import { UserRegistrationForm } from "../components";
 import "./globals.css";
-
 
 interface ServerCaptifyProviderProps {
   children: ReactNode;
@@ -69,7 +67,10 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
 
   // Check if user is authorized via Cognito groups OR has approved status
   const isAuthorized =
-    userGroups.some(group => group.includes("CACProvider") || group.includes("captify-authorized")) || userStatus === "approved";
+    userGroups.some(
+      (group: string) =>
+        group.includes("CACProvider") || group.includes("captify-authorized")
+    ) || userStatus === "approved";
 
   // Check if user has already registered (has any status, even if pending)
   const hasRegistered = userStatus !== null && userStatus !== undefined;

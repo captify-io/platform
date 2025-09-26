@@ -10,11 +10,11 @@ import { useAgent } from './index';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
-import { 
-  Plus, 
-  MessageSquare, 
-  Trash2, 
-  Edit2, 
+import {
+  Plus,
+  MessageSquare,
+  Trash2,
+  Edit2,
   Search,
   Loader2,
   Calendar,
@@ -23,10 +23,11 @@ import {
   Bot,
   Brain,
   Zap,
-  Cpu
+  Cpu,
+  X
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import type { AgentMessage } from "../types/agent";
+import type { AgentMessage } from "../../types/agent";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,9 +49,11 @@ import {
 
 export interface ThreadsPanelProps {
   className?: string;
+  onClose?: () => void;
+  isMobile?: boolean;
 }
 
-export function ThreadsPanel({ className }: ThreadsPanelProps) {
+export function ThreadsPanel({ className, onClose, isMobile = false }: ThreadsPanelProps) {
   const {
     currentThread,
     threads,
@@ -64,17 +67,56 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
     refreshThreads,
   } = useAgent();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [activeTab, setActiveTab] = useState<'threads' | 'agents' | 'projects'>('threads');
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
-  // Filter threads based on search query
-  const filteredThreads = threads.filter(thread =>
-    (thread.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    thread.messages.some((msg: AgentMessage) => 
-      msg.content.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Filter data based on active tab
+  const getFilteredData = () => {
+    switch (activeTab) {
+      case 'threads':
+        return threads.slice(0, 50);
+      case 'agents':
+        // For now, return unique agents from threads
+        const agentMap = new Map();
+        threads.forEach(thread => {
+          if (thread.threadType === 'agent' || thread.agentId) {
+            const agentId = thread.agentId || thread.id;
+            const agentName = thread.metadata?.agentName || thread.provider || 'Agent';
+            agentMap.set(agentId, {
+              id: agentId,
+              name: agentName,
+              provider: thread.provider,
+              model: thread.model,
+              threadCount: (agentMap.get(agentId)?.threadCount || 0) + 1
+            });
+          }
+        });
+        return Array.from(agentMap.values());
+      case 'projects':
+        // For now, return unique projects from threads
+        const projectMap = new Map();
+        threads.forEach(thread => {
+          if (thread.threadType === 'project' || thread.projectId) {
+            const projectId = thread.projectId || thread.id;
+            const projectName = thread.metadata?.projectName || 'Project';
+            projectMap.set(projectId, {
+              id: projectId,
+              name: projectName,
+              threadCount: (projectMap.get(projectId)?.threadCount || 0) + 1,
+              updatedAt: thread.updatedAt
+            });
+          }
+        });
+        return Array.from(projectMap.values());
+      default:
+        return threads.slice(0, 50);
+    }
+  };
+
+  const filteredData = getFilteredData();
 
   const handleCreateThread = async () => {
     await createThread();
@@ -108,8 +150,18 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
     setEditingTitle('');
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: number | string) => {
+    // Handle both number and string timestamps
+    const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) : timestamp);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -122,7 +174,10 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
     } else if (diffDays < 7) {
       return `${diffDays}d ago`;
     } else {
-      return date.toLocaleDateString();
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
     }
   };
 
@@ -134,71 +189,103 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
     return preview + (lastMessage.content.length > 100 ? '...' : '');
   };
 
-  const getProviderIcon = (provider: string, model?: string) => {
+  const getProviderIcon = (provider: string, model?: string, threadType?: string) => {
     const iconProps = { className: "h-4 w-4" };
-    
+
+    // Special handling for different thread types
+    if (threadType === 'agent') {
+      return <Zap {...iconProps} className="h-4 w-4 text-purple-500" />;
+    }
+
+    if (threadType === 'project') {
+      return <Hash {...iconProps} className="h-4 w-4 text-blue-500" />;
+    }
+
+    // Provider-specific icons
     switch (provider?.toLowerCase()) {
       case 'openai':
+        // Differentiate between GPT models
+        if (model?.includes('gpt-4')) {
+          return <Bot {...iconProps} className="h-4 w-4 text-green-600" />;
+        }
         return <Bot {...iconProps} className="h-4 w-4 text-green-500" />;
       case 'anthropic':
+        // Claude models
+        if (model?.includes('claude-3-opus')) {
+          return <Brain {...iconProps} className="h-4 w-4 text-orange-600" />;
+        } else if (model?.includes('claude-3-sonnet')) {
+          return <Brain {...iconProps} className="h-4 w-4 text-orange-500" />;
+        } else if (model?.includes('claude-3-haiku')) {
+          return <Brain {...iconProps} className="h-4 w-4 text-orange-400" />;
+        }
         return <Brain {...iconProps} className="h-4 w-4 text-orange-500" />;
       case 'bedrock':
+        // AWS Bedrock models
+        if (model?.includes('claude')) {
+          return <Cpu {...iconProps} className="h-4 w-4 text-blue-600" />;
+        } else if (model?.includes('titan')) {
+          return <Cpu {...iconProps} className="h-4 w-4 text-blue-500" />;
+        } else if (model?.includes('llama')) {
+          return <Cpu {...iconProps} className="h-4 w-4 text-blue-400" />;
+        }
         return <Cpu {...iconProps} className="h-4 w-4 text-blue-500" />;
-      case 'agent':
-        return <Zap {...iconProps} className="h-4 w-4 text-purple-500" />;
       default:
         return <MessageSquare {...iconProps} className="h-4 w-4 text-gray-500" />;
     }
   };
 
   return (
-    <div className={cn("flex flex-col h-full bg-background border-r", className)}>
+    <div className={cn("flex flex-col h-full bg-muted/20", className)}>
       {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Chats
-          </h2>
-          <Button 
-            size="sm" 
+      <div className="p-4">
+        {isMobile && onClose && (
+          <div className="flex justify-end mb-4">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 mb-4 bg-background/50 rounded-lg p-1">
+          <Button
+            size="sm"
+            variant={activeTab === 'threads' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('threads')}
+            className="flex-1 h-8 text-xs"
+          >
+            threads
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === 'agents' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('agents')}
+            className="flex-1 h-8 text-xs"
+          >
+            agents
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === 'projects' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('projects')}
+            className="flex-1 h-8 text-xs"
+          >
+            projects
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={handleCreateThread}
             disabled={isLoadingThreads}
+            className="h-8 w-8 p-0"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3" />
           </Button>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search chats..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Token Usage */}
-        <div className="mt-3 p-2 bg-muted rounded-md">
-          <div className="text-xs text-muted-foreground mb-1">Monthly Usage</div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">
-              {tokenUsage.total.toLocaleString()} tokens
-            </span>
-            <Badge variant="outline" className="text-xs">
-              {Math.round((tokenUsage.total / tokenUsage.limit) * 100)}%
-            </Badge>
-          </div>
-          <div className="w-full bg-background rounded-full h-1.5 mt-1">
-            <div 
-              className="bg-primary h-1.5 rounded-full" 
-              style={{ 
-                width: `${Math.min((tokenUsage.total / tokenUsage.limit) * 100, 100)}%` 
-              }}
-            />
-          </div>
         </div>
       </div>
 
@@ -220,31 +307,23 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                 Try Again
               </Button>
             </div>
-          ) : filteredThreads.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">
-                {searchQuery ? 'No chats found' : 'No chats yet'}
+                {activeTab === 'threads' ? 'No conversations' :
+                 activeTab === 'agents' ? 'No agents found' : 'No projects found'}
               </p>
-              {!searchQuery && (
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="mt-2"
-                  onClick={handleCreateThread}
-                >
-                  Start your first chat
-                </Button>
-              )}
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredThreads.map((thread) => (
+              {activeTab === 'threads' ? (
+                // Render threads
+                filteredData.map((thread: any) => (
                 <div
                   key={thread.id}
                   className={cn(
-                    "group relative p-3 rounded-lg cursor-pointer transition-colors hover:bg-accent",
-                    currentThread?.id === thread.id && "bg-accent border"
+                    "group relative p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-background/80 hover:shadow-sm",
+                    currentThread?.id === thread.id && "bg-primary/5 ring-1 ring-primary/20 shadow-sm"
                   )}
                   onClick={() => handleSelectThread(thread.id)}
                 >
@@ -283,27 +362,18 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-start gap-2 mb-1">
-                          {getProviderIcon(thread.provider || 'openai', thread.model)}
-                          <h3 className="font-medium text-sm line-clamp-1 flex-1">
-                            {thread.title}
-                          </h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2 ml-6">
-                          {getThreadPreview(thread)}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground ml-6">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDate(thread.updatedAt.toString())}
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 p-1.5 rounded-lg bg-primary/10">
+                            {getProviderIcon(thread.provider || 'openai', thread.model, thread.threadType)}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Hash className="h-3 w-3" />
-                            {thread.metadata?.messageCount || thread.messages.length}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm line-clamp-1 text-foreground mb-1">
+                              {thread.title}
+                            </h3>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDate(thread.updatedAt)} • {(thread.metadata?.tokenUsage?.total || thread.metadata?.totalTokens || 0).toLocaleString()} • {thread.model || 'gpt-4'}
+                            </div>
                           </div>
-                          <Badge variant="outline" className="text-xs px-1 py-0">
-                            {thread.model || 'gpt-4'}
-                          </Badge>
                         </div>
                       </>
                     )}
@@ -365,7 +435,60 @@ export function ThreadsPanel({ className }: ThreadsPanelProps) {
                     </div>
                   )}
                 </div>
-              ))}
+                ))
+              ) : activeTab === 'agents' ? (
+                // Render agents
+                filteredData.map((agent: any) => (
+                  <div
+                    key={agent.id}
+                    className="group relative p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-background/80 hover:shadow-sm"
+                    onClick={() => {
+                      setSelectedAgent(agent.id);
+                      // TODO: Filter threads by agent
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 p-1.5 rounded-lg bg-primary/10">
+                        {getProviderIcon(agent.provider, agent.model, 'agent')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm line-clamp-1 text-foreground mb-1">
+                          {agent.name}
+                        </h3>
+                        <div className="text-xs text-muted-foreground">
+                          {agent.threadCount} conversation{agent.threadCount !== 1 ? 's' : ''} • {agent.model}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // Render projects
+                filteredData.map((project: any) => (
+                  <div
+                    key={project.id}
+                    className="group relative p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-background/80 hover:shadow-sm"
+                    onClick={() => {
+                      setSelectedProject(project.id);
+                      // TODO: Filter threads by project
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 p-1.5 rounded-lg bg-primary/10">
+                        {getProviderIcon('', '', 'project')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm line-clamp-1 text-foreground mb-1">
+                          {project.name}
+                        </h3>
+                        <div className="text-xs text-muted-foreground">
+                          {project.threadCount} conversation{project.threadCount !== 1 ? 's' : ''} • {formatDate(project.updatedAt || Date.now())}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
