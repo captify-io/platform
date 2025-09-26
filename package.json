@@ -13,7 +13,7 @@
     "dist": "tsup && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "push": "npm run dist && npm run version:patch && git add -A && git commit -m 'chore: release v$npm_package_version' && git push origin master",
     "build:dev": "tsup --watch",
-    "start": "next start -p 8081",
+    "start": "npx next start -p 8081",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next dist node_modules",
