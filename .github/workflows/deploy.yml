@@ -117,7 +117,8 @@ jobs:
             -x ".idea/*" \
             -x "README.md" \
             -x "*.md" \
-            -x "docs/*"
+            -x "docs/*" \
+            -x ".platform/*"
             
           echo "Created deployment package: deploy.zip ($(du -h deploy.zip | cut -f1))"
 
