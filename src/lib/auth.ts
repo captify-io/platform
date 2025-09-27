@@ -59,7 +59,7 @@ const authConfig: NextAuthConfig = {
       console.error("[Cognito Callback] Unknown provider:", account?.provider);
       return false;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile }): Promise<any> {
       // Initial sign in - store tokens in JWT
       if (account && profile) {
         // Validate that we have the required tokens
