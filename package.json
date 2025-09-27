@@ -1,7 +1,7 @@
 {
   "name": "@captify-io/platform",
   "private": false,
-  "version": "1.0.73",
+  "version": "1.0.74",
   "type": "module",
   "description": "Core components, utilities, and services for the Captify platform",
   "scripts": {
