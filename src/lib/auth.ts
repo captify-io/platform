@@ -215,3 +215,6 @@ async function refreshAccessToken(refreshToken: string) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 export const getServerSession = auth;
+
+// Export the config for external apps to use
+export { authConfig };

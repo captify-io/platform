@@ -91,12 +91,7 @@ export function SignOnPage({ appName, onSignIn, className }: SignOnPageProps) {
   );
 }
 
-// Get platform auth URLs
-const getPlatformAuthUrl = () => {
-  return process.env.NEXT_PUBLIC_CAPTIFY_API_URL || '';
-};
-
-// Exportable auth functions
+// Exportable auth functions - simplified to use standard NextAuth
 export const captifySignIn = async (appName?: string) => {
   if (isEmbedded) {
     window.parent.postMessage({
@@ -106,16 +101,7 @@ export const captifySignIn = async (appName?: string) => {
     return;
   }
 
-  // Standalone mode - redirect to platform auth
-  const platformUrl = getPlatformAuthUrl();
-  if (platformUrl) {
-    // Redirect to platform's auth endpoint
-    const authUrl = `${platformUrl}/api/auth/signin/cognito?callbackUrl=${encodeURIComponent(window.location.origin)}`;
-    window.location.href = authUrl;
-    return;
-  }
-
-  // Fallback to local auth (should not happen in practice)
+  // Use standard NextAuth signIn - external app will have its own auth endpoints
   return await signIn("cognito", {
     callbackUrl: window.location.origin,
   });
@@ -129,15 +115,7 @@ export const captifySignOut = async () => {
     return;
   }
 
-  // Standalone mode - redirect to platform signout
-  const platformUrl = getPlatformAuthUrl();
-  if (platformUrl) {
-    const signoutUrl = `${platformUrl}/api/auth/signout?callbackUrl=${encodeURIComponent(window.location.origin)}`;
-    window.location.href = signoutUrl;
-    return;
-  }
-
-  // Fallback to local signout
+  // Use standard NextAuth signOut
   return await signOut({
     callbackUrl: window.location.origin
   });
