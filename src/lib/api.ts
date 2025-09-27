@@ -28,14 +28,9 @@ class ApiClient {
   private currentAppIdentityPoolId: string | undefined = undefined;
   private currentAppSlug: string | undefined = undefined;
 
-  // Environment-aware base URL detection
+  // Always use relative URLs - apiClient should call the current app's /api/captify
   private getBaseUrl(): string {
-    // Development: use explicit platform URL if set
-    // Production: use relative URLs (same origin)
-    if (typeof window !== "undefined") {
-      return process.env.NEXT_PUBLIC_CAPTIFY_API_URL || '';
-    }
-    // Server-side: always use relative URLs
+    // Always use relative URLs regardless of environment
     return '';
   }
 
