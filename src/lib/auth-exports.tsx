@@ -1,6 +1,6 @@
+import React, { ReactNode } from "react";
 import { SessionProvider, useSession as useNextAuthSession, signIn, signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { ReactNode, createElement } from "react";
 
 // Extended session interface for Captify
 export interface CaptifySession extends Session {
