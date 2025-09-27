@@ -7,6 +7,8 @@ export { cn } from "./lib/utils";
 export {
   SignOnPage,
   useSession,
+  SessionProvider,
+  AuthProvider,
   CaptifyAuthProvider,
   captifySignIn,
   captifySignOut,

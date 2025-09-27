@@ -121,7 +121,47 @@ export const captifySignOut = async () => {
   });
 };
 
-// Exportable SessionProvider wrapper for external apps
+// Export SessionProvider directly for manual setup
+export { SessionProvider };
+
+// Enhanced AuthProvider that handles everything
+interface AuthProviderProps {
+  children: ReactNode;
+  appName: string;
+  session?: Session | null;
+}
+
+export function AuthProvider({ children, appName, session }: AuthProviderProps) {
+  return (
+    <SessionProvider session={session}>
+      <AuthWrapper appName={appName}>{children}</AuthWrapper>
+    </SessionProvider>
+  );
+}
+
+// Internal AuthWrapper component
+function AuthWrapper({ children, appName }: { children: ReactNode; appName: string }) {
+  const { session, status } = useSession();
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <SignOnPage appName={appName} />;
+  }
+
+  return <>{children}</>;
+}
+
+// Legacy wrapper for backward compatibility
 interface CaptifyAuthProviderProps {
   children: ReactNode;
   session?: Session | null;
