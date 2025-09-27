@@ -126,6 +126,11 @@
       "import": "./dist/lib/auth.js",
       "require": "./dist/lib/auth.cjs"
     },
+    "./auth": {
+      "types": "./dist/lib/auth-exports.d.ts",
+      "import": "./dist/lib/auth-exports.js",
+      "require": "./dist/lib/auth-exports.cjs"
+    },
     "./lib/api": {
       "types": "./dist/lib/api.d.ts",
       "import": "./dist/lib/api.js",

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn, apiClient } from "../../lib/utils";
 import { useSession } from "next-auth/react";
+import { useFavorites } from "../../hooks/useFavorites";
 
 // Application types
 interface Application {
@@ -84,65 +85,20 @@ interface ApplicationLauncherProps {
 
 export function ApplicationLauncher({ currentApplication }: ApplicationLauncherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
+  const { favoriteApps, toggleFavorite, isFavorite } = useFavorites();
 
-  // Fetch user favorites from DynamoDB
-  const fetchUserFavorites = useCallback(async () => {
-    if (!session?.user?.id) {
-      // Fall back to localStorage if no session
-      const storedFavorites = localStorage.getItem("captify-app-favorites");
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-      return;
-    }
-
-    try {
-      // Query UserState table by userId
-      const response = await apiClient.run({
-        service: "dynamodb",
-        operation: "query",
-        app: "core",
-        table: "UserState",
-        data: {
-          IndexName: "userId-index",
-          KeyConditionExpression: "userId = :userId",
-          ExpressionAttributeValues: {
-            ":userId": session.user.id
-          }
-        }
-      });
-
-      if (response?.data?.Items?.length > 0) {
-        const userState = response.data.Items[0];
-        if (userState?.favoriteApps) {
-          setFavorites(userState.favoriteApps);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch user favorites:", err);
-      // Fall back to localStorage
-      const storedFavorites = localStorage.getItem("captify-app-favorites");
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-    }
-  }, [session?.user?.id]);
-
-  // Load favorites from user preferences and fetch applications
+  // Load applications when component opens
   useEffect(() => {
-    // Fetch applications and user preferences when component opens
     if (isOpen) {
       fetchApplications();
-      fetchUserFavorites();
     }
-  }, [isOpen, fetchUserFavorites]);
+  }, [isOpen]);
 
   // Fetch applications from DynamoDB
   const fetchApplications = async () => {
@@ -195,97 +151,13 @@ export function ApplicationLauncher({ currentApplication }: ApplicationLauncherP
     }
   };
 
-  // Save favorites to DynamoDB and localStorage
-  const toggleFavorite = async (appId: string) => {
-    const newFavorites = favorites.includes(appId)
-      ? favorites.filter(id => id !== appId)
-      : [...favorites, appId];
-    
-    setFavorites(newFavorites);
-    
-    // Always save to localStorage for offline/anonymous users
-    localStorage.setItem("captify-app-favorites", JSON.stringify(newFavorites));
-    
-    // If user is logged in, save to UserState in DynamoDB
-    if (session?.user?.id) {
-      try {
-        // First check if UserState exists
-        const queryResponse = await apiClient.run({
-          service: "dynamodb",
-          operation: "query",
-          app: "core",
-          table: "UserState",
-          data: {
-            IndexName: "userId-index",
-            KeyConditionExpression: "userId = :userId",
-            ExpressionAttributeValues: {
-              ":userId": session.user.id
-            }
-          }
-        });
-
-        if (queryResponse?.data?.Items?.length > 0) {
-          // Update existing UserState
-          const userState = queryResponse.data.Items[0];
-          await apiClient.run({
-            service: "dynamodb",
-            operation: "update",
-            app: "core",
-            table: "UserState",
-            data: {
-              key: {
-                id: userState.id
-              },
-              updateExpression: "SET favoriteApps = :favorites, updatedAt = :updatedAt",
-              expressionAttributeValues: {
-                ":favorites": newFavorites,
-                ":updatedAt": new Date().toISOString()
-              }
-            }
-          });
-        } else {
-          // Create new UserState
-          const newUserState = {
-            id: `userstate-${session.user.id}-${Date.now()}`,
-            slug: `userstate-${session.user.id}`,
-            name: `UserState for ${session.user.email || session.user.id}`,
-            app: "core",
-            order: "0",
-            fields: {},
-            description: "User preferences and state",
-            ownerId: session.user.id,
-            createdAt: new Date().toISOString(),
-            createdBy: session.user.id,
-            updatedAt: new Date().toISOString(),
-            updatedBy: session.user.id,
-            userId: session.user.id,
-            favoriteApps: newFavorites,
-            recentApps: [],
-            preferences: {}
-          };
-
-          await apiClient.run({
-            service: "dynamodb",
-            operation: "put",
-            app: "core",
-            table: "UserState",
-            data: {
-              item: newUserState
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Failed to save favorites to database:", err);
-      }
-    }
-  };
 
   // Filter applications based on selected view
   const getFilteredApplications = () => {
     let filtered = applications;
 
     if (selectedTab === "favorites") {
-      filtered = applications.filter(app => favorites.includes(app.id));
+      filtered = applications.filter(app => favoriteApps.includes(app.id));
     } else if (selectedTab === "shared") {
       filtered = applications.filter(app => app.isShared);
     }
@@ -301,27 +173,27 @@ export function ApplicationLauncher({ currentApplication }: ApplicationLauncherP
 
   const ApplicationCard = ({ app }: { app: Application }) => {
     const Icon = app.icon || getIconComponent(app.iconName);
-    const isFavorite = favorites.includes(app.id);
+    const isAppFavorite = isFavorite(app.id);
     const isCurrent = currentApplication?.id === app.id;
 
     return (
       <a
         href={app.href || `/${app.slug || app.id}`}
         className={cn(
-          "block p-3 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-800 group",
-          isCurrent && "bg-blue-50 dark:bg-blue-950"
+          "block p-3 rounded-lg transition-all hover:bg-accent group",
+          isCurrent && "bg-accent"
         )}
         onClick={() => setIsOpen(false)}
       >
         <div className="flex items-center gap-3">
-          <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+          <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm truncate">{app.name}</h3>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-5 w-5 p-0 transition-colors hover:bg-accent"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -331,7 +203,7 @@ export function ApplicationLauncher({ currentApplication }: ApplicationLauncherP
                 <Star
                   className={cn(
                     "h-4 w-4",
-                    isFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400 hover:text-yellow-400"
+                    isAppFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground hover:text-yellow-400"
                   )}
                 />
               </Button>
@@ -349,7 +221,7 @@ export function ApplicationLauncher({ currentApplication }: ApplicationLauncherP
         <Button
           variant="ghost"
           size="sm"
-          className="text-white hover:bg-gray-800 hover:text-white p-2"
+          className="text-foreground hover:bg-accent hover:text-accent-foreground p-2"
         >
           <Grid3X3 className="h-4 w-4" />
         </Button>
@@ -357,7 +229,7 @@ export function ApplicationLauncher({ currentApplication }: ApplicationLauncherP
       <PopoverContent className="w-[600px] p-0" align="start">
         <div className="flex h-[400px]">
           {/* Left Panel */}
-          <div className="w-48 border-r bg-gray-50 dark:bg-gray-900 p-4">
+          <div className="w-48 border-r bg-muted p-4">
             <div className="space-y-1">
               <Button
                 variant={selectedTab === "all" && !selectedCategory ? "secondary" : "ghost"}

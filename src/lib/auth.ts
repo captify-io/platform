@@ -80,6 +80,7 @@ const authConfig: NextAuthConfig = {
 
         return {
           ...token,
+          sub: profile.sub, // Ensure we keep the Cognito User Pool sub
           accessToken: account.access_token,
           idToken: account.id_token,
           refreshToken: account.refresh_token,

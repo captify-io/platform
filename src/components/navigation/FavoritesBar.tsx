@@ -3,7 +3,7 @@
 import React from "react";
 import { useMemo, useEffect, useCallback } from "react";
 import { useState } from "../../lib/react-compat";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import dynamic from "next/dynamic";
 import { LucideProps } from "lucide-react";
@@ -17,7 +17,7 @@ const DynamicIcon = dynamic(() =>
     }
   }))
 , { ssr: false });
-import { Star, ChevronRight, Bot } from "lucide-react";
+import { Star, ChevronRight, Bot, X } from "lucide-react";
 import { apiClient } from "../../lib/utils";
 import { useCaptify } from "../providers/CaptifyProvider";
 import { useFavorites } from "../../hooks/useFavorites";
@@ -25,6 +25,7 @@ import type { App } from "../../types";
 
 export function FavoritesBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { session } = useCaptify();
   const { favoriteApps, loading: favoritesLoading } = useFavorites();
   const [availableApps, setAvailableApps] = useState<App[]>([]);
@@ -91,35 +92,58 @@ export function FavoritesBar() {
     router.push(`/${app.slug}`);
   };
 
+  const handleCloseApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Navigate to home to close the current app
+    router.push("/");
+  };
+
   return (
-    <div className="border-b border-gray-700 bg-black">
+    <div className="border-b border-border bg-card">
       <div className="flex items-center px-2 py-1 gap-2">
         {/* Favorites Section */}
         <div className="flex items-center flex-1 gap-1 overflow-hidden">
           {/* Favorite Apps */}
           <div className="flex items-center gap-1 overflow-x-auto">
-            {favoriteAppObjects.map((app) => (
-              <Button
-                key={app.id}
-                variant="ghost"
-                size="sm"
-                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs bg-gray-800 hover:bg-gray-700 transition-colors text-white"
-                onClick={() => handleAppClick(app)}
-              >
-                <DynamicIcon
-                  name={(app as any).icon || "package"}
-                  className="h-3 w-3 text-gray-300"
-                />
-                <span className="text-white">{app.name}</span>
-              </Button>
-            ))}
+            {favoriteAppObjects.map((app) => {
+              const isSelected = pathname === `/${app.slug}` || pathname.startsWith(`/${app.slug}/`);
+              return (
+                <Button
+                  key={app.id}
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center space-x-1 px-2 py-0.5 h-7 text-xs transition-colors ${
+                    isSelected
+                      ? 'bg-accent text-accent-foreground border-primary'
+                      : 'bg-background hover:bg-accent text-foreground border-transparent'
+                  } border`}
+                  onClick={() => handleAppClick(app)}
+                >
+                  <DynamicIcon
+                    name={(app as any).icon || "package"}
+                    className={`h-3 w-3 ${isSelected ? 'text-accent-foreground' : 'text-muted-foreground'}`}
+                  />
+                  <span>{app.name}</span>
+                  {isSelected && (
+                    <span
+                      className="h-4 w-4 ml-1 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground rounded-sm cursor-pointer transition-colors"
+                      onClick={handleCloseApp}
+                      title="Close application"
+                    >
+                      <X className="h-3 w-3" />
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
 
             {/* Show more indicator if there are more than 8 favorites */}
             {favoriteApps.length > 8 && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs text-gray-300 hover:bg-gray-800"
+                className="flex items-center space-x-1 px-2 py-0.5 h-7 text-xs text-muted-foreground hover:bg-accent"
                 onClick={() => {
                   // Could open the application launcher here
                   console.log("Show more favorites");

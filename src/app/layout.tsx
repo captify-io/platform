@@ -65,12 +65,10 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   // Get user status from session (set during authentication)
   const userStatus = (session as any)?.captifyStatus;
 
-  // Check if user is authorized via Cognito groups OR has approved status
-  const isAuthorized =
-    userGroups.some(
-      (group: string) =>
-        group.includes("CACProvider") || group.includes("captify-authorized")
-    ) || userStatus === "approved";
+  // Check if user is authorized via Cognito groups only
+  const isAuthorized = userGroups.some(
+    (group: string) => group.includes("captify-authorized")
+  );
 
   // Check if user has already registered (has any status, even if pending)
   const hasRegistered = userStatus !== null && userStatus !== undefined;

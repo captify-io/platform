@@ -4,78 +4,100 @@ import React from "react";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
 import { useState } from "../../lib/react-compat";
-import { Moon, Sun, Monitor } from "lucide-react";
+import { Palette, Sun, Moon, Check } from "lucide-react";
 import { Button } from "../ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover";
+import { themes, type ThemeName } from "./themes";
+import { useFavorites } from "../../hooks/useFavorites";
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { userTheme, saveTheme } = useFavorites();
 
   useEffect(() => {
     setMounted(true);
-    console.log('[ThemeToggle] Mounted. Initial theme:', theme, 'Resolved:', resolvedTheme);
-  }, [theme, resolvedTheme]);
+  }, []);
+
+  // Load user's saved theme on mount
+  useEffect(() => {
+    if (mounted && userTheme && userTheme !== theme) {
+      setTheme(userTheme);
+    }
+  }, [mounted, userTheme, theme, setTheme]);
 
   if (!mounted) {
     return (
       <Button
         variant="ghost"
         size="sm"
-        className="text-white hover:bg-gray-800 hover:text-white p-1 cursor-pointer"
+        className="text-foreground hover:bg-accent hover:text-accent-foreground p-1 cursor-pointer"
       >
-        <Sun className="h-4 w-4" />
+        <Palette className="h-4 w-4" />
       </Button>
     );
   }
 
-  const toggleTheme = () => {
-    // Use theme directly, not resolvedTheme for cycling
-    const currentTheme = theme || "system";
-    
-    console.log('[ThemeToggle] Current theme:', currentTheme);
-    
-    // Cycle through: system -> light -> dark -> system
-    if (currentTheme === "system") {
-      console.log('[ThemeToggle] Switching to light');
-      setTheme("light");
-    } else if (currentTheme === "light") {
-      console.log('[ThemeToggle] Switching to dark');
-      setTheme("dark");
-    } else {
-      console.log('[ThemeToggle] Switching to system');
-      setTheme("system");
-    }
+  const handleThemeSelect = async (themeName: ThemeName) => {
+    setTheme(themeName);
+    await saveTheme(themeName);
+    setOpen(false);
   };
 
   const getIcon = () => {
-    // Use theme for the icon display, not resolvedTheme
-    const currentTheme = theme || "system";
-    
+    const currentTheme = theme || "captify";
+
     switch (currentTheme) {
-      case "light":
+      case "lite":
         return <Sun className="h-4 w-4" />;
       case "dark":
         return <Moon className="h-4 w-4" />;
-      case "system":
-        return <Monitor className="h-4 w-4" />;
+      case "captify":
       default:
-        // If system theme, show the resolved theme icon with monitor indicator
-        if (resolvedTheme === "dark") {
-          return <Monitor className="h-4 w-4" />;
-        }
-        return <Monitor className="h-4 w-4" />;
+        return <Palette className="h-4 w-4" />;
     }
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={toggleTheme}
-      className="text-white hover:bg-gray-800 hover:text-white p-1 cursor-pointer"
-      title={`Current theme: ${theme || "system"}. Click to cycle through system → light → dark.`}
-    >
-      {getIcon()}
-    </Button>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-foreground hover:bg-accent hover:text-accent-foreground p-1 cursor-pointer"
+          title={`Current theme: ${themes[theme as keyof typeof themes]?.name || "Captify"}`}
+        >
+          {getIcon()}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-48 p-2">
+        <div className="space-y-1">
+          <div className="text-sm font-medium px-2 py-1">Choose theme</div>
+          {Object.entries(themes).map(([key, themeConfig]) => (
+            <Button
+              key={key}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between h-8"
+              onClick={() => handleThemeSelect(key as ThemeName)}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full border"
+                  style={{ backgroundColor: themeConfig.colors.primary }}
+                />
+                <span>{themeConfig.name}</span>
+              </div>
+              {theme === key && <Check className="h-3 w-3" />}
+            </Button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

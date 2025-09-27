@@ -157,6 +157,12 @@ export async function execute(
     } = request;
 
     const userId = session.user.userId || session.user.id;
+    console.log("🔍 Agent Service - User session:", {
+      hasUserId: !!userId,
+      userId: userId,
+      operation: operation
+    });
+
     if (!userId) {
       return {
         success: false,
@@ -390,12 +396,32 @@ export async function execute(
         };
 
         const threadsTable = `${schema}-${app}-Threads`;
+
+        console.log("🔍 Agent Service - Creating thread:", {
+          threadId: threadId,
+          userId: userId,
+          tableName: threadsTable
+        });
         const command = new PutCommand({
           TableName: threadsTable,
           Item: thread,
         });
 
-        await client.send(command);
+        try {
+          await client.send(command);
+          console.log("✅ Thread created successfully:", threadId);
+        } catch (dbError) {
+          console.error("❌ DynamoDB error creating thread:", dbError);
+          return {
+            success: false,
+            error: `Failed to create thread: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`,
+            metadata: {
+              requestId: `agent-error-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              source: "agent.createThread",
+            },
+          };
+        }
 
         return {
           success: true,

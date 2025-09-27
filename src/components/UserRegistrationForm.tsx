@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Loader2, UserPlus, AlertCircle, Building, LogOut } from "lucide-react";
+import { Loader2, UserPlus, AlertCircle, Building, LogOut, Upload, FileText, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 interface UserRegistrationFormProps {
@@ -46,6 +46,11 @@ export function UserRegistrationForm({
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const [canAccessCorePool, setCanAccessCorePool] = useState<boolean | null>(null);
   const [checkingCorePool, setCheckingCorePool] = useState(true);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [fileUploadError, setFileUploadError] = useState<string | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [uploadedFileS3Key, setUploadedFileS3Key] = useState<string | null>(null);
   // Initialize form data with session information
   const [formData, setFormData] = useState(() => {
     // Parse userName into first and last name if available
@@ -121,6 +126,13 @@ export function UserRegistrationForm({
             setRegistrationMessage(
               "Your registration has been submitted and is pending approval from an administrator."
             );
+            // Load existing file URL and S3 key if available
+            if (result.data.documents?.form2875Url) {
+              setUploadedFileUrl(result.data.documents.form2875Url);
+            }
+            if (result.data.documents?.form2875S3Key) {
+              setUploadedFileS3Key(result.data.documents.form2875S3Key);
+            }
           } else if (result.data.status === "unregistered") {
             setIsLocked(false);
             setCurrentStatus("unregistered");
@@ -290,6 +302,11 @@ export function UserRegistrationForm({
             },
             tenantId: formData.tenantId || null,
             status: "registered",
+            documents: uploadedFileUrl ? {
+              form2875Url: uploadedFileUrl,
+              form2875S3Key: uploadedFileS3Key,
+              form2875UploadedAt: new Date().toISOString(),
+            } : undefined,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -345,9 +362,96 @@ export function UserRegistrationForm({
     return emailRegex.test(email);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (PDF only for form 2875)
+    if (file.type !== 'application/pdf') {
+      setFileUploadError('Please upload a PDF file only.');
+      return;
+    }
+
+    // Validate file size (max 10MB for base64 transmission)
+    if (file.size > 10 * 1024 * 1024) {
+      setFileUploadError('File size must be less than 10MB.');
+      return;
+    }
+
+    setFileUploadError(null);
+    setUploadingFile(true);
+
+    try {
+      // Create S3 key path: users/{userId}/form2875-{timestamp}-{fileName}
+      const timestamp = new Date().getTime();
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const s3Key = `users/${userId}/form2875-${timestamp}-${sanitizedFileName}`;
+
+
+      // Convert file to base64 for API transmission
+      console.log('Converting file to base64 for upload:', s3Key);
+      const fileBuffer = await file.arrayBuffer();
+      const base64File = Buffer.from(fileBuffer).toString('base64');
+
+      // Upload file via captifyApi S3 put operation
+      const uploadResult = await apiClient.run({
+        service: "s3",
+        operation: "put",
+        app: "core",
+        data: {
+          bucket: "captify-core-bucket",
+          key: s3Key,
+          body: base64File,
+          contentType: file.type,
+          contentEncoding: "base64",
+          metadata: {
+            originalFileName: file.name,
+            uploadedBy: userId || '',
+            fileType: 'form2875',
+            uploadTimestamp: new Date().toISOString(),
+          }
+        },
+      });
+
+      console.log('S3 upload result:', uploadResult);
+
+      if (!uploadResult.success) {
+        console.error('S3 upload error:', uploadResult.error);
+        throw new Error(uploadResult.error || 'Failed to upload file to S3');
+      }
+
+      // Success - update UI state
+      const fileUrl = `https://captify-core-bucket.s3.amazonaws.com/${s3Key}`;
+      setUploadedFile(file);
+      setUploadedFileUrl(fileUrl);
+      setUploadedFileS3Key(s3Key);
+      setFileUploadError(null);
+
+      console.log(`File uploaded successfully to S3: ${s3Key}`);
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      setFileUploadError(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setUploadedFileUrl(null);
+    setUploadedFileS3Key(null);
+    setFileUploadError(null);
+    // Reset file input
+    const fileInput = document.getElementById('form2875File') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'phone') {
       // Format phone number for US format
       const formattedPhone = formatPhoneNumber(value);
@@ -424,18 +528,7 @@ export function UserRegistrationForm({
 
   return (
     <Card className="w-full max-w-2xl mx-auto relative">
-      <div className="absolute top-4 right-4 flex gap-2">
-        {currentStatus === "registered" && (
-          <Button
-            onClick={handleApprove}
-            size="sm"
-            disabled={loading}
-            className="bg-green-600 text-white hover:bg-green-700"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            {loading ? "Approving..." : "Approve"}
-          </Button>
-        )}
+      <div className="absolute top-4 right-4">
         <Button
           onClick={() => signOut({ redirect: false }).then(() => window.location.href = "/signout")}
           size="sm"
@@ -481,24 +574,6 @@ export function UserRegistrationForm({
             </p>
           </div>
 
-          {userGroups.length > 0 && (
-            <div className="space-y-2">
-              <Label>Current Groups</Label>
-              <div className="flex flex-wrap gap-2">
-                {userGroups.map((group) => (
-                  <span
-                    key={group}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {group}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Your current authentication groups
-              </p>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -552,55 +627,156 @@ export function UserRegistrationForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number (US)</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              disabled={isLocked}
-              placeholder="(555) 123-4567"
-              type="tel"
-              maxLength={14}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number (US)</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                disabled={isLocked}
+                placeholder="(555) 123-4567"
+                type="tel"
+                maxLength={14}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tenantId" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Organization
+              </Label>
+              {loadingTenants ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading organizations...
+                </div>
+              ) : (
+                <Select
+                  value={formData.tenantId}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, tenantId: value }))
+                  }
+                  disabled={isLocked}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your organization (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tenants.length > 0 ? (
+                      tenants.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} ({tenant.code})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No organizations available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
 
+          {/* Form 2875 Upload Section */}
           <div className="space-y-2">
-            <Label htmlFor="tenantId" className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              Organization (Optional)
+            <Label htmlFor="form2875File" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Security Clearance Form 2875
             </Label>
-            {loadingTenants ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading organizations...
+            <p className="text-xs text-muted-foreground">
+              If you require security clearance, please upload your Form 2875 (PDF only, max 10MB)
+            </p>
+
+            {/* File upload area */}
+            {!uploadedFileUrl && !uploadedFile && (
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {uploadingFile ? "Uploading..." : "Click to upload or drag and drop"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">PDF files only (max 10MB)</p>
+                  <input
+                    id="form2875File"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    disabled={isLocked || uploadingFile}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isLocked || uploadingFile}
+                    onClick={() => document.getElementById('form2875File')?.click()}
+                  >
+                    {uploadingFile ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose File
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <Select
-                value={formData.tenantId}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, tenantId: value }))
-                }
-                disabled={isLocked}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your organization (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tenants.length > 0 ? (
-                    tenants.map((tenant) => (
-                      <SelectItem key={tenant.id} value={tenant.id}>
-                        {tenant.name} ({tenant.code})
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      No organizations available
-                    </SelectItem>
+            )}
+
+            {/* Uploaded file display */}
+            {(uploadedFile || uploadedFileUrl) && (
+              <div className="border border-border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium">
+                      {uploadedFile?.name || "Form 2875.pdf"}
+                    </span>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Uploaded
+                    </span>
+                  </div>
+                  {!isLocked && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveFile}
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   )}
-                </SelectContent>
-              </Select>
+                </div>
+                {uploadedFileUrl && (
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-xs"
+                      onClick={() => window.open(uploadedFileUrl, '_blank')}
+                    >
+                      View uploaded file
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* File upload error */}
+            {fileUploadError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{fileUploadError}</AlertDescription>
+              </Alert>
             )}
           </div>
 

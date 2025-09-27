@@ -156,15 +156,15 @@ export function TopNavigation({
   return (
     <div>
       {/* Main Top Bar */}
-      <div className="bg-black text-white">
+      <div className="bg-card border-b border-border">
         <div className="flex items-center px-4 h-12 gap-4">
           {/* Left side - Fixed width */}
           <div className="flex items-center space-x-3 flex-shrink-0">
             <span className="font-medium whitespace-nowrap">
-              <span className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]">
+              <span className="text-primary drop-shadow-[0_0_8px_rgba(96,165,250,0.6)]">
                 AFSC
               </span>
-              <span className="text-white ml-1">TITAN</span>
+              <span className="text-foreground ml-1">TITAN</span>
             </span>
           </div>
 
@@ -180,7 +180,12 @@ export function TopNavigation({
 
           {/* Right side - Fixed width with proper spacing */}
           <div className="flex items-center space-x-3 flex-shrink-0">
-            <ThemeToggle />
+            {/* Token Counter */}
+            <div className="flex items-center space-x-2 px-3 py-1 bg-muted rounded-md border border-border whitespace-nowrap">
+              <Zap className="h-4 w-4 text-warning" />
+              <span className="text-sm font-medium text-foreground">4,600</span>
+              <span className="text-xs text-muted-foreground">tokens</span>
+            </div>
 
             {/* Notifications */}
             <DropdownMenu>
@@ -188,11 +193,11 @@ export function TopNavigation({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:bg-gray-800 hover:text-white p-2 cursor-pointer relative"
+                  className="text-foreground hover:bg-accent hover:text-accent-foreground p-2 cursor-pointer relative"
                 >
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
@@ -219,26 +224,26 @@ export function TopNavigation({
                       <div
                         key={notification.id}
                         className={`p-3 border-b last:border-b-0 hover:bg-accent/50 ${
-                          !notification.read ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                          !notification.read ? "bg-accent/20" : ""
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               {notification.type === "success" && (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <CheckCircle className="h-4 w-4 text-success" />
                               )}
                               {notification.type === "warning" && (
-                                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                <AlertCircle className="h-4 w-4 text-warning" />
                               )}
                               {notification.type === "info" && (
-                                <Clock className="h-4 w-4 text-blue-500" />
+                                <Clock className="h-4 w-4 text-info" />
                               )}
                               <h4 className="font-medium text-sm truncate">
                                 {notification.title}
                               </h4>
                               {!notification.read && (
-                                <div className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0"></div>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground mb-1">
@@ -278,26 +283,21 @@ export function TopNavigation({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Token Counter */}
-            <div className="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-md border border-gray-700 whitespace-nowrap">
-              <Zap className="h-4 w-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white">4,600</span>
-              <span className="text-xs text-gray-400">tokens</span>
-            </div>
+            <ThemeToggle />
 
             <div className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center space-x-2 text-white hover:bg-gray-800 hover:text-white px-3 py-2 h-auto"
+                    className="flex items-center space-x-2 text-foreground hover:bg-accent hover:text-accent-foreground px-3 py-2 h-auto"
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
                         src={session?.user?.image || undefined}
                         alt={session?.user?.name || "User"}
                       />
-                      <AvatarFallback className="bg-blue-600 text-white text-sm">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                         {(user?.name || session?.user?.name) &&
                         user?.name !== user?.email &&
                         session?.user?.name !== session?.user?.email
@@ -325,13 +325,8 @@ export function TopNavigation({
                           session?.user?.email?.split("@")[0] ||
                           "User"}
                       </span>
-                      {(user?.email || session?.user?.email) && (
-                        <span className="text-xs text-gray-300 truncate max-w-full">
-                          {user?.email || session?.user?.email}
-                        </span>
-                      )}
                     </div>
-                    <ChevronDown className="h-4 w-4 text-gray-300" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
@@ -342,7 +337,7 @@ export function TopNavigation({
                           src={session?.user?.image || undefined}
                           alt={session?.user?.name || "User"}
                         />
-                        <AvatarFallback className="bg-blue-600 text-white">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {session?.user?.name &&
                           session?.user?.name !== session?.user?.email
                             ? session.user.name
@@ -396,7 +391,7 @@ export function TopNavigation({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}
-                    className="flex items-center space-x-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                    className="flex items-center space-x-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Sign Out</span>

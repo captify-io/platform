@@ -28,6 +28,17 @@ class ApiClient {
   private currentAppIdentityPoolId: string | undefined = undefined;
   private currentAppSlug: string | undefined = undefined;
 
+  // Environment-aware base URL detection
+  private getBaseUrl(): string {
+    // Development: use explicit platform URL if set
+    // Production: use relative URLs (same origin)
+    if (typeof window !== "undefined") {
+      return process.env.NEXT_PUBLIC_CAPTIFY_API_URL || '';
+    }
+    // Server-side: always use relative URLs
+    return '';
+  }
+
   // Set the current app's identity pool ID (called when app context changes)
   setAppIdentityPool(poolId: string | undefined, appSlug?: string) {
     // Only update if it's actually changing to prevent unnecessary logs
@@ -53,7 +64,8 @@ class ApiClient {
     try {
       // Use app from request, default to "core" if not specified
       const app = request.app || "core";
-      const url = `/api/captify`;
+      const baseUrl = this.getBaseUrl();
+      const url = `${baseUrl}/api/captify`;
 
       // If no identity pool is explicitly provided, use the current app's pool
       const finalRequest = {

@@ -37,8 +37,9 @@ export function ClientCaptifyProvider({
       <SessionMonitor>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="captify"
+          enableSystem={false}
+          themes={["captify", "lite", "dark"]}
           disableTransitionOnChange
           storageKey="captify-theme"
         >

@@ -7,6 +7,7 @@ export default defineConfig({
     "src/index.ts",
     "src/lib/index.ts",
     "src/lib/auth.ts",
+    "src/lib/auth-exports.tsx",
     "src/lib/api.ts",
     "src/lib/utils.ts",
     "src/hooks/index.ts",

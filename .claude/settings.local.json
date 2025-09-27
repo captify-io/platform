@@ -109,7 +109,18 @@
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 3)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 1)",
       "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 18042848003 --log)",
-      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 2)"
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run list --limit 2)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 18042989904 --log)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 18042989904 --repo captify-io/platform)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view --job=51346879719 --repo captify-io/platform)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view --log --job=51346879719 --repo captify-io/platform)",
+      "Bash(nslookup:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" run view 18044582713 --log)",
+      "Bash(curl:*)",
+      "Bash(ipconfig /flushdns)",
+      "Bash(az account show:*)",
+      "Bash(az ad app show:*)",
+      "Bash(az ad app update:*)"
     ],
     "deny": [],
     "ask": []

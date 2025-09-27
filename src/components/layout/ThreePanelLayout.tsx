@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Bot,
+  X,
   ChevronDown,
   Loader2,
 } from "lucide-react";
@@ -337,36 +338,6 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
               state === "collapsed" ? "px-0" : "px-2"
             )}
           >
-            {/* Top controls - always visible */}
-            <div
-              className={cn(
-                "flex items-center gap-1 border-b border-border pb-2 pt-2",
-                state === "collapsed" ? "flex-col px-0" : "flex-row px-0"
-              )}
-            >
-              <SidebarTrigger
-                className={cn("h-8 w-8", state === "collapsed" && "mb-1")}
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push("/")}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Bot className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side={state === "collapsed" ? "right" : "bottom"}
-                  >
-                    Home
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
             {loading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -525,18 +496,35 @@ const ThreePanelContent = React.memo(function ThreePanelContent({
           </SidebarContent>
         </Sidebar>
 
-        {/* Sidebar Resize Handle */}
-        {state !== "collapsed" && (
-          <div
-            className={cn(
-              "w-1 bg-transparent hover:bg-border cursor-col-resize transition-colors relative",
-              isResizingSidebar && "bg-border"
-            )}
-            onMouseDown={handleSidebarMouseDown}
+        {/* Sidebar Resize Handle with Toggle */}
+        <div className="relative w-1 bg-transparent hover:bg-border transition-colors">
+          {state !== "collapsed" && (
+            <div
+              className={cn(
+                "absolute inset-0 cursor-col-resize",
+                isResizingSidebar && "bg-border"
+              )}
+              onMouseDown={handleSidebarMouseDown}
+            >
+              <div className="absolute inset-y-0 left-0 w-1 bg-border opacity-0 hover:opacity-100 transition-opacity" />
+            </div>
+          )}
+
+          {/* Toggle Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 p-0 bg-background border border-border rounded-full shadow-sm hover:bg-accent z-10"
+            title={state === "collapsed" ? "Open menu" : "Close menu"}
           >
-            <div className="absolute inset-y-0 left-0 w-1 bg-border opacity-0 hover:opacity-100 transition-opacity" />
-          </div>
-        )}
+            {state === "collapsed" ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Main Content Area */}

@@ -31,7 +31,7 @@ npm cache clean --force || true
 
 # Install dependencies
 echo "Installing dependencies with GitHub token..."
-npm ci --production=false
+npm ci --legacy-peer-deps
 
 echo "Verifying installation..."
 if [ -d "node_modules" ]; then
