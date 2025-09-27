@@ -80,9 +80,7 @@ export function SignOnPage({ appName, onSignIn, className }: SignOnPageProps) {
           <div className="text-center">Loading...</div>
         ) : (
           <button
-            onClick={() => signIn("cognito", {
-              callbackUrl: window.location.origin
-            })}
+            onClick={() => captifySignIn(appName)}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Sign In with Captify
@@ -92,6 +90,11 @@ export function SignOnPage({ appName, onSignIn, className }: SignOnPageProps) {
     </div>
   );
 }
+
+// Get platform auth URLs
+const getPlatformAuthUrl = () => {
+  return process.env.NEXT_PUBLIC_CAPTIFY_API_URL || '';
+};
 
 // Exportable auth functions
 export const captifySignIn = async (appName?: string) => {
@@ -103,6 +106,16 @@ export const captifySignIn = async (appName?: string) => {
     return;
   }
 
+  // Standalone mode - redirect to platform auth
+  const platformUrl = getPlatformAuthUrl();
+  if (platformUrl) {
+    // Redirect to platform's auth endpoint
+    const authUrl = `${platformUrl}/api/auth/signin/cognito?callbackUrl=${encodeURIComponent(window.location.origin)}`;
+    window.location.href = authUrl;
+    return;
+  }
+
+  // Fallback to local auth (should not happen in practice)
   return await signIn("cognito", {
     callbackUrl: window.location.origin,
   });
@@ -116,6 +129,15 @@ export const captifySignOut = async () => {
     return;
   }
 
+  // Standalone mode - redirect to platform signout
+  const platformUrl = getPlatformAuthUrl();
+  if (platformUrl) {
+    const signoutUrl = `${platformUrl}/api/auth/signout?callbackUrl=${encodeURIComponent(window.location.origin)}`;
+    window.location.href = signoutUrl;
+    return;
+  }
+
+  // Fallback to local signout
   return await signOut({
     callbackUrl: window.location.origin
   });
