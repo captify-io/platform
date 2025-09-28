@@ -1,7 +1,7 @@
 {
   "name": "@captify-io/platform",
   "private": false,
-  "version": "1.0.74",
+  "version": "1.0.75",
   "type": "module",
   "description": "Core components, utilities, and services for the Captify platform",
   "scripts": {
@@ -74,6 +74,7 @@
     "@tailwindcss/postcss": "^4.1.13",
     "@types/react": "^19.1.12",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/swagger-ui-react": "^5.18.0",
     "ai": "^5.0.39",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.0.0",
@@ -100,6 +101,8 @@
     "recharts": "^2.15.4",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-react": "^5.29.0",
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.1.13",
     "tw-animate-css": "^1.3.8",

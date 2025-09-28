@@ -18,6 +18,41 @@ const missingVars = Object.entries(requiredEnvVars)
 
 const authConfig: NextAuthConfig = {
   debug: process.env.NEXTAUTH_DEBUG === "true",
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "development" ? ".localhost" : undefined,
+      }
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.callback-url"
+        : "next-auth.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "development" ? ".localhost" : undefined,
+      }
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Host-next-auth.csrf-token"
+        : "next-auth.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "development" ? ".localhost" : undefined,
+      }
+    }
+  },
   providers: [
     CognitoProvider({
       clientId: process.env.COGNITO_CLIENT_ID!,

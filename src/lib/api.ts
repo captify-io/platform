@@ -7,10 +7,10 @@ export interface CaptifyResponse<T = any> {
 }
 
 export interface ApiRequest {
-  service: string;
+  service: string; // Format: 'package.service' e.g., 'platform.dynamo', 'pmbook.contracts'
   operation: string;
-  app?: string;
-  table?: string;
+  app?: string; // @deprecated - use package prefix in service name instead
+  table?: string; // Format: 'app-table' e.g., 'pmbook-Contracts', 'platform-Users'
   identityPoolId?: string; // Optional Identity Pool ID to use for AWS credentials
   forceRefresh?: boolean; // Force refresh of AWS credentials
   data?: {
@@ -91,6 +91,7 @@ class ApiClient {
           "Content-Type": "application/json",
           "x-app": app,
         },
+        credentials: "include", // Include cookies for cross-origin requests
         body: JSON.stringify(finalRequest), // Use finalRequest which includes identityPoolId
       };
 

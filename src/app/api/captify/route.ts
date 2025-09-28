@@ -75,10 +75,6 @@ async function handleRequest(request: NextRequest, method: string) {
 
     // Log the incoming request
 
-    // Check for x-app header or app in body
-    const appFromHeader = request.headers.get("x-app");
-    const app = appFromHeader || body.app || "core";
-
     if (!body.service) {
       return new Response(
         JSON.stringify({ error: "Service parameter is required" }),
@@ -88,6 +84,21 @@ async function handleRequest(request: NextRequest, method: string) {
         }
       );
     }
+
+    // Parse package and service from service name (e.g., 'platform.dynamo' or 'pmbook.contracts')
+    let packageName: string;
+    let serviceName: string;
+
+    if (body.service.includes('.')) {
+      [packageName, serviceName] = body.service.split('.', 2);
+    } else {
+      // Backward compatibility - if no package prefix, assume platform
+      packageName = 'platform';
+      serviceName = body.service;
+    }
+
+    // Map package names
+    const app = packageName === 'platform' ? 'core' : packageName;
 
     try {
       // Get minimal session from NextAuth
@@ -212,18 +223,18 @@ async function handleRequest(request: NextRequest, method: string) {
           );
         }
 
-        // Get the service handler
-        serviceHandler = serviceModule.services.use(body.service);
+        // Get the service handler using the parsed service name (without package prefix)
+        serviceHandler = serviceModule.services.use(serviceName);
 
         if (!serviceHandler) {
           throw new Error(
-            `Service '${body.service}' not found in @captify-io/${app} package`
+            `Service '${serviceName}' not found in @captify-io/${app} package`
           );
         }
 
         if (typeof serviceHandler.execute !== "function") {
           throw new Error(
-            `Service '${body.service}' does not have an execute method`
+            `Service '${serviceName}' does not have an execute method`
           );
         }
 
@@ -232,7 +243,7 @@ async function handleRequest(request: NextRequest, method: string) {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Failed to load service ${body.service} from @captify-io/${app}`,
+            error: `Failed to load service ${serviceName} from @captify-io/${app}`,
             details:
               importError instanceof Error
                 ? importError.message
@@ -314,7 +325,7 @@ async function handleRequest(request: NextRequest, method: string) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Failed to execute service ${body.service}`,
+          error: `Failed to execute service ${serviceName}`,
           details: error instanceof Error ? error.message : "Unknown error",
         }),
         {
