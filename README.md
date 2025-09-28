@@ -67,6 +67,16 @@ import { api } from "@captify-io/platform/services";
 
 ## Recent Changes
 
+### v1.0.75
+- **Cross-Origin Authentication Support**
+  - Configured NextAuth cookies for cross-origin session sharing
+  - Added support for external applications running on different ports/domains
+  - Enhanced apiClient with `credentials: "include"` for automatic cookie forwarding
+  - Supports development mode with `.localhost` domain sharing
+  - Production-ready with `sameSite: "none"` for secure cross-domain requests
+  - Maintains security with `httpOnly` cookies and proper CSRF protection
+  - External apps can now authenticate directly with the main platform
+
 ### v1.0.67
 - **Agent Chat Interface Improvements**
   - Streamlined chat interface with cleaner layout and reduced padding
