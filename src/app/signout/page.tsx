@@ -69,6 +69,7 @@ export default function SignOutPage() {
 
           <div className="space-y-4">
             <Button
+              variant="default"
               onClick={handleSignIn}
               className="w-full"
               size="lg"

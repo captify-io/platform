@@ -18,22 +18,14 @@ export default function HomePage() {
     );
   }
 
-  // Initial settings - can be customized based on user preferences or environment
-  const initialSettings = {
+  const agentProps: any = {
+    mode: "chat",
+    className: "h-full w-full",
     model: "gpt-4o",
-    provider: "openai" as const,
     temperature: 0.7,
     maxTokens: 4000,
-    systemPrompt:
-      "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations.",
+    systemPrompt: "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations."
   };
 
-  return (
-    <Agent
-      className="h-full w-full"
-      userState={{}}
-      config={{}}
-      initialSettings={initialSettings}
-    />
-  );
+  return <Agent {...agentProps} />;
 }
