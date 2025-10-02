@@ -1,13 +1,12 @@
 "use client";
 
 import React from "react";
-import { Agent } from "@captify-io/core/components";
-import { useCaptify } from "@captify-io/core/hooks";
+import { Agent, useCaptify } from "@captify-io/core/components";
 
 export default function HomePage() {
   const { session } = useCaptify();
 
-  if (!(session as any)?.user) {
+  if (!session?.user) {
     return (
       <div className="h-screen w-full bg-background flex items-center justify-center">
         <div className="text-center">
@@ -18,14 +17,20 @@ export default function HomePage() {
     );
   }
 
-  const agentProps: any = {
-    mode: "chat",
-    className: "h-full w-full",
+  // Initial settings - can be customized based on user preferences or environment
+  const initialSettings = {
     model: "gpt-4o",
+    provider: "openai" as const,
     temperature: 0.7,
     maxTokens: 4000,
-    systemPrompt: "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations."
+    systemPrompt:
+      "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations.",
   };
 
-  return <Agent {...agentProps} />;
+  return (
+    <Agent
+      className="h-full w-full"
+      initialSettings={initialSettings}
+    />
+  );
 }

@@ -21,15 +21,11 @@ This application depends on `@captify-io/core` for all UI components, hooks, and
 ## Installation
 
 ```bash
-# Install dependencies (including @captify-io/core)
+# Install dependencies (including @captify-io/core from GitHub)
 npm install
-
-# For local development, link to local @captify-io/core
-cd ../captify-core
-npm link
-cd ../captify-platform
-npm link @captify-io/core
 ```
+
+**Note:** The `@captify-io/core` package is installed directly from GitHub. The package.json is configured to pull from `github:captify-io/core`.
 
 ## Environment Variables
 
@@ -61,7 +57,7 @@ DEV_ORIGIN=http://localhost:3001
 ## Development
 
 ```bash
-# Start development server
+# Start development server with Turbopack
 npm run dev
 
 # Type checking
@@ -73,6 +69,17 @@ npm run build
 # Start production server
 npm start
 ```
+
+### Tailwind CSS v4 Configuration
+
+This project uses **Tailwind CSS v4** with the following setup:
+
+- **globals.css** contains `@import "tailwindcss"` and `@source` directives
+- **postcss.config.cjs** uses `@tailwindcss/postcss` plugin
+- **No tailwind.config.ts** - all configuration is in CSS using `@theme inline`
+- **@captify-io/core components** are scanned via `@source "../../node_modules/@captify-io/core/dist/**/*.{js,cjs}"`
+
+**Important:** If you add new external component libraries, add them to the `@source` directive in `globals.css` to ensure their utility classes are generated.
 
 ## API Routes
 

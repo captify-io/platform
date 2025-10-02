@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { CaptifyProvider, UserRegistrationForm } from "@captify-io/core/components";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 interface ServerCaptifyProviderProps {
@@ -74,32 +75,41 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
   // Check 3: User is NOT authorized - show registration form (whether they've registered before or not)
   if (!isAuthorized) {
     return (
-      <div className="h-screen bg-background overflow-auto">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="mb-6 text-center">
-              <h1 className="text-3xl font-bold mb-2">
-                Account Registration is Required
-              </h1>
-              <p className="text-muted-foreground">
-                Please provide your information to access the platform
-              </p>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="captify"
+        enableSystem={false}
+        themes={["captify", "lite", "dark"]}
+        disableTransitionOnChange={true}
+        storageKey="captify-theme"
+      >
+        <div className="h-screen bg-background overflow-auto">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-2xl mx-auto">
+              <div className="mb-6 text-center">
+                <h1 className="text-3xl font-bold mb-2">
+                  Account Registration is Required
+                </h1>
+                <p className="text-muted-foreground">
+                  Please provide your information to access the platform
+                </p>
+              </div>
+              <UserRegistrationForm
+                userId={userId}
+                userEmail={userEmail}
+                userName={userName}
+                userGroups={userGroups}
+                onRegistrationComplete={() => {
+                  // Refresh the page after registration
+                  if (typeof window !== 'undefined') {
+                    window.location.reload();
+                  }
+                }}
+              />
             </div>
-            <UserRegistrationForm
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              userGroups={userGroups}
-              onRegistrationComplete={() => {
-                // Refresh the page after registration
-                if (typeof window !== 'undefined') {
-                  window.location.reload();
-                }
-              }}
-            />
           </div>
         </div>
-      </div>
+      </ThemeProvider>
     );
   }
 
