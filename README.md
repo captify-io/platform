@@ -85,16 +85,27 @@ This project uses **Tailwind CSS v4** with the following setup:
 
 ### `/api/captify` - AWS Service Proxy
 
-Handles authenticated AWS service calls from external applications.
+Handles authenticated AWS service calls from external applications. All services are provided by `@captify-io/core` package.
+
+**Important:** All service requests must use the `platform.*` namespace (e.g., `platform.dynamodb`, `platform.s3`). Services are **always** loaded from `@captify-io/core/services`, regardless of the package name in the request.
 
 **Request:**
 ```json
 {
   "service": "platform.dynamodb",
-  "operation": "get",
-  "table": "core-Users",
+  "operation": "query",
+  "table": "core-Notification",
   "data": {
-    "Key": { "userId": "user-123" }
+    "IndexName": "userId-timestamp-index",
+    "KeyConditionExpression": "#userId = :userId",
+    "ExpressionAttributeNames": {
+      "#userId": "userId"
+    },
+    "ExpressionAttributeValues": {
+      ":userId": "user-id-here"
+    },
+    "ScanIndexForward": false,
+    "Limit": 50
   }
 }
 ```
@@ -103,13 +114,71 @@ Handles authenticated AWS service calls from external applications.
 ```json
 {
   "success": true,
-  "data": { ... }
+  "data": {
+    "Items": [...],
+    "Count": 5,
+    "ScannedCount": 5
+  }
 }
 ```
+
+**Available Services:**
+- `platform.dynamodb` - DynamoDB operations (query, scan, get, put, update, delete)
+- `platform.s3` - S3 operations (upload, download, list, delete)
+- `platform.cognito` - Cognito user management
+- `platform.aurora` - Aurora Serverless queries
 
 ### `/api/auth/[...nextauth]` - NextAuth.js
 
 Standard NextAuth.js endpoints for authentication.
+
+## External App Authentication
+
+This platform provides centralized authentication for external applications using NextAuth.js with AWS Cognito.
+
+### How It Works
+
+External apps redirect unauthenticated users to this platform's sign-in endpoint with a `callbackUrl`:
+
+```
+User visits: http://localhost:3001/ops/contracts (pmbook app)
+         ↓ (no session)
+Redirects to: http://localhost:3000/api/auth/signin?callbackUrl=http://localhost:3001/ops/contracts
+         ↓
+Platform authenticates with Cognito
+         ↓
+Sets session cookie on .localhost domain
+         ↓
+Redirects back to: http://localhost:3001/ops/contracts
+         ↓
+pmbook receives request with valid session cookie
+```
+
+### Trusted Domains
+
+The platform uses **server-side 302 redirects** throughout the flow and automatically whitelists:
+
+- **localhost** - any port (e.g., localhost:3000, localhost:3001, localhost:3002)
+- **.captify.io** - all subdomains (e.g., app.captify.io, admin.captify.io)
+
+Additional domains can be configured via the `NEXTAUTH_TRUSTED_DOMAINS` environment variable:
+
+```env
+NEXTAUTH_TRUSTED_DOMAINS=.example.com,.internal.net
+```
+
+Domains starting with `.` are treated as wildcard subdomains.
+
+### Session Cookie Configuration
+
+The session cookie is set with:
+- **Domain:** `.localhost` (development) or `.captify.io` (production)
+- **SameSite:** `lax` (development) or `none` (production)
+- **HttpOnly:** `true`
+- **Secure:** `true` (production only)
+- **MaxAge:** 8 hours
+
+This allows all apps on the same domain to share the authentication session.
 
 ## Deployment
 

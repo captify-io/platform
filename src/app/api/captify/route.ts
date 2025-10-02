@@ -201,41 +201,39 @@ async function handleRequest(request: NextRequest, method: string) {
         );
       }
 
-      // Get service handler - only use local services
+      // Get service handler - ALWAYS from @captify-io/core
       let serviceHandler;
-      let serviceModule;
       try {
-        // Only allow platform services from local src/services
+        // Validate package name is 'platform' (all services are platform.*)
         if (packageName !== "platform") {
-          throw new Error(`Only 'platform' services are supported. External packages are not allowed.`);
+          throw new Error(`Only 'platform' services are supported. Received: '${packageName}'`);
         }
 
-        serviceModule = await import("@captify-io/core/services");
+        // IMPORTANT: All services ALWAYS come from @captify-io/core
+        // The packageName is just for validation, not for dynamic imports
+        const serviceModule = await import("@captify-io/core/services");
 
-        if (!serviceModule.services) {
-          throw new Error(
-            `No services export found in local services`
-          );
+        if (!serviceModule?.services) {
+          throw new Error("@captify-io/core/services does not export 'services'");
         }
 
         if (typeof serviceModule.services.use !== "function") {
-          throw new Error(
-            `services.use is not a function in local services`
-          );
+          throw new Error("@captify-io/core services.use is not a function");
         }
 
-        // Get the service handler using the parsed service name (without package prefix)
+        // Get the service handler (e.g., 'dynamodb', 's3', 'cognito')
         serviceHandler = serviceModule.services.use(serviceName);
 
         if (!serviceHandler) {
           throw new Error(
-            `Service '${serviceName}' not found in platform services`
+            `Service '${serviceName}' not found in @captify-io/core services. ` +
+            `Available services are managed by @captify-io/core.`
           );
         }
 
         if (typeof serviceHandler.execute !== "function") {
           throw new Error(
-            `Service '${serviceName}' does not have an execute method`
+            `Service '${serviceName}' from @captify-io/core does not have an execute method`
           );
         }
 
@@ -244,13 +242,14 @@ async function handleRequest(request: NextRequest, method: string) {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Failed to load service ${serviceName} from @captify-io/${packageName}`,
+            error: `Failed to load service ${serviceName} from @captify-io/core`,
             details:
               importError instanceof Error
                 ? importError.message
                 : "Unknown import error",
             app: externalApp,
             requestedService: body.service,
+            packageName: packageName, // Include for debugging
           }),
           {
             status: 404,

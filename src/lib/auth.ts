@@ -213,7 +213,50 @@ const authConfig: NextAuthConfig = {
       };
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirect after sign in
+      // Get trusted domains from environment or use defaults
+      const envDomains = process.env.NEXTAUTH_TRUSTED_DOMAINS || '';
+      const configuredDomains = envDomains.split(',').map(d => d.trim()).filter(Boolean);
+
+      // Default trusted domains (always allowed)
+      const defaultDomains = [
+        'localhost', // Any port on localhost
+        '.captify.io', // All subdomains of captify.io
+      ];
+
+      const trustedDomains = [...defaultDomains, ...configuredDomains];
+
+      try {
+        const parsedUrl = new URL(url, baseUrl);
+        const baseUrlParsed = new URL(baseUrl);
+
+        // If url is just the baseUrl (same origin, same path "/" or empty), redirect to home
+        // This handles the case where callback cookie persists but no explicit callback was set
+        if (
+          parsedUrl.origin === baseUrlParsed.origin &&
+          (parsedUrl.pathname === '/' || parsedUrl.pathname === '')
+        ) {
+          return baseUrl;
+        }
+
+        // Check if hostname matches any trusted domain
+        const isTrusted = trustedDomains.some(domain => {
+          if (domain.startsWith('.')) {
+            // Subdomain wildcard: check if hostname ends with domain
+            return parsedUrl.hostname === domain.slice(1) || parsedUrl.hostname.endsWith(domain);
+          } else {
+            // Exact match
+            return parsedUrl.hostname === domain;
+          }
+        });
+
+        if (isTrusted) {
+          return url;
+        }
+      } catch (error) {
+        // Invalid URL, fall back to baseUrl
+      }
+
+      // Default: redirect to baseUrl (home page)
       return baseUrl;
     },
   },

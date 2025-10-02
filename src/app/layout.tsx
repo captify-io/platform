@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { CaptifyProvider, UserRegistrationForm } from "@captify-io/core/components";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -34,25 +35,14 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
     if (pathname === "/signout") {
       return <>{children}</>;
     }
-    // Otherwise, redirect to signin
-    return (
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `window.location.href = "/api/auth/signin";`,
-        }}
-      />
-    );
+    // Server-side 302 redirect to signin
+    redirect("/api/auth/signin");
   }
 
   // Check 2: Token refresh error - redirect to signin
   if ((session as any).error === "RefreshAccessTokenError") {
-    return (
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `window.location.href = "/api/auth/signin";`,
-        }}
-      />
-    );
+    // Server-side 302 redirect to signin
+    redirect("/api/auth/signin");
   }
 
   // Check 2: User is authenticated - check core identity pool access
