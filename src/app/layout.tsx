@@ -90,6 +90,12 @@ async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
               userEmail={userEmail}
               userName={userName}
               userGroups={userGroups}
+              onRegistrationComplete={() => {
+                // Refresh the page after registration
+                if (typeof window !== 'undefined') {
+                  window.location.reload();
+                }
+              }}
             />
           </div>
         </div>

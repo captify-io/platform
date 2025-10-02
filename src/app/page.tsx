@@ -7,7 +7,7 @@ import { useCaptify } from "@captify-io/core/hooks";
 export default function HomePage() {
   const { session } = useCaptify();
 
-  if (!session?.user) {
+  if (!(session as any)?.user) {
     return (
       <div className="h-screen w-full bg-background flex items-center justify-center">
         <div className="text-center">
@@ -31,6 +31,8 @@ export default function HomePage() {
   return (
     <Agent
       className="h-full w-full"
+      userState={{}}
+      config={{}}
       initialSettings={initialSettings}
     />
   );
