@@ -52,6 +52,10 @@ SCHEMA=your-schema-name
 # Domain (for CORS)
 DOMAIN=captify.io
 DEV_ORIGIN=http://localhost:3001
+
+# Session Configuration (optional)
+NEXT_PUBLIC_IDLE_TIMEOUT_MINUTES=60  # Idle timeout in minutes (default: 15 in production, 0 in development)
+NEXTAUTH_TRUSTED_DOMAINS=.example.com,.internal.net  # Additional trusted domains for redirects
 ```
 
 ## Development
@@ -211,8 +215,12 @@ npm run deploy:eb
 - **NEVER** commit `.env` files to git
 - Token storage is server-side only (DynamoDB)
 - CORS is configured for specific origins only
-- Session timeout is 15 minutes of inactivity
-- Tokens refresh 15 minutes before expiry
+- **Session Configuration:**
+  - **Idle Timeout:** Default 15 minutes in production (configurable via `NEXT_PUBLIC_IDLE_TIMEOUT_MINUTES`)
+  - **Session Cookie MaxAge:** 8 hours
+  - **Cognito Token Expiry:** 1 hour (auto-refreshes 15 minutes before expiry)
+  - **DynamoDB Token TTL:** 24 hours (automatic cleanup)
+- Warning dialog appears 2 minutes before idle timeout logout
 
 ## Architecture Dependencies
 
