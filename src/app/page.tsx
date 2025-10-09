@@ -1,14 +1,26 @@
 "use client";
 
-import React from "react";
-import { Agent, useCaptify } from "@captify-io/core/components";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-export default function HomePage() {
-  const { session } = useCaptify();
+export default function RootPage() {
+  const router = useRouter();
+  const { status } = useSession();
 
-  if (!session?.user) {
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/captify/home");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return null;
+  }
+
+  if (status === "unauthenticated") {
     return (
-      <div className="h-screen w-full bg-background flex items-center justify-center">
+      <div className="w-full bg-background flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Welcome to Captify</h1>
           <p className="text-muted-foreground">Please log in to continue</p>
@@ -17,20 +29,5 @@ export default function HomePage() {
     );
   }
 
-  // Initial settings - can be customized based on user preferences or environment
-  const initialSettings = {
-    model: "gpt-4o",
-    provider: "openai" as const,
-    temperature: 0.7,
-    maxTokens: 4000,
-    systemPrompt:
-      "You are a helpful AI assistant for the Captify platform. You can help users with questions about their projects, data analysis, strategic planning, and general business operations.",
-  };
-
-  return (
-    <Agent
-      className="h-full w-full"
-      initialSettings={initialSettings}
-    />
-  );
+  return null;
 }

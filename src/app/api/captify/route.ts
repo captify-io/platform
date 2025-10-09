@@ -3,49 +3,15 @@ import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
 import { auth } from "../../../lib/auth";
 import { getStoredTokens } from "../../../lib/auth-store";
 
-export async function GET(request: NextRequest) {
-  return handleRequest(request, "GET");
-}
-
 export async function POST(request: NextRequest) {
-  return handleRequest(request, "POST");
-}
-
-export async function OPTIONS(request: NextRequest) {
-  return handleRequest(request, "OPTIONS");
-}
-
-
-async function handleRequest(request: NextRequest, method: string) {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(2, 15);
 
+  const headers = {
+    "Content-Type": "application/json",
+  };
 
   try {
-    // Add CORS headers for external app support
-    const headers = {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": process.env.NODE_ENV === "development"
-        ? request.headers.get("origin") || process.env.DEV_ORIGIN || "http://localhost:3001"
-        : `https://${process.env.DOMAIN || "captify.io"}`,
-      "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-app, Cookie",
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Expose-Headers": "Set-Cookie",
-    };
-
-    // Handle OPTIONS request for CORS
-    if (method === "OPTIONS") {
-      return new Response(null, { status: 200, headers });
-    }
-
-    // Only POST requests are supported for service calls
-    if (method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers,
-      });
-    }
 
     // Get request body
     const body = await request.json();
@@ -313,13 +279,7 @@ async function handleRequest(request: NextRequest, method: string) {
       requestId,
     }), {
       status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": process.env.NODE_ENV === "development"
-          ? request.headers.get("origin") || process.env.DEV_ORIGIN || "*"
-          : `https://${process.env.DOMAIN || "captify.io"}`,
-        "Access-Control-Allow-Credentials": "true",
-      },
+      headers,
     });
   }
 }

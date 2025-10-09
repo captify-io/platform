@@ -1,119 +1,145 @@
-import { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { CaptifyProvider, UserRegistrationForm } from "@captify-io/core/components";
-import { ThemeProvider } from "next-themes";
-import "./globals.css";
+"use client";
 
-interface ServerCaptifyProviderProps {
-  children: ReactNode;
+import React, { useEffect } from "react";
+import { SessionProvider, useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import "./globals.css";
+import { config } from "@/config";
+import type { CaptifyLayoutConfig } from "@captify-io/core/components";
+
+/**
+ * Generate hash-to-route mapping from menu configuration
+ * This ensures routes are automatically synced with menu changes
+ */
+function generateHashToRouteMap(config: CaptifyLayoutConfig): Record<string, string> {
+  const hashMap: Record<string, string> = {
+    'captify-home': '/captify',
+  };
+
+  function processMenuItem(item: any) {
+    if (item.id && item.href) {
+      hashMap[item.id] = item.href;
+    }
+    if (item.children) {
+      item.children.forEach(processMenuItem);
+    }
+  }
+
+  config.menu?.forEach(processMenuItem);
+  return hashMap;
 }
 
-async function ServerCaptifyProvider({ children }: ServerCaptifyProviderProps) {
-  // Check if this is the signout page - allow it without authentication
-  const { headers } = await import("next/headers");
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "";
+interface CaptifyPageLayoutProps {
+  children: React.ReactNode;
+  params?: Promise<{}>;
+}
 
-  // Allow public pages without authentication
-  if (pathname === "/signout") {
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Check if we're on an auth page (signin, signout, error, callback)
+  const isAuthPage = typeof window !== "undefined" &&
+    (window.location.pathname.startsWith("/auth/") ||
+     window.location.pathname.startsWith("/api/auth/"));
+
+  // Backward compatibility: Redirect hash URLs to proper routes
+  useEffect(() => {
+    if (typeof window === "undefined" || isAuthPage) return;
+
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      // Remove the # and convert hash pattern to route
+      const hashValue = hash.substring(1);
+
+      // Generate hash-to-route mapping from menu configuration
+      // This automatically stays in sync with menu changes in config.ts
+      const hashToRoute = generateHashToRouteMap(config);
+
+      const route = hashToRoute[hashValue];
+      if (route) {
+        // Clear the hash and navigate to the proper route
+        window.history.replaceState(null, '', window.location.pathname);
+        router.push(route);
+      }
+    }
+  }, [router, isAuthPage]);
+
+  // Redirect to default page if on root captify path without hash
+  useEffect(() => {
+    if (typeof window === "undefined" || isAuthPage) return;
+
+    // If we're at /captify with no hash and no specific page, redirect to default
+    if (pathname === '/captify' && !window.location.hash) {
+      router.push('/captify/insights');
+    }
+  }, [pathname, router, isAuthPage]);
+
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.querySelector('[data-sidebar="sidebar"]');
+      const trigger = document.querySelector('[data-sidebar="trigger"]');
+      const target = event.target as Node;
+
+      // Check if sidebar is open (not collapsed)
+      const isOpen = sidebar?.getAttribute('data-state') !== 'collapsed';
+
+      if (isOpen && sidebar && !sidebar.contains(target) && trigger && !trigger.contains(target)) {
+        // Click was outside sidebar and trigger button - close it
+        const toggleButton = trigger as HTMLElement;
+        toggleButton?.click();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // If loading, show nothing (brief flash only)
+  if (status === "loading") {
+    return null;
+  }
+
+  // Skip auth check for auth pages to prevent infinite loop
+  if (isAuthPage) {
     return <>{children}</>;
   }
 
-  let session = null;
-
-  try {
-    // Import getServerSession to get full session with tokens
-    const { getServerSession } = await import("../lib/auth");
-    session = await getServerSession();
-  } catch (error) {
-    // Error getting server session
-  }
-
-  // Check 1: Not authenticated
-  if (!session) {
-    // If on signout page, allow access without authentication
-    if (pathname === "/signout") {
-      return <>{children}</>;
+  // If no session, session error, or expired tokens, redirect to sign-in (check BEFORE capturing session)
+  if (
+    status === "unauthenticated" ||
+    !session?.user ||
+    (session as any)?.error === "RefreshAccessTokenError"
+  ) {
+    if (typeof window !== "undefined") {
+      // Clear storage on error
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      window.location.href = "/api/auth/signin";
     }
-    // Server-side 302 redirect to signin
-    redirect("/api/auth/signin");
+    return null;
   }
 
-  // Check 2: Token refresh error - redirect to signin
-  if ((session as any).error === "RefreshAccessTokenError") {
-    // Server-side 302 redirect to signin
-    redirect("/api/auth/signin");
-  }
-
-  // Check 2: User is authenticated - check core identity pool access
-  const userId = (session as any)?.user?.id;
-  const userEmail = session?.user?.email;
-  const userName = session?.user?.name;
-  const userGroups = (session as any)?.groups || [];
-
-  // Get user status from session (set during authentication)
-  const userStatus = (session as any)?.captifyStatus;
-
-  // Check if user is authorized via Cognito groups only
-  const isAuthorized = userGroups.some(
-    (group: string) => group.includes("captify-authorized")
-  );
-
-  // Check if user has already registered (has any status, even if pending)
-  const hasRegistered = userStatus !== null && userStatus !== undefined;
-
-  // Check 3: User is NOT authorized - show registration form (whether they've registered before or not)
-  if (!isAuthorized) {
-    return (
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="captify"
-        enableSystem={false}
-        themes={["captify", "lite", "dark"]}
-        disableTransitionOnChange={true}
-        storageKey="captify-theme"
-      >
-        <div className="h-screen bg-background overflow-auto">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-2xl mx-auto">
-              <div className="mb-6 text-center">
-                <h1 className="text-3xl font-bold mb-2">
-                  Account Registration is Required
-                </h1>
-                <p className="text-muted-foreground">
-                  Please provide your information to access the platform
-                </p>
-              </div>
-              <UserRegistrationForm
-                userId={userId}
-                userEmail={userEmail}
-                userName={userName}
-                userGroups={userGroups}
-                onRegistrationComplete={() => {
-                  // Refresh the page after registration
-                  if (typeof window !== 'undefined') {
-                    window.location.reload();
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </ThemeProvider>
-    );
-  }
-
-  // Check 4: User IS authorized - show full application
-  return (
-    <CaptifyProvider session={session}>{children}</CaptifyProvider>
-  );
+  // Render children - the captify layout will be added by /captify/layout.tsx
+  return <>{children}</>;
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function CaptifyPageLayout({
+  children,
+  params,
+}: CaptifyPageLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="h-full m-0 p-0">
-        <ServerCaptifyProvider>{children}</ServerCaptifyProvider>
+        <SessionProvider
+          refetchInterval={0}
+          refetchOnWindowFocus={false}
+          refetchWhenOffline={false}
+        >
+          <LayoutContent>{children}</LayoutContent>
+        </SessionProvider>
       </body>
     </html>
   );

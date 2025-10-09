@@ -566,3 +566,20 @@ pre::-webkit-scrollbar-thumb:hover {
   position: relative !important;
   inset: unset !important;
 }
+
+/* Fix Radix UI ScrollArea internal wrapper to allow full height */
+[data-radix-scroll-area-viewport] > div[style*="display: table"] {
+  display: flex !important;
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* Remove hardcoded sidebar widths - let it size naturally */
+.fixed.left-0.top-0.bottom-0.z-40.flex.bg-black {
+  width: auto !important;
+}
+
+/* Remove hardcoded margin from content */
+.flex.flex-1.transition-all.duration-200 {
+  margin-left: 0 !important;
+}

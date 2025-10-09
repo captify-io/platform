@@ -11,22 +11,11 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleRequest(request: NextRequest, method: string) {
-  try {
-    // Add CORS headers
-    const headers = {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": process.env.NODE_ENV === "development"
-        ? request.headers.get("origin") || process.env.DEV_ORIGIN || "http://localhost:3001"
-        : `https://${process.env.DOMAIN || "captify.io"}`,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-app",
-      "Access-Control-Allow-Credentials": "true",
-    };
+  const headers = {
+    "Content-Type": "application/json",
+  };
 
-    // Handle OPTIONS request for CORS
-    if (method === "OPTIONS") {
-      return new Response(null, { status: 200, headers });
-    }
+  try {
 
     // Get request data
     const body = method === "POST" ? await request.json() : {};
@@ -143,7 +132,7 @@ async function handleRequest(request: NextRequest, method: string) {
         error: "Internal Server Error",
         details: error instanceof Error ? error.message : "Unknown error"
       }),
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

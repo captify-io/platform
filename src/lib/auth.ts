@@ -9,13 +9,18 @@ const requiredEnvVars = {
   COGNITO_CLIENT_SECRET: process.env.COGNITO_CLIENT_SECRET,
   COGNITO_ISSUER: process.env.COGNITO_ISSUER,
   COGNITO_WELLKNOWN: process.env.COGNITO_WELLKNOWN,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  CAPTIFY_URL: process.env.CAPTIFY_URL,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  CAPTIFY_DOMAIN: process.env.CAPTIFY_DOMAIN,
 };
 
 const missingVars = Object.entries(requiredEnvVars)
   .filter(([key, value]) => !value)
   .map(([key]) => key);
+
+if (missingVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
 
 const authConfig: NextAuthConfig = {
   debug: process.env.NEXTAUTH_DEBUG === "true",
@@ -28,7 +33,7 @@ const authConfig: NextAuthConfig = {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "development" ? ".localhost" : ".captify.io",
+        domain: process.env.CAPTIFY_DOMAIN!,
         maxAge: 8 * 60 * 60, // 8 hours for security
       }
     },
@@ -40,7 +45,7 @@ const authConfig: NextAuthConfig = {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "development" ? ".localhost" : ".captify.io",
+        domain: process.env.CAPTIFY_DOMAIN!,
       }
     },
     csrfToken: {
@@ -51,7 +56,7 @@ const authConfig: NextAuthConfig = {
         httpOnly: true,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "development" ? ".localhost" : ".captify.io",
+        domain: process.env.CAPTIFY_DOMAIN!,
       }
     }
   },
@@ -84,8 +89,9 @@ const authConfig: NextAuthConfig = {
     }),
   ],
   pages: {
+    signIn: "/auth/signin",
     error: "/auth/error",
-    signOut: "/signout",
+    signOut: "/auth/signout",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -213,50 +219,7 @@ const authConfig: NextAuthConfig = {
       };
     },
     async redirect({ url, baseUrl }) {
-      // Get trusted domains from environment or use defaults
-      const envDomains = process.env.NEXTAUTH_TRUSTED_DOMAINS || '';
-      const configuredDomains = envDomains.split(',').map(d => d.trim()).filter(Boolean);
-
-      // Default trusted domains (always allowed)
-      const defaultDomains = [
-        'localhost', // Any port on localhost
-        '.captify.io', // All subdomains of captify.io
-      ];
-
-      const trustedDomains = [...defaultDomains, ...configuredDomains];
-
-      try {
-        const parsedUrl = new URL(url, baseUrl);
-        const baseUrlParsed = new URL(baseUrl);
-
-        // If url is just the baseUrl (same origin, same path "/" or empty), redirect to home
-        // This handles the case where callback cookie persists but no explicit callback was set
-        if (
-          parsedUrl.origin === baseUrlParsed.origin &&
-          (parsedUrl.pathname === '/' || parsedUrl.pathname === '')
-        ) {
-          return baseUrl;
-        }
-
-        // Check if hostname matches any trusted domain
-        const isTrusted = trustedDomains.some(domain => {
-          if (domain.startsWith('.')) {
-            // Subdomain wildcard: check if hostname ends with domain
-            return parsedUrl.hostname === domain.slice(1) || parsedUrl.hostname.endsWith(domain);
-          } else {
-            // Exact match
-            return parsedUrl.hostname === domain;
-          }
-        });
-
-        if (isTrusted) {
-          return url;
-        }
-      } catch (error) {
-        // Invalid URL, fall back to baseUrl
-      }
-
-      // Default: redirect to baseUrl (home page)
+      // Redirect to home page after sign in
       return baseUrl;
     },
   },

@@ -42,12 +42,12 @@ function AuthErrorContent() {
       return; // Don't redirect for config errors in dev
     }
 
-    const nextAuthUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL;
+    const captifyUrl = process.env.NEXT_PUBLIC_CAPTIFY_URL;
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '/';
     const callbackUrl = encodeURIComponent(currentUrl);
 
-    const signinUrl = nextAuthUrl
-      ? `${nextAuthUrl}/api/auth/signin?callbackUrl=${callbackUrl}`
+    const signinUrl = captifyUrl
+      ? `${captifyUrl}/api/auth/signin?callbackUrl=${callbackUrl}`
       : `/api/auth/signin?callbackUrl=${callbackUrl}`;
 
     window.location.href = signinUrl;
@@ -82,7 +82,7 @@ function AuthErrorContent() {
               <h2 className="text-lg font-semibold mb-2">Debug Steps:</h2>
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>Check browser developer tools for cookie issues</li>
-                <li>Verify Cognito redirect URIs include: http://localhost:3000/api/auth/callback/cognito</li>
+                <li>Verify Cognito redirect URIs are properly configured</li>
                 <li>Clear browser cookies and try again</li>
                 <li>Check server logs for detailed error information</li>
               </ol>
