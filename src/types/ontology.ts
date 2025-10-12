@@ -8,7 +8,7 @@
  * Reference: specification.md for complete entity definitions
  */
 
-import { Core } from "@captify-io/core/types";
+import { Core, Agent, AgentType, AgentStatus, AgentWorkflow, Provider, ProviderType, ProviderStatus, ProviderModel, ProviderModelStatus, ModelCapability } from "@captify-io/core/types";
 
 // ===============================================================
 // LIFECYCLE & STATUS TYPES
@@ -50,7 +50,7 @@ export type ModelFramework = "pytorch" | "tensorflow" | "sklearn" | "bedrock" | 
 
 export type ModelStatus = "training" | "deployed" | "retired";
 
-export type AgentStatus = "active" | "inactive" | "testing";
+// AgentStatus is imported from @captify-io/core/types below (line ~296)
 
 export type SystemType = "internal" | "external" | "saas" | "custom";
 
@@ -271,27 +271,19 @@ export interface Model extends Core {
   status: ModelStatus;
 }
 
-export interface Agent extends Core {
-  modelRef?: string;
-  guardrailPolicy?: string;
-  knowledgeBase?: string;
-  linkedOutcomes: string[];
-  linkedCapabilities: string[];
+// ===============================================================
+// LLM PROVIDERS & MODELS
+// ===============================================================
+// Re-export from core to avoid circular dependency
+// These are imported above and re-exported here for convenience
+export type { Provider, ProviderType, ProviderStatus, ProviderModel, ProviderModelStatus, ModelCapability };
 
-  // AWS Bedrock Agent integration - references to actual AWS Bedrock Agents
-  bedrockAgentId: string;           // AWS Bedrock Agent ID (required)
-  bedrockAgentAliasId?: string;     // AWS Bedrock Agent Alias ID
-  bedrockAgentArn?: string;         // Full ARN of the agent
-  knowledgeBaseId?: string;         // AWS Bedrock Knowledge Base ID
-  guardrailId?: string;             // AWS Bedrock Guardrail ID
-
-  // Legacy fields (keeping for backward compatibility)
-  agentId: string;
-  agentAliasId?: string;
-
-  instructions?: string;
-  status: AgentStatus;
-}
+// ===============================================================
+// AGENTS & WORKFLOWS
+// ===============================================================
+// Re-export from core to avoid circular dependency
+// These are imported above and re-exported here for convenience
+export type { Agent, AgentType, AgentStatus, AgentWorkflow };
 
 export interface System extends Core {
   integrations: string[];

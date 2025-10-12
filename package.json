@@ -22,6 +22,7 @@
     "@aws-sdk/client-cognito-identity": "^3.876.0",
     "@aws-sdk/client-dynamodb": "^3.873.0",
     "@aws-sdk/lib-dynamodb": "^3.896.0",
+    "@captify-io/core": "file:../core",
     "@tailwindcss/postcss": "^4.1.13",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.5.2",
