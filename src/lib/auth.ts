@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import CognitoProvider from "next-auth/providers/cognito";
-import { storeTokensSecurely, getStoredTokens, removeStoredTokens } from "./auth-store";
+import { storeTokensSecurely, getStoredTokens, removeStoredTokens, extendTokenTTL } from "./auth-store";
 
 // Validate required environment variables
 const requiredEnvVars = {
@@ -22,8 +22,13 @@ if (missingVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 
+console.log("[AUTH] Loading auth configuration, NEXTAUTH_DEBUG:", process.env.NEXTAUTH_DEBUG);
+
 const authConfig: NextAuthConfig = {
   debug: process.env.NEXTAUTH_DEBUG === "true",
+  session: {
+    strategy: "jwt",
+  },
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === "production"
@@ -102,24 +107,37 @@ const authConfig: NextAuthConfig = {
       return false;
     },
     async jwt({ token, account, profile }): Promise<any> {
+      // Debug logging
+      process.stderr.write(`[AUTH JWT] Called with account=${!!account}, profile=${!!profile}, token.sub=${token.sub}\n`);
+
       // Initial sign in - store tokens in JWT
       if (account && profile) {
+        process.stderr.write(`[AUTH JWT] Initial signin detected!\n`);
         // Validate that we have the required tokens
         if (!account.access_token || !account.id_token) {
-          throw new Error("Missing required Cognito tokens");
+          const error = new Error("Missing required Cognito tokens");
+          console.error("[AUTH ERROR]", error);
+          throw error;
         }
 
         // Store only essential data in JWT (large tokens stored server-side)
         const groups = (profile as any)["cognito:groups"] || [];
         const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
-        // Store large Cognito tokens server-side (implement this next)
-        await storeTokensSecurely(sessionId, {
-          accessToken: account.access_token,
-          idToken: account.id_token,
-          refreshToken: account.refresh_token || "",
-          expiresAt: account.expires_at || 0,
-        });
+        // Store large Cognito tokens server-side
+        try {
+          await storeTokensSecurely(sessionId, {
+            accessToken: account.access_token,
+            idToken: account.id_token,
+            refreshToken: account.refresh_token || "",
+            expiresAt: account.expires_at || 0,
+          });
+        } catch (error) {
+          console.error("[AUTH ERROR] Failed to store tokens in DynamoDB:", error);
+          // Write to stderr so it shows in PM2 logs
+          process.stderr.write(`[AUTH ERROR] ${error}\n`);
+          throw error;
+        }
 
         // Minimal JWT payload to prevent 431 errors
         return {
@@ -142,23 +160,33 @@ const authConfig: NextAuthConfig = {
 
       // Check if stored tokens exist and are valid
       if (token.sessionId) {
+        console.log("[AUTH] JWT callback - Subsequent request, sessionId:", token.sessionId);
         const storedTokens = await getStoredTokens(token.sessionId as string);
 
         // If no stored tokens found, session is invalid
         if (!storedTokens) {
+          console.error("[AUTH] Stored tokens not found for sessionId:", token.sessionId);
           return {
             ...token,
             error: "RefreshAccessTokenError",
           };
         }
+        console.log("[AUTH] Stored tokens found, expiresAt:", new Date(storedTokens.expiresAt * 1000).toISOString());
+
+        // Extend DynamoDB token TTL on every access (only if tokens exist)
+        await extendTokenTTL(token.sessionId as string);
 
         // Check if tokens are still valid with buffer time for proactive refresh
         const now = Date.now() / 1000;
-        const refreshBuffer = 900; // 15 minutes before expiry (increased from 5)
+        const refreshBuffer = 1800; // 30 minutes before expiry (increased for better UX)
 
         if (storedTokens.expiresAt > now + refreshBuffer) {
           // Tokens are still valid and not near expiry
-          return token;
+          // Update issuedAt to extend the NextAuth cookie
+          return {
+            ...token,
+            issuedAt: Math.floor(Date.now() / 1000),
+          };
         }
 
         // Tokens are expired or close to expiring, try to refresh them
@@ -219,7 +247,16 @@ const authConfig: NextAuthConfig = {
       };
     },
     async redirect({ url, baseUrl }) {
-      // Redirect to home page after sign in
+      // Handle redirects after sign in/out
+      // If url starts with baseUrl, it's a callback - use it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // If url is relative, prepend baseUrl
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // Default to home page
       return baseUrl;
     },
   },
@@ -240,7 +277,7 @@ const authConfig: NextAuthConfig = {
 /**
  * Refresh the access token using the refresh token
  */
-async function refreshAccessToken(refreshToken: string) {
+export async function refreshAccessToken(refreshToken: string) {
   try {
     // Get token endpoint from well-known configuration
     const wellKnownResponse = await fetch(

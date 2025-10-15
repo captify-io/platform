@@ -61,8 +61,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="h-full m-0 p-0">
         <SessionProvider
-          refetchInterval={0}
-          refetchOnWindowFocus={false}
+          refetchInterval={5 * 60}
+          refetchOnWindowFocus={true}
           refetchWhenOffline={false}
         >
           <LayoutContent>{children}</LayoutContent>

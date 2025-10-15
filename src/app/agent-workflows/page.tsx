@@ -16,7 +16,7 @@ import { apiClient } from "@captify-io/core/lib/api";
 import type { Agent } from "@captify-io/core/types";
 import { useRouter } from "next/navigation";
 
-export default function WorkflowsPage() {
+export default function AgentWorkflowsPage() {
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,11 @@ export default function WorkflowsPage() {
       });
 
       if (result.success && result.data?.Items) {
-        setAgents(result.data.Items);
+        // Filter to only show workflow type agents
+        const workflowAgents = result.data.Items.filter(
+          (agent: Agent) => agent.type === "workflow"
+        );
+        setAgents(workflowAgents);
       }
     } catch (error) {
       console.error("Failed to load agents:", error);
@@ -116,7 +120,7 @@ export default function WorkflowsPage() {
 
         // Navigate to workflow editor
         console.log("Navigating to workflow:", workflowId);
-        router.push(`/workflows/${workflowId}`);
+        router.push(`/agent-workflows/${workflowId}`);
       } else {
         console.error("Agent creation failed:", result);
         alert("Failed to create agent. Check console for details.");
@@ -330,7 +334,7 @@ export default function WorkflowsPage() {
                       <Button
                         size="sm"
                         variant="default"
-                        onClick={() => router.push(`/workflows/${agent.config?.workflowId}`)}
+                        onClick={() => router.push(`/agent-workflows/${agent.config?.workflowId}`)}
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Edit Workflow

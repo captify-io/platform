@@ -3,10 +3,6 @@ import {
   GetCredentialsForIdentityCommand,
   GetIdCommand,
 } from "@aws-sdk/client-cognito-identity";
-import { getSessionConfig } from "./session-config";
-
-// Get session configuration
-const sessionConfig = getSessionConfig();
 
 interface CachedCredentials {
   accessKeyId: string;

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../lib/credentials";
-import { auth } from "../../../lib/auth";
-import { getStoredTokens } from "../../../lib/auth-store";
+import { auth, refreshAccessToken } from "../../../lib/auth";
+import { getStoredTokens, storeTokensSecurely } from "../../../lib/auth-store";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Retrieve stored tokens from DynamoDB
-      const storedTokens = await getStoredTokens(sessionId);
+      let storedTokens = await getStoredTokens(sessionId);
 
       if (!storedTokens) {
         return new Response(
@@ -122,6 +122,46 @@ export async function POST(request: NextRequest) {
             headers,
           }
         );
+      }
+
+      // Check if tokens are expired or close to expiring
+      const now = Date.now() / 1000;
+      const refreshBuffer = 600; // 10 minutes buffer for API calls (less than JWT callback's 30 min)
+
+      if (storedTokens.expiresAt <= now + refreshBuffer && storedTokens.refreshToken) {
+        // Tokens are expired or about to expire, refresh them
+        try {
+          const refreshedTokens = await refreshAccessToken(storedTokens.refreshToken);
+
+          // Update stored tokens
+          const newExpiresAt = Math.floor(Date.now() / 1000) + (refreshedTokens.expires_in || 3600);
+          await storeTokensSecurely(sessionId, {
+            accessToken: refreshedTokens.access_token,
+            idToken: refreshedTokens.id_token,
+            refreshToken: refreshedTokens.refresh_token || storedTokens.refreshToken,
+            expiresAt: newExpiresAt,
+          });
+
+          // Get the refreshed tokens
+          storedTokens = await getStoredTokens(sessionId);
+          if (!storedTokens) {
+            throw new Error("Failed to retrieve refreshed tokens");
+          }
+        } catch (refreshError) {
+          // Token refresh failed, return 401
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Token refresh failed",
+              code: "TOKEN_REFRESH_FAILED",
+              message: "Your session has expired. Please sign in again.",
+            }),
+            {
+              status: 401,
+              headers,
+            }
+          );
+        }
       }
 
       const idToken = storedTokens.idToken;

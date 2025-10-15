@@ -4,11 +4,15 @@
  */
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
-// Initialize DynamoDB client
+// Initialize DynamoDB client with explicit credentials
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || "us-east-1",
+  credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  } : undefined, // Fall back to default credential chain if no explicit credentials
 });
 
 const dynamoClient = DynamoDBDocumentClient.from(client);
@@ -49,20 +53,16 @@ export async function storeTokensSecurely(sessionId: string, tokens: {
   };
 
   try {
+    // Remove ConditionExpression - it was causing writes to fail on initial signin
     await dynamoClient.send(new PutCommand({
       TableName: TABLE_NAME,
       Item: item,
-      // Conditional put to prevent overwrites without validation
-      ConditionExpression: "attribute_not_exists(sessionId) OR #ttl < :now",
-      ExpressionAttributeNames: {
-        "#ttl": "ttl"
-      },
-      ExpressionAttributeValues: {
-        ":now": now
-      }
     }));
-  } catch (error) {
-    throw new Error("Failed to store authentication tokens");
+  } catch (error: any) {
+    const errorMsg = `[AUTH-STORE] DynamoDB PutCommand failed: ${error.message || error}`;
+    process.stderr.write(errorMsg + '\n');
+    console.error(errorMsg, error);
+    throw error; // Throw the original error, not a generic one
   }
 }
 
@@ -94,6 +94,34 @@ export async function getStoredTokens(sessionId: string): Promise<StoredTokens |
     return tokens;
   } catch (error) {
     return null;
+  }
+}
+
+/**
+ * Extend the TTL of stored tokens when user is active
+ * This prevents tokens from expiring while user is actively using the application
+ */
+export async function extendTokenTTL(sessionId: string): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  const newTtl = now + (24 * 60 * 60); // Extend by 24 hours
+
+  try {
+    await dynamoClient.send(new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { sessionId },
+      UpdateExpression: 'SET #ttl = :ttl',
+      ExpressionAttributeNames: {
+        '#ttl': 'ttl'
+      },
+      ExpressionAttributeValues: {
+        ':ttl': newTtl
+      },
+      // Only update if the record exists
+      ConditionExpression: 'attribute_exists(sessionId)'
+    }));
+  } catch (error) {
+    // Don't throw - this is a background extension operation
+    // If it fails, the next request will try again
   }
 }
 

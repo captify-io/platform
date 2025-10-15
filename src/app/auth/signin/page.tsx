@@ -3,177 +3,98 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Shield, Lock } from "lucide-react";
 
 function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
-  const error = searchParams.get("error");
 
   const handleSignIn = () => {
-    // Sign in when user clicks button
+    // Clear only NextAuth session cookies, preserve CSRF and callback URL cookies needed for OAuth flow
+    document.cookie.split(";").forEach((cookie) => {
+      const [name] = cookie.split("=");
+      const cookieName = name.trim();
+
+      // Only clear session token, not CSRF or callback URL cookies
+      if (cookieName.includes('session-token')) {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.captify.io`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
+
+    // Clear storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Now initiate Cognito signin
     signIn("cognito", { callbackUrl, redirect: true });
   };
 
+  const notices = [
+    "All activities may be monitored and recorded",
+    "Data transmitted or stored may be intercepted and inspected",
+    "System usage logs and audit trails will be maintained",
+    "Unauthorized access attempts will be investigated",
+    "Data may be seized and disclosed to authorized personnel",
+    "No expectation of privacy exists on this system",
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-      <div className="w-full max-w-md">
-        {/* Card Container */}
-        <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-primary to-secondary p-8 text-center">
-            <div className="mb-4">
-              <div className="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg">
-                <svg
-                  className="w-12 h-12 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-white">Captify</h1>
-            <p className="text-white/90 mt-2 text-sm">Platform Authentication</p>
-          </div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 relative overflow-hidden">
+      {/* Subtle background grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
 
-          {/* Content Section */}
-          <div className="p-8">
-            {error && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-sm text-destructive text-center">
-                  {error === "OAuthSignin" && "Error connecting to authentication provider"}
-                  {error === "OAuthCallback" && "Error during authentication callback"}
-                  {error === "OAuthCreateAccount" && "Error creating account"}
-                  {error === "EmailCreateAccount" && "Error creating account"}
-                  {error === "Callback" && "Authentication callback error"}
-                  {error === "OAuthAccountNotLinked" && "Account already exists with different provider"}
-                  {error === "EmailSignin" && "Error sending sign in email"}
-                  {error === "CredentialsSignin" && "Invalid credentials"}
-                  {error === "SessionRequired" && "Please sign in to continue"}
-                  {!["OAuthSignin", "OAuthCallback", "OAuthCreateAccount", "EmailCreateAccount", "Callback", "OAuthAccountNotLinked", "EmailSignin", "CredentialsSignin", "SessionRequired"].includes(error) && "Authentication error occurred"}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-semibold text-foreground">Welcome Back</h2>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Sign in to access your account
-                </p>
-              </div>
-
-              <button
-                onClick={handleSignIn}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span>Sign In with AWS Cognito</span>
-              </button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Secure Authentication</span>
-                </div>
-              </div>
-
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <svg
-                    className="w-4 h-4 text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
-                  <span>Enterprise-grade security</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <svg
-                    className="w-4 h-4 text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                  <span>Protected by AWS Cognito</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <svg
-                    className="w-4 h-4 text-success"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  <span>Lightning-fast authentication</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="bg-muted/30 px-8 py-4 text-center border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              By signing in, you agree to our{" "}
-              <a href="#" className="text-primary hover:underline">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="#" className="text-primary hover:underline">
-                Privacy Policy
-              </a>
-            </p>
-          </div>
+      <div className="relative z-10 w-full max-w-xl mx-auto px-6">
+        {/* Logo */}
+        <div className="text-center mb-16">
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter select-none text-slate-200" style={{
+            letterSpacing: "-0.05em"
+          }}>
+            CAPTIFY.IO
+          </h1>
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Need help?{" "}
-            <a href="#" className="text-primary hover:underline font-medium">
-              Contact Support
-            </a>
-          </p>
+        {/* Main Card */}
+        <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl shadow-black/50">
+          <div className="p-8">
+            {/* Authorization Notice */}
+            <div className="mb-6">
+              <div className="flex items-start gap-3 mb-4">
+                <Shield className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-slate-300 font-semibold text-sm mb-1">AUTHORIZED USE ONLY</h3>
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    You are accessing a system provided for authorized use only. By using this system, you consent to the following:
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 ml-8">
+                {notices.map((notice, index) => (
+                  <div key={index} className="flex items-start gap-2 text-slate-400">
+                    <span className="text-slate-600 text-xs mt-0.5">•</span>
+                    <span className="text-xs leading-relaxed">{notice}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              onClick={handleSignIn}
+              className="w-full group relative px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-indigo-900/30 hover:shadow-xl hover:shadow-indigo-900/40"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Lock className="h-4 w-4" />
+                Sign In
+              </span>
+            </button>
+
+            {/* Footer Notice */}
+            <p className="text-center text-slate-500 text-xs mt-5 leading-relaxed">
+              By signing in, you acknowledge and agree to the conditions above
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -184,8 +105,8 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400" />
         </div>
       }
     >

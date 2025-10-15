@@ -1,6 +1,6 @@
 {
   "name": "@captify-io/platform",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "Captify Platform - Next.js application with cross-origin authentication and API proxy",
   "scripts": {
