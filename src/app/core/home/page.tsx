@@ -27,7 +27,7 @@ interface AgentStats {
   recentActivity: number;
 }
 
-export default function InsightsPage() {
+export default function HomePage() {
   const [stats, setStats] = useState<AgentStats>({
     totalAgents: 0,
     totalWorkflows: 0,
@@ -43,7 +43,7 @@ export default function InsightsPage() {
         const agentsResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "captify-core-Agent",
+          table: "core-Agent",
           data: { Select: "COUNT" },
         });
 
@@ -51,7 +51,7 @@ export default function InsightsPage() {
         const workflowsResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "captify-core-Workflow",
+          table: "core-AgentWorkflow",
           data: { Select: "COUNT" },
         });
 
@@ -59,7 +59,7 @@ export default function InsightsPage() {
         const spacesResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "captify-core-Space",
+          table: "core-Space",
           data: { Select: "COUNT" },
         });
 
@@ -143,7 +143,7 @@ export default function InsightsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Insights</h1>
+          <h1 className="text-4xl font-bold mb-2">Home</h1>
           <p className="text-muted-foreground">
             Overview of agent activities and platform analytics
           </p>
@@ -273,3 +273,5 @@ export default function InsightsPage() {
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";

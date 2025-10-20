@@ -19,7 +19,6 @@ export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [models, setModels] = useState<Record<string, ProviderModel[]>>({});
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadProviders();
@@ -27,13 +26,11 @@ export default function ProvidersPage() {
 
   const loadProviders = async () => {
     try {
-      setLoading(true);
-
       // Load all providers
       const providersResult = await apiClient.run({
         service: "platform.dynamodb",
         operation: "scan",
-        table: "captify-core-Provider",
+        table: "core-Provider",
         data: {},
       });
 
@@ -48,7 +45,7 @@ export default function ProvidersPage() {
             const modelsResult = await apiClient.run({
               service: "platform.dynamodb",
               operation: "query",
-              table: "captify-core-ProviderModel",
+              table: "core-ProviderModel",
               data: {
                 IndexName: "providerId-index",
                 KeyConditionExpression: "providerId = :pid",
@@ -69,8 +66,6 @@ export default function ProvidersPage() {
       }
     } catch (error) {
       console.error("Failed to load providers:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -111,20 +106,6 @@ export default function ProvidersPage() {
         return "bg-gray-500";
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full">
-        <PageToolbar
-          title="Providers"
-          description="Manage LLM providers and models"
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Loading providers...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full">

@@ -1,6 +1,6 @@
 {
   "name": "@captify-io/platform",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "description": "Captify Platform - Next.js application with cross-origin authentication and API proxy",
   "scripts": {
@@ -22,7 +22,7 @@
     "@aws-sdk/client-cognito-identity": "^3.876.0",
     "@aws-sdk/client-dynamodb": "^3.873.0",
     "@aws-sdk/lib-dynamodb": "^3.896.0",
-    "@captify-io/core": "file:../core",
+    "@captify-io/core": "^2.0.6",
     "@tailwindcss/postcss": "^4.1.13",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.5.2",

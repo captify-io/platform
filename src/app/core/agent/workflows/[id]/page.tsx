@@ -12,7 +12,6 @@ export default function WorkflowEditorPage() {
   const workflowId = params.id as string;
   const [nodes, setNodes] = useState<WorkflowNode[]>([]);
   const [edges, setEdges] = useState<WorkflowEdge[]>([]);
-  const [loading, setLoading] = useState(true);
   const [agentId, setAgentId] = useState("");
   const [workflowName, setWorkflowName] = useState("");
 
@@ -67,8 +66,6 @@ export default function WorkflowEditorPage() {
         }
       } catch (error) {
         console.error("Failed to load workflow:", error);
-      } finally {
-        setLoading(false);
       }
     }
 
@@ -138,17 +135,9 @@ export default function WorkflowEditorPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading workflow...</p>
-      </div>
-    );
-  }
-
   // Navigate back to workflows list
   const handleBack = () => {
-    router.push("/workflows");
+    router.push("/core/agent/workflows");
   };
 
   return (

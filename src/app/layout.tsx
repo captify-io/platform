@@ -1,13 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
 import {
   CaptifyProvider,
   CaptifyLayout,
+  useCaptify,
 } from "@captify-io/core/components";
 import { config } from "../config";
+import { usePathname } from "next/navigation";
 import "./globals.css";
+
+// Component that calls setPageReady when pathname changes (page navigation complete)
+function PageReadyManager({ children }: { children: React.ReactNode }) {
+  const { setPageReady } = useCaptify();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Page has rendered, close the loading screen
+    setPageReady();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  return <>{children}</>;
+}
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -46,7 +62,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <CaptifyProvider session={session}>
       <CaptifyLayout config={config} session={session}>
-        {children}
+        <PageReadyManager>{children}</PageReadyManager>
       </CaptifyLayout>
     </CaptifyProvider>
   );
@@ -61,8 +77,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="h-full m-0 p-0">
         <SessionProvider
-          refetchInterval={5 * 60}
-          refetchOnWindowFocus={true}
+          refetchInterval={0}
+          refetchOnWindowFocus={false}
           refetchWhenOffline={false}
         >
           <LayoutContent>{children}</LayoutContent>

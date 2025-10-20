@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useCaptify } from "@captify-io/core/components";
+import { useCaptify, LoadingScreen } from "@captify-io/core/components";
 import { apiClient } from "@captify-io/core/lib";
 import Link from "next/link";
 import { Home, Settings, User, Bell, Bookmark, Clock } from "lucide-react";
@@ -189,9 +189,7 @@ export default function HomePage() {
         <div>
           <h2 className="text-2xl font-semibold mb-4">All Applications</h2>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading applications...
-            </div>
+            <LoadingScreen message="Loading applications..." />
           ) : apps.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No applications available

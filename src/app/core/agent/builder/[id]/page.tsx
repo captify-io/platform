@@ -31,7 +31,6 @@ export default function AgentDetailPage({
   const [applications, setApplications] = useState<CaptifyApplication[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [models, setModels] = useState<ProviderModel[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -56,12 +55,11 @@ export default function AgentDetailPage({
   }, [providerId]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const agentResult = await apiClient.run({
         service: "platform.dynamodb",
         operation: "get",
-        table: "captify-core-Agent",
+        table: "core-Agent",
         data: {
           Key: { id },
         },
@@ -83,7 +81,7 @@ export default function AgentDetailPage({
       const appsResult = await apiClient.run({
         service: "platform.dynamodb",
         operation: "scan",
-        table: "captify-core-App",
+        table: "core-App",
         data: {},
       });
       setApplications(appsResult.data?.Items || []);
@@ -91,14 +89,12 @@ export default function AgentDetailPage({
       const providersResult = await apiClient.run({
         service: "platform.dynamodb",
         operation: "scan",
-        table: "captify-core-Provider",
+        table: "core-Provider",
         data: {},
       });
       setProviders(providersResult.data?.Items || []);
     } catch (error) {
       console.error("Failed to load data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -107,7 +103,7 @@ export default function AgentDetailPage({
       const result = await apiClient.run({
         service: "platform.dynamodb",
         operation: "query",
-        table: "captify-core-ProviderModel",
+        table: "core-ProviderModel",
         data: {
           IndexName: "providerId-index",
           KeyConditionExpression: "providerId = :pid",
@@ -133,7 +129,7 @@ export default function AgentDetailPage({
       await apiClient.run({
         service: "platform.dynamodb",
         operation: "update",
-        table: "captify-core-Agent",
+        table: "core-Agent",
         data: {
           Key: { id: agent.id },
           UpdateExpression:
@@ -181,13 +177,13 @@ export default function AgentDetailPage({
       await apiClient.run({
         service: "platform.dynamodb",
         operation: "delete",
-        table: "captify-core-Agent",
+        table: "core-Agent",
         data: {
           Key: { id: agent.id },
         },
       });
 
-      router.push("/agent-builder");
+      router.push("/core/agent/builder");
     } catch (error) {
       console.error("Failed to delete agent:", error);
       alert("Failed to delete agent");
@@ -195,25 +191,8 @@ export default function AgentDetailPage({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading agent...</div>
-      </div>
-    );
-  }
-
   if (!agent) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Agent not found</h2>
-          <Button onClick={() => router.push("/agent-builder")}>
-            Back to Agent Builder
-          </Button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -223,7 +202,7 @@ export default function AgentDetailPage({
         {/* Header */}
         <div className="p-4 border-b">
           <button
-            onClick={() => router.push("/agent-builder")}
+            onClick={() => router.push("/core/agent/builder")}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-3 transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />

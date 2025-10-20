@@ -46,12 +46,36 @@ function SignInContent() {
 
       <div className="relative z-10 w-full max-w-xl mx-auto px-6">
         {/* Logo */}
-        <div className="text-center mb-16">
-          <h1 className="text-7xl md:text-8xl font-black tracking-tighter select-none text-slate-200" style={{
-            letterSpacing: "-0.05em"
-          }}>
-            CAPTIFY.IO
-          </h1>
+        <div className="text-center mb-12">
+          <div className="inline-flex flex-col items-center gap-3">
+            {/* Subtle glow container */}
+            <div className="relative">
+              {/* Soft background glow */}
+              <div className="absolute inset-0 blur-2xl opacity-20 bg-gradient-to-r from-indigo-400 via-indigo-500 to-indigo-400 scale-110" />
+
+              {/* Main logo text */}
+              <h1
+                className="relative text-5xl md:text-6xl font-black tracking-tight select-none px-2"
+                style={{
+                  letterSpacing: "-0.03em",
+                  background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 20%, #cbd5e1 40%, #94a3b8 70%, #64748b 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.15))"
+                }}
+              >
+                CAPTIFY
+              </h1>
+            </div>
+
+            {/* Subtle accent line */}
+            <div className="flex items-center gap-2 w-full justify-center">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-indigo-500/40" />
+              <div className="h-1 w-1 rounded-full bg-indigo-500/60" />
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-indigo-500/40" />
+            </div>
+          </div>
         </div>
 
         {/* Main Card */}

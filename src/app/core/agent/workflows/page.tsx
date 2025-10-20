@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 export default function AgentWorkflowsPage() {
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -44,8 +43,6 @@ export default function AgentWorkflowsPage() {
       }
     } catch (error) {
       console.error("Failed to load agents:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -120,7 +117,7 @@ export default function AgentWorkflowsPage() {
 
         // Navigate to workflow editor
         console.log("Navigating to workflow:", workflowId);
-        router.push(`/agent-workflows/${workflowId}`);
+        router.push(`/core/agent/workflows/${workflowId}`);
       } else {
         console.error("Agent creation failed:", result);
         alert("Failed to create agent. Check console for details.");
@@ -250,20 +247,6 @@ export default function AgentWorkflowsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full">
-        <PageToolbar
-          title="Agent Workflows"
-          description="Build and manage agent workflows"
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Loading agents...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
       <PageToolbar
@@ -288,24 +271,13 @@ export default function AgentWorkflowsPage() {
           </div>
 
           {/* Agent Cards */}
-          {agents.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Workflow className="h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No agents yet</h3>
-                <p className="text-muted-foreground mb-6 text-center max-w-md">
-                  Create your first workflow agent to get started. Build visual workflows with
-                  drag-and-drop nodes.
-                </p>
-                <Button onClick={createNewAgent} disabled={creating}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {creating ? "Creating..." : "Create Your First Agent"}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {agents.map((agent) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agents.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                No workflow agents found
+              </div>
+            ) : (
+              agents.map((agent) => (
                 <Card key={agent.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -334,7 +306,7 @@ export default function AgentWorkflowsPage() {
                       <Button
                         size="sm"
                         variant="default"
-                        onClick={() => router.push(`/agent-workflows/${agent.config?.workflowId}`)}
+                        onClick={() => router.push(`/core/agent/workflows/${agent.config?.workflowId}`)}
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Edit Workflow
@@ -376,9 +348,9 @@ export default function AgentWorkflowsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
