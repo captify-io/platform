@@ -17,6 +17,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const externalApp = request.headers.get("x-app");
 
+    // Debug logging
+    const fs = require('fs');
+    fs.appendFileSync('/tmp/api-requests.log', `[${new Date().toISOString()}] Request: service=${body.service}, operation=${body.operation}\n`);
+
+    // Log full body for streamMessage operations
+    if (body.operation === 'streamMessage') {
+      fs.appendFileSync('/tmp/stream-requests.log', `[${new Date().toISOString()}] StreamMessage Body: ${JSON.stringify(body, null, 2)}\n`);
+    }
+
 
     if (!body.service) {
       return new Response(
@@ -32,13 +41,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse package and service from service name (e.g., 'platform.dynamodb')
+    // Parse service name
+    // Supports:
+    // - 'platform.dynamodb' -> packageName='platform', serviceName='dynamodb'
+    // - 'ontology.widget' -> packageName='platform', serviceName='ontology', subService='widget'
     if (!body.service.includes('.')) {
       return new Response(
         JSON.stringify({
-          error: "Service must be in format 'package.service' (e.g., 'platform.dynamodb')",
+          error: "Service must be in format 'package.service' or 'namespace.service' (e.g., 'platform.dynamodb' or 'ontology.widget')",
           received: body.service,
-          examples: ["platform.dynamodb"]
+          examples: ["platform.dynamodb", "ontology.widget"]
         }),
         {
           status: 400,
@@ -47,7 +59,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [packageName, serviceName] = body.service.split('.', 2);
+    const serviceParts = body.service.split('.');
+    let packageName = serviceParts[0];
+    let serviceName = serviceParts[1];
+    let subService = serviceParts.length > 2 ? serviceParts.slice(2).join('.') : null;
+
+    // Handle namespace services (e.g., 'ontology.widget')
+    // These are core services that aren't prefixed with 'platform.'
+    const coreNamespaces = ['ontology'];
+    if (coreNamespaces.includes(packageName)) {
+      // Treat as platform service with nested structure
+      subService = serviceName;
+      serviceName = packageName;
+      packageName = 'platform';
+    }
 
     try {
       let session;
@@ -209,11 +234,16 @@ export async function POST(request: NextRequest) {
 
       // Get service handler - ALWAYS from @captify-io/core
       let serviceHandler;
+      let actualServiceName = serviceName;
+
       try {
         // Validate package name is 'platform' (all services are platform.*)
         if (packageName !== "platform") {
           throw new Error(`Only 'platform' services are supported. Received: '${packageName}'`);
         }
+
+        // Note: platform.agent is the unified service that handles all agent operations
+        // No auto-detection needed - serviceName is used directly
 
         // IMPORTANT: All services ALWAYS come from @captify-io/core
         // The packageName is just for validation, not for dynamic imports
@@ -227,19 +257,42 @@ export async function POST(request: NextRequest) {
           throw new Error("@captify-io/core services.use is not a function");
         }
 
-        // Get the service handler (e.g., 'dynamodb', 's3', 'cognito')
-        serviceHandler = serviceModule.services.use(serviceName);
+        // Get the service handler (e.g., 'dynamodb', 's3', 'cognito', 'assistant', 'agent', 'ontology')
+        serviceHandler = serviceModule.services.use(actualServiceName);
 
         if (!serviceHandler) {
           throw new Error(
-            `Service '${serviceName}' not found in @captify-io/core services. ` +
+            `Service '${actualServiceName}' not found in @captify-io/core services. ` +
             `Available services are managed by @captify-io/core.`
           );
         }
 
+        // Handle nested services (e.g., ontology.widget)
+        if (subService) {
+          // Navigate to nested service (e.g., serviceHandler.widget for 'ontology.widget')
+          const nestedHandler = (serviceHandler as any)[subService];
+          if (!nestedHandler) {
+            throw new Error(
+              `Nested service '${subService}' not found in '${actualServiceName}'. ` +
+              `Full service path: ${body.service}`
+            );
+          }
+
+          if (typeof nestedHandler.execute === "function") {
+            serviceHandler = nestedHandler;
+          } else if (typeof nestedHandler === "object" && nestedHandler.execute) {
+            // Nested object with execute method
+            serviceHandler = nestedHandler;
+          } else {
+            throw new Error(
+              `Nested service '${actualServiceName}.${subService}' does not have an execute method`
+            );
+          }
+        }
+
         if (typeof serviceHandler.execute !== "function") {
           throw new Error(
-            `Service '${serviceName}' from @captify-io/core does not have an execute method`
+            `Service '${actualServiceName}' from @captify-io/core does not have an execute method`
           );
         }
 
@@ -248,13 +301,14 @@ export async function POST(request: NextRequest) {
         return new Response(
           JSON.stringify({
             success: false,
-            error: `Failed to load service ${serviceName} from @captify-io/core`,
+            error: `Failed to load service ${actualServiceName} from @captify-io/core`,
             details:
               importError instanceof Error
                 ? importError.message
                 : "Unknown import error",
             app: externalApp,
             requestedService: body.service,
+            actualService: actualServiceName,
             packageName: packageName, // Include for debugging
           }),
           {
@@ -283,6 +337,7 @@ export async function POST(request: NextRequest) {
 
       // Pass both request and credentials to the service
       // Add schema to the request body
+      // AI SDK sends id and messages at root level - keep them there
       const processedBody = {
         ...body,
         schema: process.env.SCHEMA || "captify",
@@ -293,6 +348,14 @@ export async function POST(request: NextRequest) {
         credentials,
         apiSession
       );
+
+      // Handle streaming response (AI SDK returns Response directly for streamMessage)
+      if (result instanceof Response) {
+        console.log('[API] Returning direct stream Response');
+        return result;
+      }
+
+      // Normal JSON response
       return new Response(JSON.stringify(result), {
         status: result.success ? 200 : 400,
         headers,

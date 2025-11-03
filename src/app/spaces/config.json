@@ -1,0 +1,57 @@
+{
+  "slug": "spaces",
+  "name": "Spaces",
+  "version": "1.0.0",
+  "description": "Collaborative workspaces and project management",
+  "menu": [
+    {
+      "label": "All Spaces",
+      "href": "/spaces",
+      "icon": "LayoutGrid",
+      "description": "View all spaces"
+    },
+    {
+      "label": "My Spaces",
+      "href": "/spaces/my",
+      "icon": "Users",
+      "description": "Spaces you're a member of"
+    },
+    {
+      "label": "Create Space",
+      "href": "/spaces/create",
+      "icon": "Plus",
+      "description": "Create a new space"
+    }
+  ],
+  "manifest": {
+    "name": "Spaces",
+    "icon": "LayoutGrid",
+    "color": "#f59e0b",
+    "category": "collaboration",
+    "tags": ["workspaces", "collaboration", "teams"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "space-management",
+      "name": "Space Management",
+      "description": "Create and manage collaborative spaces",
+      "enabled": true,
+      "icon": "LayoutGrid",
+      "href": "/spaces"
+    },
+    {
+      "id": "team-collaboration",
+      "name": "Team Collaboration",
+      "description": "Collaborate with team members",
+      "enabled": true,
+      "icon": "Users",
+      "href": "/spaces/my"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user", "member", "admin"]
+  }
+}

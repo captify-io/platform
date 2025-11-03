@@ -5,25 +5,10 @@ import { SessionProvider, useSession } from "next-auth/react";
 import {
   CaptifyProvider,
   CaptifyLayout,
-  useCaptify,
-} from "@captify-io/core/components";
+} from "@captify-io/core";
 import { config } from "../config";
-import { usePathname } from "next/navigation";
+import { AppAccessGuard } from "../components/app-access-guard";
 import "./globals.css";
-
-// Component that calls setPageReady when pathname changes (page navigation complete)
-function PageReadyManager({ children }: { children: React.ReactNode }) {
-  const { setPageReady } = useCaptify();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Page has rendered, close the loading screen
-    setPageReady();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  return <>{children}</>;
-}
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -32,6 +17,27 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const isAuthPage = typeof window !== "undefined" &&
     (window.location.pathname.startsWith("/auth/") ||
      window.location.pathname.startsWith("/api/auth/"));
+
+  // Handle redirect to sign-in only when session status changes
+  // This prevents page reload on every render (e.g., when switching browser tabs)
+  useEffect(() => {
+    // Skip auth check for auth pages to prevent infinite loop
+    if (isAuthPage) {
+      return;
+    }
+
+    // If no session, session error, or expired tokens, redirect to sign-in
+    if (
+      status === "unauthenticated" ||
+      (!session?.user && status !== "loading") ||
+      (session as any)?.error === "RefreshAccessTokenError"
+    ) {
+      // Clear storage on error
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      window.location.href = "/api/auth/signin";
+    }
+  }, [status, session, isAuthPage]);
 
   // If loading, show nothing (brief flash only)
   if (status === "loading") {
@@ -43,26 +49,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // If no session, session error, or expired tokens, redirect to sign-in
-  if (
-    status === "unauthenticated" ||
-    !session?.user ||
-    (session as any)?.error === "RefreshAccessTokenError"
-  ) {
-    if (typeof window !== "undefined") {
-      // Clear storage on error
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-      window.location.href = "/api/auth/signin";
-    }
+  // If no session, show nothing while redirecting
+  if (status === "unauthenticated" || !session?.user) {
     return null;
   }
 
-  // Render with CaptifyLayout
+  // Render with CaptifyLayout and App Access Guard
   return (
     <CaptifyProvider session={session}>
       <CaptifyLayout config={config} session={session}>
-        <PageReadyManager>{children}</PageReadyManager>
+        <AppAccessGuard>
+          {children}
+        </AppAccessGuard>
       </CaptifyLayout>
     </CaptifyProvider>
   );

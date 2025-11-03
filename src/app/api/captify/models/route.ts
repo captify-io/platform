@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { getAwsCredentialsFromIdentityPool } from "../../lib/credentials";
 import { auth } from "../../../../lib/auth";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
@@ -21,16 +23,6 @@ async function handleRequest(request: NextRequest, method: string) {
     const body = method === "POST" ? await request.json() : {};
     const provider = body.provider || request.nextUrl.searchParams.get('provider');
 
-    if (!provider) {
-      return new Response(
-        JSON.stringify({
-          error: "Provider parameter is required",
-          availableProviders: ["agent", "openai", "anthropic", "bedrock"],
-        }),
-        { status: 400, headers }
-      );
-    }
-
     // Get session for authentication
     const session = await auth();
     if (!session?.user) {
@@ -40,67 +32,63 @@ async function handleRequest(request: NextRequest, method: string) {
       );
     }
 
-    let models: string[] = [];
+    // Get AWS credentials
+    const identityPoolId = process.env.COGNITO_IDENTITY_POOL_ID;
+    if (!identityPoolId) {
+      return new Response(
+        JSON.stringify({ error: "AWS configuration missing" }),
+        { status: 500, headers }
+      );
+    }
 
-    try {
-      switch (provider) {
-        case "agent":
-          // For agents, return available agent models based on app context
-          const app = request.headers.get("x-app") || "core";
-          models = await getAgentModels(app, session, request);
-          break;
+    const credentials = await getAwsCredentialsFromIdentityPool(
+      session,
+      identityPoolId,
+      false
+    );
 
-        case "openai":
-          models = [
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo",
-            "gpt-3.5-turbo"
-          ];
-          break;
+    const schema = process.env.SCHEMA || "captify";
 
-        case "anthropic":
-          models = [
-            "claude-3-5-sonnet-20241022",
-            "claude-3-5-haiku-20241022",
-            "claude-3-opus-20240229",
-            "claude-3-sonnet-20240229",
-            "claude-3-haiku-20240307"
-          ];
-          break;
-
-        case "bedrock":
-          // Try to fetch models from Bedrock API if credentials available
-          try {
-            const identityPoolId = process.env.COGNITO_IDENTITY_POOL_ID;
-            if (!identityPoolId) {
-              throw new Error("COGNITO_IDENTITY_POOL_ID not configured");
+    // If no provider specified, return all available providers
+    if (!provider) {
+      try {
+        const providers = await getAvailableProviders(credentials, schema);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              providers: providers.map(p => ({
+                id: p.id,
+                name: p.name,
+                status: p.status
+              }))
             }
-            const credentials = await getAwsCredentialsFromIdentityPool(
-              session,
-              identityPoolId,
-              false
-            );
-            models = await getBedrockModels(credentials);
-          } catch (error) {
-            models = [
-              "anthropic.claude-3-5-sonnet-20241022-v2:0",
-              "anthropic.claude-3-haiku-20240307-v1:0",
-              "anthropic.claude-3-opus-20240229-v1:0",
-              "amazon.titan-text-premier-v1:0",
-              "meta.llama3-70b-instruct-v1:0"
-            ];
-          }
-          break;
+          }),
+          { status: 200, headers }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: "Failed to fetch providers",
+            details: error instanceof Error ? error.message : "Unknown error"
+          }),
+          { status: 500, headers }
+        );
+      }
+    }
 
-        default:
-          return new Response(
-            JSON.stringify({
-              error: `Unknown provider: ${provider}`,
-              availableProviders: ["agent", "openai", "anthropic", "bedrock"],
-            }),
-            { status: 400, headers }
-          );
+    // Fetch models for the specified provider
+    try {
+      const models = await getModelsForProvider(provider, credentials, schema);
+
+      if (models.length === 0) {
+        return new Response(
+          JSON.stringify({
+            error: `No models found for provider: ${provider}`,
+            success: false
+          }),
+          { status: 404, headers }
+        );
       }
 
       return new Response(
@@ -108,7 +96,12 @@ async function handleRequest(request: NextRequest, method: string) {
           success: true,
           data: {
             provider,
-            models,
+            models: models.map(m => ({
+              id: m.modelId,
+              name: m.name,
+              description: m.description,
+              status: m.status
+            })),
             count: models.length
           }
         }),
@@ -137,43 +130,63 @@ async function handleRequest(request: NextRequest, method: string) {
   }
 }
 
-// Get available agent models based on app context
-async function getAgentModels(app: string, session: any, request: NextRequest): Promise<string[]> {
-  // Default core agent is always available
-  const models = ["core"];
+// Get available providers from DynamoDB
+async function getAvailableProviders(credentials: any, schema: string): Promise<any[]> {
+  const client = new DynamoDBClient({
+    region: credentials.region,
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      sessionToken: credentials.sessionToken,
+    },
+  });
 
-  // Only core agents are supported - external apps are no longer dynamically loaded
+  const docClient = DynamoDBDocumentClient.from(client);
+  const tableName = `${schema}-core-provider`;
 
-  return models;
+  const command = new ScanCommand({
+    TableName: tableName,
+    FilterExpression: '#status = :status',
+    ExpressionAttributeNames: {
+      '#status': 'status'
+    },
+    ExpressionAttributeValues: {
+      ':status': 'active'
+    }
+  });
+
+  const response = await docClient.send(command);
+  return response.Items || [];
 }
 
-// Get available Bedrock models via API
-async function getBedrockModels(credentials: any): Promise<string[]> {
-  try {
-    const { BedrockClient, ListFoundationModelsCommand } = await import("@aws-sdk/client-bedrock");
+// Get models for a specific provider from DynamoDB
+async function getModelsForProvider(providerId: string, credentials: any, schema: string): Promise<any[]> {
+  const client = new DynamoDBClient({
+    region: credentials.region,
+    credentials: {
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
+      sessionToken: credentials.sessionToken,
+    },
+  });
 
-    const client = new BedrockClient({
-      region: credentials.region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-        sessionToken: credentials.sessionToken,
-      },
-    });
+  const docClient = DynamoDBDocumentClient.from(client);
+  const tableName = `${schema}-core-provider-model`;
 
-    const command = new ListFoundationModelsCommand({
-      byOutputModality: "TEXT"
-    });
+  const command = new QueryCommand({
+    TableName: tableName,
+    IndexName: 'providerId-index',
+    KeyConditionExpression: 'providerId = :providerId',
+    FilterExpression: '#status = :status',
+    ExpressionAttributeNames: {
+      '#status': 'status'
+    },
+    ExpressionAttributeValues: {
+      ':providerId': providerId,
+      ':status': 'active'
+    }
+  });
 
-    const response = await client.send(command);
-
-    return response.modelSummaries?.map(model => model.modelId || "") || [];
-  } catch (error) {
-    // Return default models as fallback
-    return [
-      "anthropic.claude-3-5-sonnet-20241022-v2:0",
-      "anthropic.claude-3-haiku-20240307-v1:0",
-      "amazon.titan-text-premier-v1:0"
-    ];
-  }
+  const response = await docClient.send(command);
+  return response.Items || [];
 }

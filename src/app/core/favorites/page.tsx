@@ -1,15 +1,13 @@
 "use client";
 
-import { useCaptify } from "@captify-io/core/components";
+import { } from "@captify-io/core";
 import { useEffect } from "react";
 
 export default function FavoritesPage() {
-  const { setPageReady } = useCaptify();
 
   useEffect(() => {
     // Page is ready immediately
-    setPageReady();
-  }, [setPageReady]);
+  }, []);
 
   return (
     <div className="p-6">

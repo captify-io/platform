@@ -1,0 +1,71 @@
+{
+  "slug": "profile",
+  "name": "Profile",
+  "version": "1.0.0",
+  "description": "User profile and settings",
+  "menu": [
+    {
+      "label": "My Profile",
+      "href": "/profile",
+      "icon": "User",
+      "description": "View and edit your profile"
+    },
+    {
+      "label": "Settings",
+      "href": "/profile/settings",
+      "icon": "Settings",
+      "description": "Account settings"
+    },
+    {
+      "label": "Security",
+      "href": "/profile/security",
+      "icon": "Shield",
+      "description": "Security and privacy"
+    },
+    {
+      "label": "Notifications",
+      "href": "/profile/notifications",
+      "icon": "Bell",
+      "description": "Notification preferences"
+    }
+  ],
+  "manifest": {
+    "name": "Profile",
+    "icon": "User",
+    "color": "#10b981",
+    "category": "system",
+    "tags": ["profile", "settings", "account"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "profile",
+      "name": "Profile Management",
+      "description": "View and edit your user profile",
+      "enabled": true,
+      "icon": "User",
+      "href": "/profile"
+    },
+    {
+      "id": "settings",
+      "name": "Account Settings",
+      "description": "Manage account preferences",
+      "enabled": true,
+      "icon": "Settings",
+      "href": "/profile/settings"
+    },
+    {
+      "id": "security",
+      "name": "Security Settings",
+      "description": "Manage security and privacy settings",
+      "enabled": true,
+      "icon": "Shield",
+      "href": "/profile/security"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user"]
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Agent } from "@captify-io/core/components";
+import { Agent } from "@captify-io/core";
 
 export default function AgentPage() {
   return (
@@ -10,3 +10,5 @@ export default function AgentPage() {
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";

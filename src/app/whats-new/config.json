@@ -1,0 +1,65 @@
+{
+  "slug": "whats-new",
+  "name": "What's New",
+  "version": "1.0.0",
+  "description": "Platform updates, new features, and release notes",
+  "menu": [
+    {
+      "label": "Latest Updates",
+      "href": "/whats-new",
+      "icon": "Sparkles",
+      "description": "Latest platform updates"
+    },
+    {
+      "label": "Release Notes",
+      "href": "/whats-new/releases",
+      "icon": "FileText",
+      "description": "Detailed release notes"
+    },
+    {
+      "label": "Coming Soon",
+      "href": "/whats-new/roadmap",
+      "icon": "TrendingUp",
+      "description": "Upcoming features"
+    }
+  ],
+  "manifest": {
+    "name": "What's New",
+    "icon": "Sparkles",
+    "color": "#ec4899",
+    "category": "system",
+    "tags": ["updates", "releases", "changelog", "news"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "changelog",
+      "name": "Changelog",
+      "description": "View platform updates and changes",
+      "enabled": true,
+      "icon": "Sparkles",
+      "href": "/whats-new"
+    },
+    {
+      "id": "release-notes",
+      "name": "Release Notes",
+      "description": "Detailed release documentation",
+      "enabled": true,
+      "icon": "FileText",
+      "href": "/whats-new/releases"
+    },
+    {
+      "id": "roadmap",
+      "name": "Roadmap",
+      "description": "Upcoming features and improvements",
+      "enabled": true,
+      "icon": "TrendingUp",
+      "href": "/whats-new/roadmap"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user"]
+  }
+}

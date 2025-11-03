@@ -1,0 +1,78 @@
+{
+  "slug": "marketplace",
+  "name": "Marketplace",
+  "version": "1.0.0",
+  "description": "Discover and install apps, plugins, and integrations",
+  "menu": [
+    {
+      "label": "Browse Apps",
+      "href": "/marketplace",
+      "icon": "Store",
+      "description": "Browse all marketplace apps"
+    },
+    {
+      "label": "Categories",
+      "href": "/marketplace/categories",
+      "icon": "Grid",
+      "description": "Browse by category"
+    },
+    {
+      "label": "My Apps",
+      "href": "/marketplace/installed",
+      "icon": "Package",
+      "description": "Your installed apps"
+    },
+    {
+      "label": "Featured",
+      "href": "/marketplace/featured",
+      "icon": "Star",
+      "description": "Featured apps"
+    }
+  ],
+  "manifest": {
+    "name": "Marketplace",
+    "icon": "Store",
+    "color": "#8b5cf6",
+    "category": "system",
+    "tags": ["marketplace", "apps", "plugins", "integrations", "extensions"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "app-catalog",
+      "name": "App Catalog",
+      "description": "Browse available apps and integrations",
+      "enabled": true,
+      "icon": "Store",
+      "href": "/marketplace"
+    },
+    {
+      "id": "install-apps",
+      "name": "Install Apps",
+      "description": "One-click app installation",
+      "enabled": true,
+      "icon": "Download",
+      "href": "/marketplace"
+    },
+    {
+      "id": "app-reviews",
+      "name": "Reviews & Ratings",
+      "description": "User reviews and ratings",
+      "enabled": true,
+      "icon": "Star"
+    },
+    {
+      "id": "manage-apps",
+      "name": "Manage Installed Apps",
+      "description": "Update and remove installed apps",
+      "enabled": true,
+      "icon": "Package",
+      "href": "/marketplace/installed"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user"]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "slug": "search",
+  "name": "Search",
+  "version": "1.0.0",
+  "description": "Global search across all platform content and applications",
+  "menu": [
+    {
+      "label": "Search",
+      "href": "/search",
+      "icon": "Search",
+      "description": "Search everything"
+    },
+    {
+      "label": "Recent Searches",
+      "href": "/search/recent",
+      "icon": "Clock",
+      "description": "Your recent searches"
+    },
+    {
+      "label": "Saved Searches",
+      "href": "/search/saved",
+      "icon": "Bookmark",
+      "description": "Your saved searches"
+    }
+  ],
+  "manifest": {
+    "name": "Search",
+    "icon": "Search",
+    "color": "#06b6d4",
+    "category": "system",
+    "tags": ["search", "find", "discover", "kendra"],
+    "visibility": "public",
+    "resources": {
+      "knowledgeBaseId": "captify-search-kb"
+    }
+  },
+  "features": [
+    {
+      "id": "global-search",
+      "name": "Global Search",
+      "description": "Search across all applications and content",
+      "enabled": true,
+      "icon": "Search",
+      "href": "/search"
+    },
+    {
+      "id": "filters",
+      "name": "Advanced Filters",
+      "description": "Filter search results by type, date, app",
+      "enabled": true,
+      "icon": "Filter",
+      "href": "/search?filters=true"
+    },
+    {
+      "id": "saved-searches",
+      "name": "Saved Searches",
+      "description": "Save and reuse common searches",
+      "enabled": true,
+      "icon": "Bookmark",
+      "href": "/search/saved"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user"]
+  }
+}

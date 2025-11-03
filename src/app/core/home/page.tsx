@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { apiClient } from "@captify-io/core/lib";
+import { apiClient } from "@captify-io/core";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@captify-io/core/components/ui";
+} from "@captify-io/core/ui";
 import {
   Activity,
   MessageSquare,
@@ -43,7 +43,7 @@ export default function HomePage() {
         const agentsResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "core-Agent",
+          table: "core-agent",
           data: { Select: "COUNT" },
         });
 
@@ -51,7 +51,7 @@ export default function HomePage() {
         const workflowsResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "core-AgentWorkflow",
+          table: "core-agent-workflow",
           data: { Select: "COUNT" },
         });
 
@@ -59,7 +59,7 @@ export default function HomePage() {
         const spacesResponse = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "core-Space",
+          table: "core-space",
           data: { Select: "COUNT" },
         });
 

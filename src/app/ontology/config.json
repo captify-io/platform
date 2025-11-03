@@ -1,0 +1,71 @@
+{
+  "slug": "ontology",
+  "name": "Ontology",
+  "version": "1.0.0",
+  "description": "Data model and ontology management",
+  "menu": [
+    {
+      "label": "Nodes",
+      "href": "/ontology/nodes",
+      "icon": "Circle",
+      "description": "Ontology nodes"
+    },
+    {
+      "label": "Edges",
+      "href": "/ontology/edges",
+      "icon": "ArrowRight",
+      "description": "Ontology relationships"
+    },
+    {
+      "label": "Visualizer",
+      "href": "/ontology/visualizer",
+      "icon": "Network",
+      "description": "Visual ontology explorer"
+    },
+    {
+      "label": "Schema",
+      "href": "/ontology/schema",
+      "icon": "FileCode",
+      "description": "Schema definitions"
+    }
+  ],
+  "manifest": {
+    "name": "Ontology",
+    "icon": "Network",
+    "color": "#8b5cf6",
+    "category": "system",
+    "tags": ["ontology", "data model", "schema", "graph"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "node-management",
+      "name": "Node Management",
+      "description": "Manage ontology nodes and entities",
+      "enabled": true,
+      "icon": "Circle",
+      "href": "/ontology/nodes"
+    },
+    {
+      "id": "edge-management",
+      "name": "Edge Management",
+      "description": "Manage ontology relationships",
+      "enabled": true,
+      "icon": "ArrowRight",
+      "href": "/ontology/edges"
+    },
+    {
+      "id": "visualizer",
+      "name": "Ontology Visualizer",
+      "description": "Visual graph explorer",
+      "enabled": true,
+      "icon": "Network",
+      "href": "/ontology/visualizer"
+    }
+  ],
+  "access": {
+    "requiresApproval": true,
+    "defaultRole": "developer",
+    "allowedRoles": ["developer", "architect", "admin"]
+  }
+}

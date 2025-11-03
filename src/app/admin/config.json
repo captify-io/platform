@@ -1,0 +1,95 @@
+{
+  "slug": "admin",
+  "name": "Admin",
+  "version": "1.0.0",
+  "description": "Platform administration and management",
+  "menu": [
+    {
+      "label": "Dashboard",
+      "href": "/admin",
+      "icon": "LayoutDashboard",
+      "description": "Admin dashboard overview"
+    },
+    {
+      "label": "User Management",
+      "href": "/admin/users",
+      "icon": "Users",
+      "description": "Manage users and permissions"
+    },
+    {
+      "label": "Applications",
+      "href": "/admin/apps",
+      "icon": "AppWindow",
+      "description": "Manage platform applications"
+    },
+    {
+      "label": "Security",
+      "href": "/admin/security",
+      "icon": "Shield",
+      "description": "Security and authentication settings"
+    },
+    {
+      "label": "System Settings",
+      "href": "/admin/settings",
+      "icon": "Settings",
+      "description": "Platform configuration"
+    },
+    {
+      "label": "Database",
+      "href": "/admin/database",
+      "icon": "Database",
+      "description": "Database management"
+    },
+    {
+      "label": "Activity Logs",
+      "href": "/admin/logs",
+      "icon": "Activity",
+      "description": "System activity and audit logs"
+    },
+    {
+      "label": "Reports",
+      "href": "/admin/reports",
+      "icon": "FileText",
+      "description": "Generate and view reports"
+    }
+  ],
+  "manifest": {
+    "name": "Admin",
+    "icon": "Shield",
+    "color": "#dc2626",
+    "category": "system",
+    "tags": ["administration", "management", "security"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "user-management",
+      "name": "User Management",
+      "description": "Manage platform users, roles, and permissions",
+      "enabled": true,
+      "icon": "Users",
+      "href": "/admin/users"
+    },
+    {
+      "id": "app-management",
+      "name": "App Management",
+      "description": "Configure and manage platform applications",
+      "enabled": true,
+      "icon": "AppWindow",
+      "href": "/admin/apps"
+    },
+    {
+      "id": "security",
+      "name": "Security Settings",
+      "description": "Manage authentication and security policies",
+      "enabled": true,
+      "icon": "Shield",
+      "href": "/admin/security"
+    }
+  ],
+  "access": {
+    "requiresApproval": true,
+    "defaultRole": "admin",
+    "allowedRoles": ["admin", "superadmin"]
+  }
+}

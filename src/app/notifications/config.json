@@ -1,0 +1,65 @@
+{
+  "slug": "notifications",
+  "name": "Notifications",
+  "version": "1.0.0",
+  "description": "View and manage your notifications and activity",
+  "menu": [
+    {
+      "label": "All Notifications",
+      "href": "/notifications",
+      "icon": "Bell",
+      "description": "All notifications"
+    },
+    {
+      "label": "Unread",
+      "href": "/notifications/unread",
+      "icon": "BellDot",
+      "description": "Unread notifications",
+      "badge": "new"
+    },
+    {
+      "label": "Settings",
+      "href": "/notifications/settings",
+      "icon": "Settings",
+      "description": "Notification preferences"
+    }
+  ],
+  "manifest": {
+    "name": "Notifications",
+    "icon": "Bell",
+    "color": "#f59e0b",
+    "category": "system",
+    "tags": ["notifications", "alerts", "activity", "updates"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "notifications-list",
+      "name": "Notifications List",
+      "description": "View all your notifications",
+      "enabled": true,
+      "icon": "Bell",
+      "href": "/notifications"
+    },
+    {
+      "id": "real-time-updates",
+      "name": "Real-time Updates",
+      "description": "Get instant notifications",
+      "enabled": true,
+      "icon": "Zap"
+    },
+    {
+      "id": "notification-preferences",
+      "name": "Preferences",
+      "description": "Customize notification settings",
+      "enabled": true,
+      "icon": "Settings",
+      "href": "/notifications/settings"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "user",
+    "allowedRoles": ["user"]
+  }
+}

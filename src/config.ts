@@ -1,4 +1,4 @@
-import type { CaptifyLayoutConfig } from "@captify-io/core/components";
+import type { CaptifyLayoutConfig } from "@captify-io/core";
 
 /**
  * Platform Configuration

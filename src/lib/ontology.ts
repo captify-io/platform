@@ -2,7 +2,7 @@
  * Ontology Helper Functions
  *
  * Utility functions for working with ontology entities via apiClient
- * All functions use apiClient.run() from @captify-io/core/lib/api
+ * All functions use apiClient.run() from @captify-io/core
  *
  * Reference: specification.md and IMPLEMENTATION_NOTES.md
  */
@@ -164,7 +164,7 @@ export async function getOutcomesByStrategy(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Outcome",
+    table: "core-outcome",
     data: {
       index: "strategyId-index",
       fields: ["strategyId"],
@@ -182,7 +182,7 @@ export async function getOutcomesByCLIN(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Outcome",
+    table: "core-outcome",
     data: {
       index: "clinId-index",
       fields: ["clinId"],
@@ -208,7 +208,7 @@ export async function getObjectivesByStatus(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Objective",
+    table: "core-objective",
     data: {
       index: "tenantId-status-index",
       fields: ["tenantId", "status"],
@@ -230,7 +230,7 @@ export async function getUseCasesByOutcome(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-UseCase",
+    table: "core-usecase",
     data: {
       index: "outcomeId-index",
       fields: ["outcomeId"],
@@ -249,7 +249,7 @@ export async function getUseCasesByStage(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-UseCase",
+    table: "core-usecase",
     data: {
       index: "tenantId-stage-index",
       fields: ["tenantId", "stage"],
@@ -267,7 +267,7 @@ export async function getCapabilitiesByOutcome(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Capability",
+    table: "core-capability",
     data: {
       index: "outcomeId-index",
       fields: ["outcomeId"],
@@ -286,7 +286,7 @@ export async function getCapabilitiesByStage(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Capability",
+    table: "core-capability",
     data: {
       index: "tenantId-stage-index",
       fields: ["tenantId", "stage"],
@@ -305,7 +305,7 @@ export async function getTasksByEntity(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Task",
+    table: "core-task",
     data: {
       index: "relatedEntity-type-index",
       fields: ["relatedEntity", "relatedEntityType"],
@@ -324,7 +324,7 @@ export async function getTasksByTeamAndStatus(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Task",
+    table: "core-task",
     data: {
       index: "team-status-index",
       fields: ["team", "status"],
@@ -347,7 +347,7 @@ export async function getDataProductsByStage(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-DataProduct",
+    table: "core-dataproduct",
     data: {
       index: "tenantId-lifecycleStage-index",
       fields: ["tenantId", "lifecycleStage"],
@@ -366,7 +366,7 @@ export async function getModelsByTeamAndStatus(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Model",
+    table: "core-model",
     data: {
       index: "ownerTeam-status-index",
       fields: ["ownerTeam", "status"],
@@ -468,7 +468,7 @@ export async function getActiveAgents(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Agent",
+    table: "core-agent",
     data: {
       index: "tenantId-status-index",
       fields: ["tenantId", "status"],
@@ -486,7 +486,7 @@ export async function getCapabilitiesBySystem(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Capability",
+    table: "core-capability",
     data: {
       index: "deliveredBySystem-index",
       fields: ["deliveredBySystem"],
@@ -508,7 +508,7 @@ export async function getCLINsByContract(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-CLIN",
+    table: "core-clin",
     data: {
       index: "contractId-index",
       fields: ["contractId"],
@@ -526,7 +526,7 @@ export async function getReportsByStatus(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Report",
+    table: "core-report",
     data: {
       index: "status-generatedOn-index",
       fields: ["status"],
@@ -548,7 +548,7 @@ export async function getMetricsForEntity(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Metric",
+    table: "core-metric",
     data: {
       index: "relatedEntityId-index",
       fields: ["relatedEntityId"],
@@ -567,7 +567,7 @@ export async function getGovernanceRecordsByTeamAndStatus(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-GovernanceRecord",
+    table: "core-governancerecord",
     data: {
       index: "ownerTeam-status-index",
       fields: ["ownerTeam", "status"],
@@ -585,7 +585,7 @@ export async function getFeedbackForEntity(
   return apiClient.run({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-Feedback",
+    table: "core-feedback",
     data: {
       index: "relatedThing-index",
       fields: ["relatedThing"],
@@ -607,7 +607,7 @@ export async function getLatestOntologyGraph(
   const response = await apiClient.run<{ items: OntologyGraph[] }>({
     service: "platform.dynamodb",
     operation: "query",
-    table: "core-OntologyGraph",
+    table: "core-ontologygraph",
     data: {
       index: "tenantId-version-index",
       fields: ["tenantId"],

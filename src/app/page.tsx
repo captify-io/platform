@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useCaptify, LoadingScreen } from "@captify-io/core/components";
-import { apiClient } from "@captify-io/core/lib";
+import { useCaptify, apiClient, Skeleton } from "@captify-io/core";
+import { Widget } from "@captify-io/core/components/widgets";
 import Link from "next/link";
 import { Home, Settings, User, Bell, Bookmark, Clock } from "lucide-react";
 
@@ -19,7 +19,7 @@ export default function HomePage() {
         const response = await apiClient.run({
           service: "platform.dynamodb",
           operation: "scan",
-          table: "captify-core-App",
+          table: "core-app",
           data: {
             FilterExpression: "#status = :status",
             ExpressionAttributeNames: {
@@ -185,11 +185,40 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Ontology-Driven Widget - Apps Table */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">
+            Apps Table (Ontology-Driven Widget)
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              Auto-fetched from core-app using widget ID "table"
+            </span>
+          </h2>
+          <Widget
+            id="table"
+            onAction={(action, params) => {
+              if (action === 'rowClick' && params?.row?.slug) {
+                window.location.href = `/${params.row.slug}`;
+              }
+            }}
+            className="border rounded-lg"
+          />
+        </div>
+
         {/* All Apps */}
         <div>
           <h2 className="text-2xl font-semibold mb-4">All Applications</h2>
           {loading ? (
-            <LoadingScreen message="Loading applications..." />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : apps.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No applications available

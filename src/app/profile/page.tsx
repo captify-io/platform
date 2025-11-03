@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useCaptify } from "@captify-io/core/components";
-import { User, Settings, Bell, Palette } from "lucide-react";
+import { useCaptify } from "@captify-io/core";
+import { User, Settings, Bell, Palette, Bot } from "lucide-react";
 
 type Tab = "account" | "settings" | "preferences";
 
@@ -11,6 +11,63 @@ export default function ProfilePage() {
   const { data: session } = useSession();
   const { userState, updateUserState } = useCaptify();
   const [activeTab, setActiveTab] = useState<Tab>("account");
+  const [availableProviders, setAvailableProviders] = useState<any[]>([]);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
+
+  // Load providers and models on mount
+  useEffect(() => {
+    const fetchProvidersAndModels = async () => {
+      try {
+        // Fetch providers
+        const providersRes = await fetch('/api/captify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            service: 'platform.dynamodb',
+            operation: 'scan',
+            table: 'core-provider',
+            data: {
+              FilterExpression: '#status = :status',
+              ExpressionAttributeNames: { '#status': 'status' },
+              ExpressionAttributeValues: { ':status': 'active' }
+            }
+          })
+        });
+        const providersData = await providersRes.json();
+        if (providersData.success && providersData.data?.Items) {
+          setAvailableProviders(providersData.data.Items.sort((a: any, b: any) =>
+            parseInt(a.order || '999') - parseInt(b.order || '999')
+          ));
+        }
+
+        // Fetch models
+        const modelsRes = await fetch('/api/captify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            service: 'platform.dynamodb',
+            operation: 'scan',
+            table: 'core-provider-model',
+            data: {
+              FilterExpression: '#status = :status',
+              ExpressionAttributeNames: { '#status': 'status' },
+              ExpressionAttributeValues: { ':status': 'active' }
+            }
+          })
+        });
+        const modelsData = await modelsRes.json();
+        if (modelsData.success && modelsData.data?.Items) {
+          setAvailableModels(modelsData.data.Items);
+        }
+      } catch (error) {
+        console.error('Error fetching providers/models:', error);
+      }
+    };
+
+    fetchProvidersAndModels();
+  }, []);
 
   const tabs = [
     { id: "account" as Tab, label: "Account", icon: User },
@@ -257,6 +314,82 @@ export default function ProfilePage() {
                     <div className="text-sm text-muted-foreground">
                       {userState?.preferences?.recentApps?.length || 0} recently used
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Bot className="h-5 w-5" />
+                  <h2 className="text-2xl font-semibold">Default AI Model</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Set your preferred AI provider and model for new conversations
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">
+                      Provider
+                    </label>
+                    <select
+                      value={userState?.preferences?.defaultProvider || ""}
+                      onChange={async (e) => {
+                        if (userState) {
+                          await updateUserState({
+                            ...userState,
+                            preferences: {
+                              ...userState.preferences,
+                              defaultProvider: e.target.value || undefined,
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg bg-background"
+                    >
+                      <option value="">System Default</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">
+                      Model
+                    </label>
+                    <select
+                      value={userState?.preferences?.defaultModel || ""}
+                      onChange={async (e) => {
+                        if (userState) {
+                          await updateUserState({
+                            ...userState,
+                            preferences: {
+                              ...userState.preferences,
+                              defaultModel: e.target.value || undefined,
+                            },
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg bg-background"
+                      disabled={!userState?.preferences?.defaultProvider}
+                    >
+                      <option value="">System Default</option>
+                      {userState?.preferences?.defaultProvider &&
+                        availableModels
+                          .filter((m) => m.providerId === userState.preferences.defaultProvider)
+                          .map((model) => (
+                            <option key={model.id} value={model.modelId}>
+                              {model.name}
+                            </option>
+                          ))}
+                    </select>
+                    {!userState?.preferences?.defaultProvider && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select a provider first
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

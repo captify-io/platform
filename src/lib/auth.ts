@@ -122,6 +122,8 @@ const authConfig: NextAuthConfig = {
 
         // Store only essential data in JWT (large tokens stored server-side)
         const groups = (profile as any)["cognito:groups"] || [];
+        // Extract tenantId from first group starting with 'us-' (e.g., 'us-east-1_bZwSNAzU9_Microsoft')
+        const tenantId = groups.find((g: string) => g.startsWith('us-')) || "default";
         const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
         // Store large Cognito tokens server-side
@@ -146,6 +148,7 @@ const authConfig: NextAuthConfig = {
           email: profile.email,
           username: profile.preferred_username || profile.email,
           groups: groups.slice(0, 5), // Limit groups to prevent bloat
+          tenantId: tenantId, // Tenant ID from Cognito custom attribute
           captifyStatus: groups.some(
             (group: string | string[]) =>
               group.includes("CACProvider") ||
@@ -243,6 +246,7 @@ const authConfig: NextAuthConfig = {
           ...session.user,
           id: token.sub!,
           email: token.email,
+          tenantId: token.tenantId, // Pass tenantId to session.user
         },
       };
     },

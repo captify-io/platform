@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useCaptify } from "@captify-io/core/components";
+import { useCaptify } from "@captify-io/core";
 import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import {
