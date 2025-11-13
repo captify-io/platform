@@ -1,0 +1,336 @@
+feature:
+  id: "03"
+  name: "Context Display Component"
+  priority: "P0"
+  story_points: 5
+  estimated_hours: 12
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/components/ui"
+
+aws_services: []
+
+tables: []
+
+indexes: []
+
+stories:
+  - id: "US-03-01"
+    title: "View token usage per message"
+    as_a: "user"
+    i_want: "to see how many tokens each message uses"
+    so_that: "I can manage my context window and API costs"
+
+    acceptance_criteria:
+      - condition: "When viewing a message with token usage data"
+        expected: "Token count is displayed (input/output/total)"
+        test: "expect(screen.getByText(/\\d+ tokens/)).toBeInTheDocument()"
+
+      - condition: "When hovering over token count"
+        expected: "Breakdown tooltip shows input and output tokens"
+        test: "expect(screen.getByRole('tooltip')).toContainText('Input: 50, Output: 100')"
+
+      - condition: "When message has no token data"
+        expected: "Token display is hidden or shows 'calculating'"
+        test: "expect(screen.queryByText(/tokens/)).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display token count for message"
+        type: "unit"
+        arrange:
+          input:
+            tokenUsage:
+              input: 50
+              output: 100
+              total: 150
+        act: "render(<TokenDisplay {...input} />)"
+        assert:
+          - "expect(screen.getByText('150 tokens')).toBeInTheDocument()"
+
+      - name: "should show breakdown on hover"
+        type: "unit"
+        arrange:
+          input:
+            tokenUsage:
+              input: 50
+              output: 100
+              total: 150
+        act: |
+          render(<TokenDisplay {...input} />)
+          await userEvent.hover(screen.getByText('150 tokens'))
+        assert:
+          - "expect(screen.getByRole('tooltip')).toContainText('Input: 50')"
+          - "expect(screen.getByRole('tooltip')).toContainText('Output: 100')"
+
+      - name: "should not display when no token data"
+        type: "unit"
+        arrange:
+          input:
+            tokenUsage: null
+        act: "render(<TokenDisplay {...input} />)"
+        assert:
+          - "expect(screen.queryByText(/tokens/)).not.toBeInTheDocument()"
+
+  - id: "US-03-02"
+    title: "Monitor context window utilization"
+    as_a: "user"
+    i_want: "to see how much of my context window is being used"
+    so_that: "I know when I'm approaching the limit"
+
+    acceptance_criteria:
+      - condition: "When viewing the context panel"
+        expected: "Progress bar shows context utilization percentage"
+        test: "expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', expect.any(String))"
+
+      - condition: "When utilization is under 50%"
+        expected: "Progress bar is green"
+        test: "expect(screen.getByRole('progressbar')).toHaveClass('bg-green-500')"
+
+      - condition: "When utilization is 50-80%"
+        expected: "Progress bar is yellow"
+        test: "expect(screen.getByRole('progressbar')).toHaveClass('bg-yellow-500')"
+
+      - condition: "When utilization is over 80%"
+        expected: "Progress bar is red and warning is shown"
+        test: "expect(screen.getByRole('progressbar')).toHaveClass('bg-red-500')"
+
+    test_scenarios:
+      - name: "should show green progress bar when utilization is low"
+        type: "unit"
+        arrange:
+          input:
+            usedTokens: 2000
+            maxTokens: 8000
+        act: "render(<ContextUtilization {...input} />)"
+        assert:
+          - "expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25')"
+          - "expect(screen.getByRole('progressbar')).toHaveClass('bg-green-500')"
+
+      - name: "should show yellow progress bar when utilization is medium"
+        type: "unit"
+        arrange:
+          input:
+            usedTokens: 5000
+            maxTokens: 8000
+        act: "render(<ContextUtilization {...input} />)"
+        assert:
+          - "expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '62.5')"
+          - "expect(screen.getByRole('progressbar')).toHaveClass('bg-yellow-500')"
+
+      - name: "should show red progress bar and warning when utilization is high"
+        type: "unit"
+        arrange:
+          input:
+            usedTokens: 7000
+            maxTokens: 8000
+        act: "render(<ContextUtilization {...input} />)"
+        assert:
+          - "expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '87.5')"
+          - "expect(screen.getByRole('progressbar')).toHaveClass('bg-red-500')"
+          - "expect(screen.getByText(/approaching context limit/i)).toBeInTheDocument()"
+
+  - id: "US-03-03"
+    title: "Estimate conversation costs"
+    as_a: "user"
+    i_want: "to see the estimated cost of my conversation"
+    so_that: "I can budget my API usage"
+
+    acceptance_criteria:
+      - condition: "When viewing the context panel"
+        expected: "Cost is displayed per message and cumulative"
+        test: "expect(screen.getByText(/\\$\\d+\\.\\d+/)).toBeInTheDocument()"
+
+      - condition: "When provider pricing is available"
+        expected: "Cost is calculated accurately based on token usage"
+        test: "expect(calculateCost(tokens, pricing)).toBe(expectedCost)"
+
+      - condition: "When provider pricing is unavailable"
+        expected: "Cost display shows 'N/A' or is hidden"
+        test: "expect(screen.getByText('N/A')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should calculate cost for OpenAI GPT-4"
+        type: "unit"
+        arrange:
+          input:
+            tokenUsage:
+              input: 1000
+              output: 500
+            provider: "openai"
+            model: "gpt-4-turbo"
+            pricing:
+              inputPerMillion: 10
+              outputPerMillion: 30
+        act: "const cost = calculateCost(input)"
+        assert:
+          - "expect(cost).toBe(0.025)"
+
+      - name: "should display cost in USD format"
+        type: "unit"
+        arrange:
+          input:
+            cost: 0.025
+            currency: "USD"
+        act: "render(<CostDisplay {...input} />)"
+        assert:
+          - "expect(screen.getByText('$0.03')).toBeInTheDocument()"
+
+      - name: "should show cumulative cost for thread"
+        type: "unit"
+        arrange:
+          input:
+            messages:
+              - tokenUsage: { input: 1000, output: 500 }
+              - tokenUsage: { input: 800, output: 600 }
+            pricing:
+              inputPerMillion: 10
+              outputPerMillion: 30
+        act: "render(<ThreadCostDisplay {...input} />)"
+        assert:
+          - "expect(screen.getByText(/Total: \\$0.05/)).toBeInTheDocument()"
+
+      - name: "should handle missing pricing data"
+        type: "unit"
+        arrange:
+          input:
+            tokenUsage: { input: 1000, output: 500 }
+            pricing: null
+        act: "render(<CostDisplay {...input} />)"
+        assert:
+          - "expect(screen.getByText('N/A')).toBeInTheDocument()"
+
+  - id: "US-03-04"
+    title: "View selected context items"
+    as_a: "user"
+    i_want: "to see what files and data sources are being used"
+    so_that: "I understand what information the agent has access to"
+
+    acceptance_criteria:
+      - condition: "When context items are selected"
+        expected: "List of files, datasources, and ontology items is shown"
+        test: "expect(screen.getByText('3 files, 2 datasources')).toBeInTheDocument()"
+
+      - condition: "When clicking on a context item"
+        expected: "Item details are displayed or item is opened"
+        test: "expect(onItemClick).toHaveBeenCalledWith(itemId)"
+
+      - condition: "When no context items are selected"
+        expected: "Empty state message is shown"
+        test: "expect(screen.getByText('No context items selected')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display context items by type"
+        type: "unit"
+        arrange:
+          input:
+            contextItems:
+              - type: "file"
+                id: "file-1"
+                name: "contract.pdf"
+              - type: "datasource"
+                id: "ds-1"
+                name: "Contracts DB"
+              - type: "ontology"
+                id: "ont-1"
+                name: "Contract Schema"
+        act: "render(<ContextItemsList {...input} />)"
+        assert:
+          - "expect(screen.getByText('contract.pdf')).toBeInTheDocument()"
+          - "expect(screen.getByText('Contracts DB')).toBeInTheDocument()"
+          - "expect(screen.getByText('Contract Schema')).toBeInTheDocument()"
+
+      - name: "should show count summary"
+        type: "unit"
+        arrange:
+          input:
+            contextItems:
+              - type: "file"
+              - type: "file"
+              - type: "file"
+              - type: "datasource"
+              - type: "datasource"
+        act: "render(<ContextSummary {...input} />)"
+        assert:
+          - "expect(screen.getByText('3 files, 2 datasources')).toBeInTheDocument()"
+
+      - name: "should handle click on context item"
+        type: "unit"
+        arrange:
+          input:
+            contextItems:
+              - type: "file"
+                id: "file-1"
+                name: "contract.pdf"
+            onItemClick: jest.fn()
+        act: "await userEvent.click(screen.getByText('contract.pdf'))"
+        assert:
+          - "expect(input.onItemClick).toHaveBeenCalledWith('file-1')"
+
+      - name: "should show empty state when no items"
+        type: "unit"
+        arrange:
+          input:
+            contextItems: []
+        act: "render(<ContextItemsList {...input} />)"
+        assert:
+          - "expect(screen.getByText('No context items selected')).toBeInTheDocument()"
+
+  - id: "US-03-05"
+    title: "Toggle context panel visibility"
+    as_a: "user"
+    i_want: "to expand and collapse the context panel"
+    so_that: "I can focus on conversation when I don't need to see context details"
+
+    acceptance_criteria:
+      - condition: "When panel is collapsed"
+        expected: "Only summary is visible (token count, cost)"
+        test: "expect(screen.queryByRole('region')).not.toBeVisible()"
+
+      - condition: "When I click to expand"
+        expected: "Detailed breakdown is shown"
+        test: "expect(screen.getByRole('region')).toBeVisible()"
+
+      - condition: "When I close the panel"
+        expected: "Preference is saved to localStorage"
+        test: "expect(localStorage.getItem('contextPanelExpanded')).toBe('false')"
+
+    test_scenarios:
+      - name: "should start collapsed by default"
+        type: "unit"
+        arrange: {}
+        act: "render(<ContextPanel />)"
+        assert:
+          - "expect(screen.queryByRole('region')).not.toBeVisible()"
+
+      - name: "should expand when toggle clicked"
+        type: "unit"
+        arrange: {}
+        act: |
+          render(<ContextPanel />)
+          await userEvent.click(screen.getByRole('button', { name: /expand/i }))
+        assert:
+          - "expect(screen.getByRole('region')).toBeVisible()"
+
+      - name: "should persist expanded state"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.setItem: jest.fn()
+        act: |
+          render(<ContextPanel />)
+          await userEvent.click(screen.getByRole('button', { name: /expand/i }))
+        assert:
+          - "expect(localStorage.setItem).toHaveBeenCalledWith('contextPanelExpanded', 'true')"
+
+      - name: "should restore expanded state from localStorage"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.getItem:
+              returns: 'true'
+        act: "render(<ContextPanel />)"
+        assert:
+          - "expect(screen.getByRole('region')).toBeVisible()"

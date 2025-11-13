@@ -1,0 +1,121 @@
+{
+  "slug": "fabric",
+  "name": "Fabric",
+  "version": "1.0.0",
+  "description": "Obsidian-inspired living documentation with real-time collaboration, ProseMirror rich text editing, and AI-powered assistance",
+  "menu": [
+    {
+      "label": "Notes",
+      "href": "/fabric",
+      "icon": "FileText",
+      "description": "Browse all notes"
+    },
+    {
+      "label": "Folders",
+      "href": "/fabric/folders",
+      "icon": "Folder",
+      "description": "Organize by folders"
+    },
+    {
+      "label": "Canvas",
+      "href": "/fabric/canvas",
+      "icon": "Layout",
+      "description": "Visual canvas"
+    },
+    {
+      "label": "Templates",
+      "href": "/fabric/templates",
+      "icon": "LayoutTemplate",
+      "description": "Note templates"
+    },
+    {
+      "label": "Search",
+      "href": "/fabric/search",
+      "icon": "Search",
+      "description": "Search notes"
+    }
+  ],
+  "manifest": {
+    "name": "Fabric",
+    "icon": "FileText",
+    "color": "#10b981",
+    "category": "documentation",
+    "tags": ["documentation", "notes", "collaboration", "markdown", "yjs", "prosemirror", "ai", "knowledge-base"],
+    "visibility": "public",
+    "resources": {
+      "identityPoolId": "us-east-1:cefc0509-4f87-48d5-8238-c64390b62781",
+      "s3Bucket": "captify-spaces"
+    }
+  },
+  "features": [
+    {
+      "id": "notes",
+      "name": "Living Notes",
+      "description": "Y.js powered real-time collaborative notes with markdown and rich text",
+      "enabled": true,
+      "icon": "FileText",
+      "href": "/fabric"
+    },
+    {
+      "id": "editor",
+      "name": "ProseMirror Editor",
+      "description": "Rich text editor with custom schema, comments, and AI assistance",
+      "enabled": true,
+      "icon": "Edit",
+      "href": "/fabric/editor"
+    },
+    {
+      "id": "collaboration",
+      "name": "Real-time Collaboration",
+      "description": "Multiple users editing together with presence awareness",
+      "enabled": true,
+      "icon": "Users",
+      "href": "/fabric"
+    },
+    {
+      "id": "canvas",
+      "name": "Visual Canvas",
+      "description": "Organize notes and entities visually with drag-and-drop",
+      "enabled": true,
+      "icon": "Layout",
+      "href": "/fabric/canvas"
+    },
+    {
+      "id": "templates",
+      "name": "Templates",
+      "description": "Reusable note templates with variable substitution",
+      "enabled": true,
+      "icon": "LayoutTemplate",
+      "href": "/fabric/templates"
+    },
+    {
+      "id": "wikilinks",
+      "name": "Wikilinks",
+      "description": "Obsidian-style [[wikilinks]] and typed links [[type::target]]",
+      "enabled": true,
+      "icon": "Link",
+      "href": "/fabric"
+    },
+    {
+      "id": "ai-assistance",
+      "name": "AI Assistant",
+      "description": "AI-powered authoring, proofreading, and content generation",
+      "enabled": true,
+      "icon": "Sparkles",
+      "href": "/fabric/ai"
+    },
+    {
+      "id": "version-history",
+      "name": "Version History",
+      "description": "S3-based snapshots with point-in-time restore",
+      "enabled": true,
+      "icon": "History",
+      "href": "/fabric/history"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "member",
+    "allowedRoles": ["member", "admin"]
+  }
+}

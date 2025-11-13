@@ -1,0 +1,204 @@
+# JSON Schema for Captify Workshop User Stories (YAML format)
+# Use this schema to validate user story YAML files
+# Validation: ajv validate -s user-story-schema.yaml -d "*/user-stories/*.yaml"
+
+$schema: http://json-schema.org/draft-07/schema#
+title: Captify User Story
+description: Schema for machine-readable user stories with test scenarios
+type: object
+required:
+  - feature
+  - stories
+
+properties:
+  feature:
+    type: object
+    required:
+      - id
+      - name
+      - priority
+    properties:
+      id:
+        type: string
+        pattern: "^\\d{2}$"
+        description: "Feature number (e.g., '01', '02')"
+      name:
+        type: string
+        minLength: 3
+        description: "Human-readable feature name"
+      priority:
+        type: string
+        enum: ["P0", "P1", "P2", "P3"]
+        description: "Feature priority level"
+      story_points:
+        type: integer
+        minimum: 1
+        maximum: 21
+        description: "Estimated story points (Fibonacci: 1,2,3,5,8,13,21)"
+      estimated_hours:
+        type: number
+        minimum: 0.5
+        description: "Estimated hours for implementation"
+
+  dependencies:
+    type: array
+    items:
+      type: string
+      pattern: "^US-\\d{2}-\\d{2}$"
+    description: "Array of dependent user story IDs"
+
+  services_required:
+    type: array
+    items:
+      type: string
+    description: "Core services/packages required from @captify-io/core"
+    examples:
+      - "@captify-io/core/lib/api"
+      - "@captify-io/core/types"
+
+  aws_services:
+    type: array
+    items:
+      type: string
+      enum:
+        - dynamodb
+        - s3
+        - cognito
+        - aurora
+        - bedrock
+        - kendra
+        - glue
+        - sagemaker
+        - quicksight
+        - cloudwatch
+    description: "AWS services utilized by this feature"
+
+  tables:
+    type: array
+    items:
+      type: string
+      pattern: "^[a-z]+-[a-z-]+$"
+    description: "DynamoDB tables accessed (short format: app-table)"
+    examples:
+      - core-user
+      - core-notification
+      - pmbook-contract
+
+  indexes:
+    type: array
+    items:
+      type: string
+    description: "DynamoDB indexes (GSI/LSI) required"
+    examples:
+      - email-index
+      - userId-createdAt-index
+
+  stories:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - id
+        - title
+        - as_a
+        - i_want
+        - so_that
+        - acceptance_criteria
+        - test_scenarios
+      properties:
+        id:
+          type: string
+          pattern: "^US-\\d{2}-\\d{2}$"
+          description: "Unique story ID (format: US-FeatureNum-StoryNum)"
+        title:
+          type: string
+          minLength: 5
+          description: "Short descriptive title for the story"
+        as_a:
+          type: string
+          minLength: 3
+          description: "User type or persona"
+        i_want:
+          type: string
+          minLength: 5
+          description: "Goal or capability desired"
+        so_that:
+          type: string
+          minLength: 5
+          description: "Business value or benefit"
+
+        acceptance_criteria:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - condition
+              - expected
+            properties:
+              condition:
+                type: string
+                description: "Given/when condition"
+              expected:
+                type: string
+                description: "Then expected outcome"
+              test:
+                type: string
+                description: "Optional: Jest assertion code"
+
+        edge_cases:
+          type: array
+          items:
+            type: object
+            required:
+              - scenario
+              - expected_behavior
+            properties:
+              scenario:
+                type: string
+                description: "Edge case scenario"
+              expected_behavior:
+                type: string
+                description: "Expected system behavior"
+
+        test_scenarios:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - arrange
+              - act
+              - assert
+            properties:
+              name:
+                type: string
+                description: "Test name (e.g., 'should handle successful case')"
+              type:
+                type: string
+                enum: ["unit", "integration", "e2e"]
+                description: "Type of test"
+              arrange:
+                type: object
+                properties:
+                  mocks:
+                    type: object
+                    description: "Mock configurations for test dependencies"
+                  input:
+                    type: object
+                    description: "Input data for the test"
+                description: "Test setup (AAA pattern: Arrange)"
+              act:
+                type: string
+                description: "Action to perform (AAA pattern: Act)"
+              assert:
+                type: array
+                items:
+                  type: string
+                minItems: 1
+                description: "Assertions to verify (AAA pattern: Assert)"
+
+additionalProperties: false

@@ -1,0 +1,1202 @@
+feature:
+  id: ontology-advanced-features
+  name: Advanced Features and UX Polish for Enterprise Ontology
+  description: |
+    Implement power-user features including comprehensive keyboard shortcuts, command palette,
+    undo/redo system, real-time WebSocket updates, export/import capabilities, Git-like version
+    control, and automated backups to create a professional-grade ontology management experience.
+  priority: P1
+  story_points: 21
+  estimated_weeks: 2
+  owner: Platform Team
+  tags:
+    - ux-polish
+    - keyboard-shortcuts
+    - command-palette
+    - undo-redo
+    - real-time
+    - export-import
+    - version-control
+    - backups
+
+services:
+  backend:
+    - core/src/services/ontology/version-control.ts
+    - core/src/services/ontology/backup.ts
+    - core/src/services/ontology/export.ts
+    - core/src/services/ontology/import.ts
+    - core/src/services/realtime/websocket.ts
+
+  frontend:
+    - platform/src/app/ontology/components/CommandPalette.tsx
+    - platform/src/app/ontology/components/UndoRedo.tsx
+    - platform/src/app/ontology/components/ExportDialog.tsx
+    - platform/src/app/ontology/components/ImportDialog.tsx
+    - platform/src/app/ontology/components/VersionControl.tsx
+    - platform/src/app/ontology/hooks/useKeyboardShortcuts.ts
+    - platform/src/app/ontology/hooks/useRealtime.ts
+
+  libraries:
+    - cmdk (command palette)
+    - socket.io-client
+    - zustand (undo/redo state)
+    - graphml-js (GraphML export/import)
+    - papaparse (CSV)
+
+user_stories:
+  # ==========================================================================
+  # STORY 1: Comprehensive Keyboard Shortcuts
+  # ==========================================================================
+  - id: US-ADV-001
+    title: As a power user, I want keyboard shortcuts for all major actions
+    description: |
+      I need comprehensive keyboard shortcuts so I can work efficiently without
+      constantly reaching for the mouse.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I press Cmd+K (Mac) or Ctrl+K (Windows)
+        When the command palette opens
+        Then I can search for any command
+
+      - Given I press N
+        When in ontology view
+        Then a create node dialog opens
+
+      - Given I have nodes selected
+        When I press Delete
+        Then a confirmation dialog appears
+
+      - Given I want to see all shortcuts
+        When I press Cmd+/ or ?
+        Then a shortcuts help panel appears
+
+    shortcuts:
+      navigation:
+        - key: Cmd+K / Ctrl+K
+          action: Open command palette
+
+        - key: "/"
+          action: Focus search
+
+        - key: Esc
+          action: Close dialogs/panels
+
+        - key: Cmd+B / Ctrl+B
+          action: Toggle sidebar
+
+      node_operations:
+        - key: N
+          action: Create new node
+
+        - key: E
+          action: Create new edge
+
+        - key: Delete / Backspace
+          action: Delete selected
+
+        - key: D
+          action: Duplicate selected
+
+      editing:
+        - key: Cmd+Z / Ctrl+Z
+          action: Undo
+
+        - key: Cmd+Shift+Z / Ctrl+Shift+Z
+          action: Redo
+
+        - key: Cmd+C / Ctrl+C
+          action: Copy selected
+
+        - key: Cmd+V / Ctrl+V
+          action: Paste
+
+        - key: Cmd+X / Ctrl+X
+          action: Cut
+
+        - key: Cmd+A / Ctrl+A
+          action: Select all
+
+      view:
+        - key: "1"
+          action: Switch to 2D view
+
+        - key: "2"
+          action: Switch to 3D view
+
+        - key: "+"
+          action: Zoom in
+
+        - key: "-"
+          action: Zoom out
+
+        - key: "0"
+          action: Reset zoom
+
+        - key: F
+          action: Fit to screen
+
+      tools:
+        - key: V
+          action: Select tool
+
+        - key: H
+          action: Pan tool
+
+        - key: B
+          action: Box select tool
+
+      help:
+        - key: "?"
+          action: Show shortcuts
+
+        - key: Cmd+/ / Ctrl+/
+          action: Show shortcuts
+
+    test_scenarios:
+      - name: Keyboard shortcuts work
+        type: e2e
+        steps:
+          - action: press_key
+            key: n
+            expect:
+              create_node_dialog_opened: true
+
+          - action: press_key
+            key: Escape
+            expect:
+              dialog_closed: true
+
+          - action: select_nodes
+            node_ids: ['n1', 'n2']
+
+          - action: press_key
+            key: Delete
+            expect:
+              confirmation_dialog_opened: true
+
+      - name: Command palette opens with Cmd+K
+        type: e2e
+        steps:
+          - action: press_keys
+            keys: ['Cmd', 'k']
+            expect:
+              command_palette_opened: true
+              search_input_focused: true
+
+      - name: Undo/redo shortcuts
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Node 1' });
+        steps:
+          - action: press_keys
+            keys: ['Cmd', 'z']
+            expect:
+              node_deleted: true
+
+          - action: press_keys
+            keys: ['Cmd', 'Shift', 'z']
+            expect:
+              node_restored: true
+
+      - name: View shortcuts help
+        type: e2e
+        steps:
+          - action: press_key
+            key: "?"
+            expect:
+              shortcuts_panel_visible: true
+              shortcuts.length_gte: 30
+
+  # ==========================================================================
+  # STORY 2: Command Palette (Cmd+K)
+  # ==========================================================================
+  - id: US-ADV-002
+    title: As a user, I want a command palette for quick access to all features
+    description: |
+      I need a command palette with fuzzy search so I can quickly execute any
+      command without navigating through menus.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I press Cmd+K
+        When the palette opens
+        Then I see a search input and recent commands
+
+      - Given I type a search term
+        When results are displayed
+        Then they are ranked by fuzzy match relevance
+
+      - Given I select a command
+        When I press Enter
+        Then the command executes immediately
+
+      - Given I use a command frequently
+        When I open the palette
+        Then recent/frequent commands appear at the top
+
+    commands:
+      - category: Create
+        items:
+          - label: Create Node
+            shortcut: N
+            action: open_create_node_dialog
+
+          - label: Create Edge
+            shortcut: E
+            action: open_create_edge_dialog
+
+          - label: Create Group
+            action: create_group
+
+      - category: View
+        items:
+          - label: Switch to 2D View
+            shortcut: "1"
+            action: switch_2d
+
+          - label: Switch to 3D View
+            shortcut: "2"
+            action: switch_3d
+
+          - label: Fit to Screen
+            shortcut: F
+            action: fit_to_screen
+
+      - category: Edit
+        items:
+          - label: Undo
+            shortcut: Cmd+Z
+            action: undo
+
+          - label: Redo
+            shortcut: Cmd+Shift+Z
+            action: redo
+
+      - category: Tools
+        items:
+          - label: DynamoDB Query Builder
+            action: open_dynamodb_builder
+
+          - label: Athena SQL Interface
+            action: open_athena_editor
+
+          - label: Kendra Search
+            action: open_kendra_search
+
+      - category: Export/Import
+        items:
+          - label: Export as JSON
+            action: export_json
+
+          - label: Export as GraphML
+            action: export_graphml
+
+          - label: Import from JSON
+            action: import_json
+
+    test_scenarios:
+      - name: Open command palette
+        type: e2e
+        steps:
+          - action: press_keys
+            keys: ['Cmd', 'k']
+            expect:
+              command_palette_opened: true
+              recent_commands_visible: true
+
+      - name: Fuzzy search commands
+        type: e2e
+        steps:
+          - action: open_command_palette
+
+          - action: type_search
+            query: "cre nod"
+            expect:
+              results.length_gt: 0
+              results[0].label.contains: Create Node
+
+      - name: Execute command
+        type: integration
+        steps:
+          - action: open_command_palette
+
+          - action: select_command
+            label: Create Node
+            expect:
+              command_palette_closed: true
+              create_node_dialog_opened: true
+
+      - name: Recent commands prioritized
+        type: integration
+        setup: |
+          await executeCommand('Create Node', 5);  // Execute 5 times
+          await executeCommand('Create Edge', 2);
+        steps:
+          - action: open_command_palette
+            expect:
+              recent_commands[0].label: Create Node
+              recent_commands[1].label: Create Edge
+
+  # ==========================================================================
+  # STORY 3: Undo/Redo System with Visual History
+  # ==========================================================================
+  - id: US-ADV-003
+    title: As a user, I want comprehensive undo/redo with visual history
+    description: |
+      I need a robust undo/redo system with visual timeline so I can recover
+      from mistakes and review my edit history.
+
+    priority: P0
+    story_points: 5
+
+    acceptance_criteria:
+      - Given I perform actions
+        When I press Cmd+Z
+        Then the last action is undone
+
+      - Given I undo an action
+        When I press Cmd+Shift+Z
+        Then the action is redone
+
+      - Given I open history panel
+        When I view the timeline
+        Then I see all actions in chronological order
+
+      - Given I have multiple actions in history
+        When I select a specific point
+        Then I can jump to that state (selective undo)
+
+    test_scenarios:
+      - name: Basic undo/redo
+        type: integration
+        steps:
+          - action: create_node
+            params:
+              id: n1
+              label: Node 1
+
+          - action: undo
+            expect:
+              nodes.length: 0
+
+          - action: redo
+            expect:
+              nodes.length: 1
+              nodes[0].id: n1
+
+      - name: Multiple undos
+        type: integration
+        steps:
+          - action: create_node
+            params: { id: n1 }
+
+          - action: create_node
+            params: { id: n2 }
+
+          - action: create_edge
+            params: { source: n1, target: n2 }
+
+          - action: undo
+            expect:
+              edges.length: 0
+
+          - action: undo
+            expect:
+              nodes.length: 1
+
+          - action: undo
+            expect:
+              nodes.length: 0
+
+      - name: View history timeline
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Node 1' });
+          await createNode({ id: 'n2', label: 'Node 2' });
+          await updateNode({ id: 'n1', label: 'Updated Node 1' });
+        steps:
+          - action: open_history_panel
+            expect:
+              history_visible: true
+              history_items.length: 3
+              history_items[0].action: create_node
+              history_items[1].action: create_node
+              history_items[2].action: update_node
+
+      - name: Selective undo (jump to state)
+        type: integration
+        setup: |
+          await createNode({ id: 'n1' });
+          await createNode({ id: 'n2' });
+          await createNode({ id: 'n3' });
+        steps:
+          - action: open_history_panel
+
+          - action: select_history_item
+            index: 1  # After creating n2
+            expect:
+              nodes.length: 2
+              current_state_at_index: 1
+
+      - name: Undo limit enforcement
+        type: integration
+        setup: |
+          for (let i = 0; i < 105; i++) {
+            await createNode({ id: `n${i}` });
+          }
+        steps:
+          - action: get_history
+            expect:
+              history.length: 100  # Max 100 items
+              oldest_item_discarded: true
+
+  # ==========================================================================
+  # STORY 4: Real-Time WebSocket Updates
+  # ==========================================================================
+  - id: US-ADV-004
+    title: As a user, I want real-time updates when others edit the ontology
+    description: |
+      I need real-time collaboration so I can see changes made by other users
+      immediately and avoid conflicting edits.
+
+    priority: P1
+    story_points: 5
+
+    acceptance_criteria:
+      - Given another user creates a node
+        When I'm viewing the ontology
+        Then I see the new node appear in real-time
+
+      - Given another user updates a node
+        When I'm viewing that node
+        Then I see the update with a visual indicator
+
+      - Given I make a change while offline
+        When I reconnect
+        Then changes are synced and conflicts are resolved
+
+      - Given multiple users are editing
+        When I view presence indicators
+        Then I see who else is viewing/editing
+
+    test_scenarios:
+      - name: Receive real-time node creation
+        type: integration
+        setup: |
+          const user1 = await createUserSession('user1@example.com');
+          const user2 = await createUserSession('user2@example.com');
+        steps:
+          - action: user1_creates_node
+            params:
+              id: n1
+              label: Node 1
+
+          - action: wait
+            duration: 500
+
+          - action: user2_get_nodes
+            expect:
+              nodes.length: 1
+              nodes[0].id: n1
+
+      - name: Receive real-time node update
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Original' });
+          const user1 = await createUserSession('user1@example.com');
+          const user2 = await createUserSession('user2@example.com');
+        steps:
+          - action: user1_updates_node
+            params:
+              id: n1
+              label: Updated
+
+          - action: wait
+            duration: 500
+
+          - action: user2_get_node
+            node_id: n1
+            expect:
+              label: Updated
+              update_indicator_visible: true
+
+      - name: Optimistic updates
+        type: integration
+        steps:
+          - action: create_node_optimistic
+            params:
+              id: n1
+              label: Node 1
+            expect:
+              node_visible_immediately: true
+              node.status: pending
+
+          - action: wait_for_server_confirmation
+            expect:
+              node.status: confirmed
+
+      - name: Conflict resolution
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Original', version: 1 });
+          const user1 = await createUserSession('user1@example.com');
+          const user2 = await createUserSession('user2@example.com');
+        steps:
+          - action: user1_updates_node
+            params:
+              id: n1
+              label: User 1 Update
+              version: 1
+
+          - action: user2_updates_node
+            params:
+              id: n1
+              label: User 2 Update
+              version: 1
+            expect:
+              conflict_detected: true
+              conflict_resolution_dialog_visible: true
+
+          - action: resolve_conflict
+            strategy: last_write_wins
+            expect:
+              node.label: User 2 Update
+              node.version: 3
+
+      - name: Presence indicators
+        type: integration
+        setup: |
+          const user1 = await createUserSession('user1@example.com');
+          const user2 = await createUserSession('user2@example.com');
+        steps:
+          - action: user1_join_room
+            room: ontology-123
+
+          - action: user2_join_room
+            room: ontology-123
+
+          - action: user1_get_presence
+            expect:
+              active_users.length: 2
+              active_users.includes: user2@example.com
+
+  # ==========================================================================
+  # STORY 5: Export Capabilities (6+ formats)
+  # ==========================================================================
+  - id: US-ADV-005
+    title: As a user, I want to export the ontology in multiple formats
+    description: |
+      I need to export the ontology in various formats so I can share data with
+      other tools and create backups.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I select export
+        When I choose JSON format
+        Then the ontology is exported as structured JSON
+
+      - Given I select export
+        When I choose CSV format
+        Then nodes and edges are exported as separate CSV files
+
+      - Given I select export
+        When I choose GraphML format
+        Then the ontology is exported as GraphML XML
+
+      - Given I select export
+        When I choose visual export (PNG/SVG/PDF)
+        Then the current view is exported as an image or PDF
+
+    formats:
+      - format: JSON
+        extension: .json
+        use_case: Data interchange, backups, API integration
+
+      - format: CSV
+        extension: .zip (nodes.csv + edges.csv)
+        use_case: Excel, data analysis, reporting
+
+      - format: GraphML
+        extension: .graphml
+        use_case: Cytoscape, Gephi, yEd, academic tools
+
+      - format: PNG
+        extension: .png
+        use_case: Presentations, documentation
+
+      - format: SVG
+        extension: .svg
+        use_case: Scalable graphics, web embedding
+
+      - format: PDF
+        extension: .pdf
+        use_case: Reports, printable documentation
+
+    test_scenarios:
+      - name: Export as JSON
+        type: integration
+        setup: |
+          await createNodes([
+            { id: 'n1', label: 'Node 1', type: 'entity' },
+            { id: 'n2', label: 'Node 2', type: 'concept' }
+          ]);
+          await createEdge({ source: 'n1', target: 'n2', relation: 'hasMany' });
+        steps:
+          - action: export_ontology
+            params:
+              format: json
+            expect:
+              success: true
+              file_type: application/json
+              data.nodes.length: 2
+              data.edges.length: 1
+
+      - name: Export as CSV
+        type: integration
+        setup: |
+          await createNodes([
+            { id: 'n1', label: 'Node 1' },
+            { id: 'n2', label: 'Node 2' }
+          ]);
+        steps:
+          - action: export_ontology
+            params:
+              format: csv
+            expect:
+              success: true
+              file_type: application/zip
+              contains_files: ['nodes.csv', 'edges.csv']
+
+      - name: Export as GraphML
+        type: integration
+        setup: |
+          await createNodes([
+            { id: 'n1', label: 'Node 1' },
+            { id: 'n2', label: 'Node 2' }
+          ]);
+          await createEdge({ source: 'n1', target: 'n2' });
+        steps:
+          - action: export_ontology
+            params:
+              format: graphml
+            expect:
+              success: true
+              file_type: application/xml
+              xml_valid: true
+              xml_contains: '<graphml'
+
+      - name: Export as PNG
+        type: e2e
+        setup: |
+          await renderOntology();
+        steps:
+          - action: export_visual
+            params:
+              format: png
+              width: 1920
+              height: 1080
+            expect:
+              success: true
+              file_type: image/png
+              image_width: 1920
+              image_height: 1080
+
+      - name: Export subset (filtered)
+        type: integration
+        setup: |
+          await createNodes([
+            { id: 'n1', domain: 'PMBook' },
+            { id: 'n2', domain: 'Core' },
+            { id: 'n3', domain: 'PMBook' }
+          ]);
+        steps:
+          - action: export_ontology
+            params:
+              format: json
+              filter:
+                domain: PMBook
+            expect:
+              data.nodes.length: 2
+              data.nodes.every(n => n.domain === 'PMBook'): true
+
+  # ==========================================================================
+  # STORY 6: Import Capabilities with Validation
+  # ==========================================================================
+  - id: US-ADV-006
+    title: As a user, I want to import ontologies from external sources
+    description: |
+      I need to import ontologies from JSON, CSV, and GraphML so I can integrate
+      data from other tools and migrate from legacy systems.
+
+    priority: P1
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I select import
+        When I upload a JSON file
+        Then it is validated and imported with conflict resolution
+
+      - Given I import a CSV file
+        When column mappings are ambiguous
+        Then I can manually map columns to ontology properties
+
+      - Given I import a GraphML file
+        When it contains custom attributes
+        Then I can map attributes to ontology properties
+
+      - Given import has validation errors
+        When I review errors
+        Then I can fix them and retry import
+
+    test_scenarios:
+      - name: Import valid JSON
+        type: integration
+        steps:
+          - action: import_ontology
+            params:
+              format: json
+              data:
+                nodes:
+                  - id: n1
+                    label: Imported Node
+                    type: entity
+                edges:
+                  - source: n1
+                    target: n2
+                    relation: hasMany
+            expect:
+              success: true
+              imported_nodes: 1
+              imported_edges: 1
+
+      - name: Import with validation errors
+        type: integration
+        steps:
+          - action: import_ontology
+            params:
+              format: json
+              data:
+                nodes:
+                  - id: ""  # Invalid: empty ID
+                    label: Node 1
+                  - id: n2
+                    # Invalid: missing label
+            expect:
+              success: false
+              validation_errors.length: 2
+              validation_errors[0].field: id
+              validation_errors[1].field: label
+
+      - name: Import CSV with column mapping
+        type: integration
+        steps:
+          - action: upload_csv
+            file: nodes.csv
+            content: |
+              NodeID,NodeLabel,NodeType
+              n1,Node 1,entity
+              n2,Node 2,concept
+
+          - action: map_columns
+            params:
+              NodeID: id
+              NodeLabel: label
+              NodeType: type
+            expect:
+              mapping_valid: true
+
+          - action: execute_import
+            expect:
+              success: true
+              imported_nodes: 2
+
+      - name: Import GraphML
+        type: integration
+        steps:
+          - action: import_ontology
+            params:
+              format: graphml
+              data: |
+                <?xml version="1.0" encoding="UTF-8"?>
+                <graphml>
+                  <graph>
+                    <node id="n1">
+                      <data key="label">Node 1</data>
+                    </node>
+                  </graph>
+                </graphml>
+            expect:
+              success: true
+              imported_nodes: 1
+
+      - name: Import with conflict resolution
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Existing Node', version: 1 });
+        steps:
+          - action: import_ontology
+            params:
+              format: json
+              data:
+                nodes:
+                  - id: n1
+                    label: Imported Node
+            expect:
+              conflict_detected: true
+              conflict_resolution_options: ['skip', 'overwrite', 'merge']
+
+          - action: resolve_conflict
+            strategy: overwrite
+            expect:
+              success: true
+              node.label: Imported Node
+
+  # ==========================================================================
+  # STORY 7: Git-Like Version Control
+  # ==========================================================================
+  - id: US-ADV-007
+    title: As a data steward, I want Git-like version control for the ontology
+    description: |
+      I need version control similar to Git so I can track changes, create branches,
+      and merge updates safely.
+
+    priority: P1
+    story_points: 5
+
+    acceptance_criteria:
+      - Given I make changes to the ontology
+        When I commit
+        Then a snapshot is saved with message and author
+
+      - Given I want to experiment
+        When I create a branch
+        Then I can make changes without affecting main branch
+
+      - Given I have changes in a branch
+        When I merge to main
+        Then changes are integrated with conflict detection
+
+      - Given I view history
+        When I select a commit
+        Then I can see the diff of what changed
+
+    test_scenarios:
+      - name: Create commit
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Node 1' });
+          await createNode({ id: 'n2', label: 'Node 2' });
+        steps:
+          - action: create_commit
+            params:
+              message: Initial ontology structure
+              author: john@example.com
+            expect:
+              success: true
+              commit_id: defined
+              commit_hash: defined
+
+      - name: Create branch
+        type: integration
+        setup: |
+          await createCommit({ message: 'Initial commit' });
+        steps:
+          - action: create_branch
+            params:
+              name: feature/new-entities
+              from: main
+            expect:
+              success: true
+              branch_created: true
+              current_branch: feature/new-entities
+
+      - name: Merge branch
+        type: integration
+        setup: |
+          await createBranch('feature/test');
+          await switchBranch('feature/test');
+          await createNode({ id: 'n1', label: 'Feature Node' });
+          await createCommit({ message: 'Add feature node' });
+          await switchBranch('main');
+        steps:
+          - action: merge_branch
+            params:
+              source: feature/test
+              target: main
+            expect:
+              success: true
+              nodes.length: 1
+              nodes[0].id: n1
+
+      - name: View commit diff
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Original' });
+          await createCommit({ message: 'Commit 1' });
+          await updateNode({ id: 'n1', label: 'Updated' });
+          await createNode({ id: 'n2', label: 'New Node' });
+          await createCommit({ message: 'Commit 2' });
+        steps:
+          - action: view_commit_diff
+            commit_id: ${commit2.id}
+            expect:
+              success: true
+              diff.modified.length: 1
+              diff.modified[0].id: n1
+              diff.added.length: 1
+              diff.added[0].id: n2
+
+      - name: Conflict detection on merge
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Original' });
+          await createCommit({ message: 'Initial' });
+
+          // Branch 1: Update label to "Branch 1"
+          await createBranch('branch1');
+          await switchBranch('branch1');
+          await updateNode({ id: 'n1', label: 'Branch 1' });
+          await createCommit({ message: 'Update in branch1' });
+
+          // Branch 2: Update label to "Branch 2"
+          await switchBranch('main');
+          await createBranch('branch2');
+          await switchBranch('branch2');
+          await updateNode({ id: 'n1', label: 'Branch 2' });
+          await createCommit({ message: 'Update in branch2' });
+
+          // Merge branch1 to main
+          await switchBranch('main');
+          await mergeBranch('branch1');
+        steps:
+          - action: merge_branch
+            params:
+              source: branch2
+              target: main
+            expect:
+              success: false
+              conflicts.length: 1
+              conflicts[0].node_id: n1
+              conflicts[0].reason: label_conflict
+
+  # ==========================================================================
+  # STORY 8: Automated Backups
+  # ==========================================================================
+  - id: US-ADV-008
+    title: As a system admin, I want automated backups of the ontology
+    description: |
+      I need automated backups to S3 so I can recover from data loss and maintain
+      compliance with retention policies.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given backup schedule is configured
+        When the schedule triggers
+        Then a full ontology backup is created in S3
+
+      - Given backups accumulate over time
+        When retention policy is applied
+        Then old backups are automatically deleted
+
+      - Given I need to restore
+        When I select a backup
+        Then I can preview and restore the ontology state
+
+      - Given a backup fails
+        When I view alerts
+        Then I see error details and can retry
+
+    test_scenarios:
+      - name: Create manual backup
+        type: integration
+        setup: |
+          await createNodes([
+            { id: 'n1', label: 'Node 1' },
+            { id: 'n2', label: 'Node 2' }
+          ]);
+        steps:
+          - action: create_backup
+            params:
+              description: Manual backup before migration
+            expect:
+              success: true
+              backup_id: defined
+              s3_key: defined
+              s3_key.startsWith: backups/ontology-
+
+      - name: Scheduled backup execution
+        type: integration
+        setup: |
+          await configureBackupSchedule({
+            frequency: 'daily',
+            time: '02:00',
+            retention_days: 30
+          });
+        steps:
+          - action: trigger_scheduled_backup
+            expect:
+              success: true
+              backup_created: true
+
+      - name: Apply retention policy
+        type: integration
+        setup: |
+          await createBackups([
+            { date: '2025-10-01', id: 'backup-1' },
+            { date: '2025-10-15', id: 'backup-2' },
+            { date: '2025-11-01', id: 'backup-3' },
+            { date: '2025-11-07', id: 'backup-4' }
+          ]);
+          await configureRetentionPolicy({ days: 30 });
+        steps:
+          - action: apply_retention_policy
+            expect:
+              success: true
+              deleted_backups.includes: backup-1  # Older than 30 days
+              retained_backups.includes: backup-3
+              retained_backups.includes: backup-4
+
+      - name: Restore from backup
+        type: integration
+        setup: |
+          await createNode({ id: 'n1', label: 'Original Node' });
+          const backup = await createBackup({ description: 'Backup 1' });
+          await updateNode({ id: 'n1', label: 'Modified Node' });
+          await deleteNode({ id: 'n1' });
+        steps:
+          - action: restore_backup
+            backup_id: ${backup.id}
+            expect:
+              success: true
+              nodes.length: 1
+              nodes[0].label: Original Node
+
+      - name: Backup failure alert
+        type: integration
+        setup: |
+          await simulateS3Failure();
+        steps:
+          - action: trigger_backup
+            expect:
+              success: false
+              error: defined
+
+          - action: get_alerts
+            expect:
+              alerts.length: 1
+              alerts[0].type: backup_failed
+              alerts[0].severity: critical
+
+testing:
+  unit_tests:
+    framework: vitest
+    coverage_target: 90
+    files:
+      - platform/src/app/ontology/components/**/*.test.tsx
+      - platform/src/app/ontology/hooks/**/*.test.ts
+
+  integration_tests:
+    framework: vitest
+    setup: |
+      await setupTestDatabase();
+      await setupWebSocketServer();
+    teardown: |
+      await cleanupTestDatabase();
+      await shutdownWebSocketServer();
+    files:
+      - tests/integration/advanced-features/*.test.ts
+
+  e2e_tests:
+    framework: playwright
+    scenarios:
+      - User executes keyboard shortcuts
+      - User searches and executes command via palette
+      - User undos/redos multiple actions
+      - Two users collaborate in real-time
+      - User exports ontology as JSON/CSV/GraphML
+      - User imports ontology from external source
+      - User creates branch, commits, and merges
+      - User restores from backup
+
+deployment:
+  environments:
+    - name: dev
+      auto_deploy: true
+      on: push to main
+
+    - name: staging
+      auto_deploy: false
+      requires_approval: true
+
+    - name: production
+      auto_deploy: false
+      requires_approval: true
+      smoke_tests: true
+
+monitoring:
+  metrics:
+    - name: command_palette_usage
+      type: counter
+      labels: [command]
+
+    - name: undo_redo_operations
+      type: counter
+      labels: [operation, success]
+
+    - name: websocket_connections
+      type: gauge
+      labels: [room]
+
+    - name: export_operations
+      type: counter
+      labels: [format, success]
+
+    - name: import_operations
+      type: counter
+      labels: [format, success, errors]
+
+    - name: backup_operations
+      type: counter
+      labels: [type, success]
+
+    - name: backup_size_bytes
+      type: histogram
+      buckets: [1000000, 10000000, 100000000, 1000000000]
+
+  alerts:
+    - name: websocket_disconnections_high
+      condition: websocket_disconnection_rate > 0.1
+      severity: warning
+      notification: slack
+
+    - name: backup_failed
+      condition: backup_failure
+      severity: critical
+      notification: slack + pagerduty
+
+    - name: import_validation_errors_high
+      condition: import_validation_error_rate > 0.2
+      severity: warning
+      notification: slack
+
+documentation:
+  - file: features/05-advanced-features.md
+    type: feature_spec
+
+  - file: KEYBOARD-SHORTCUTS.md
+    type: user_guide
+
+  - file: VERSION-CONTROL-GUIDE.md
+    type: user_guide
+
+  - file: BACKUP-RESTORE-GUIDE.md
+    type: operational_guide

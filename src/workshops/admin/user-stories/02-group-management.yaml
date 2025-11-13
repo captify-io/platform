@@ -1,0 +1,512 @@
+# Admin Application - Group Management Feature
+# User stories for managing AWS Cognito groups in the admin panel
+
+feature:
+  id: "02"
+  name: "Group Management"
+  priority: "P0"
+  story_points: 3
+  estimated_hours: 8
+
+dependencies:
+  - "01-user-management"
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/types"
+
+aws_services:
+  - cognito
+
+cognito_operations:
+  - createGroup
+  - deleteGroup
+  - listGroups
+  - adminAddUserToGroup
+  - adminRemoveUserFromGroup
+  - listUsersInGroup
+
+standard_groups:
+  - captify-admin
+  - captify-operations
+
+stories:
+  - id: "US-02-01"
+    title: "Create User Group"
+    as_a: "System Administrator"
+    i_want: "to create new user groups in AWS Cognito"
+    so_that: "I can organize users and control access to applications"
+
+    acceptance_criteria:
+      - condition: "Valid group name is provided"
+        expected: "Group is created in Cognito with description"
+        test: "expect(result.group.GroupName).toBe(groupName)"
+
+      - condition: "Group name already exists"
+        expected: "Error is thrown with 'Group already exists' message"
+        test: "expect(promise).rejects.toThrow(/already exists/i)"
+
+      - condition: "Invalid group name format"
+        expected: "Validation error is thrown"
+        test: "expect(promise).rejects.toThrow(/invalid group name/i)"
+
+    edge_cases:
+      - scenario: "Group name with special characters"
+        expected_behavior: "Should validate against Cognito naming rules"
+
+      - scenario: "Group name too long (>128 chars)"
+        expected_behavior: "Should reject with validation error"
+
+    test_scenarios:
+      - name: "should create group successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                group:
+                  GroupName: "pmbook-admin"
+                  Description: "PMBook application administrators"
+                  UserPoolId: "us-east-1_abc123"
+                  CreationDate: "2025-11-04T10:00:00Z"
+          input:
+            groupData:
+              name: "pmbook-admin"
+              description: "PMBook application administrators"
+        act: "const result = await createGroup(input.groupData)"
+        assert:
+          - "expect(result).toBeDefined()"
+          - "expect(result.group.GroupName).toBe('pmbook-admin')"
+          - "expect(result.group.Description).toBe('PMBook application administrators')"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.cognito', operation: 'createGroup', data: expect.objectContaining({ GroupName: 'pmbook-admin' }) })"
+
+      - name: "should validate group name format"
+        type: "unit"
+        arrange:
+          input:
+            groupData:
+              name: "invalid group!"
+              description: "Invalid group"
+        act: "const promise = createGroup(input.groupData)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/invalid group name/i)"
+
+      - name: "should prevent duplicate group creation"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "GroupExistsException: Group already exists"
+          input:
+            groupData:
+              name: "captify-admin"
+              description: "Platform administrators"
+        act: "const promise = createGroup(input.groupData)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/already exists/i)"
+
+      - name: "should handle Cognito errors gracefully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "Cognito service unavailable"
+          input:
+            groupData:
+              name: "new-group"
+              description: "New group"
+        act: "const promise = createGroup(input.groupData)"
+        assert:
+          - "await expect(promise).rejects.toThrow()"
+
+  - id: "US-02-02"
+    title: "Delete User Group"
+    as_a: "System Administrator"
+    i_want: "to delete user groups from AWS Cognito"
+    so_that: "unused groups can be removed from the system"
+
+    acceptance_criteria:
+      - condition: "Valid group name is provided"
+        expected: "Group is deleted and confirmation is returned"
+        test: "expect(result.deleted).toBe(true)"
+
+      - condition: "Group does not exist"
+        expected: "Error is thrown with 'Group not found' message"
+        test: "expect(promise).rejects.toThrow(/not found/i)"
+
+      - condition: "Attempt to delete standard group"
+        expected: "Error is thrown preventing deletion of protected groups"
+        test: "expect(promise).rejects.toThrow(/cannot delete standard group/i)"
+
+    edge_cases:
+      - scenario: "Group has members"
+        expected_behavior: "Either prevent deletion or allow with warning (business decision)"
+
+      - scenario: "Group is referenced in app access control"
+        expected_behavior: "Check dependencies before deletion"
+
+    test_scenarios:
+      - name: "should delete group successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                deleted: true
+          input:
+            groupName: "old-group"
+        act: "const result = await deleteGroup(input.groupName)"
+        assert:
+          - "expect(result.deleted).toBe(true)"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.cognito', operation: 'deleteGroup', data: { GroupName: 'old-group' } })"
+
+      - name: "should prevent deletion of standard groups"
+        type: "unit"
+        arrange:
+          input:
+            groupName: "captify-admin"
+        act: "const promise = deleteGroup(input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/cannot delete standard group/i)"
+
+      - name: "should throw error if group not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "ResourceNotFoundException: Group not found"
+          input:
+            groupName: "nonexistent-group"
+        act: "const promise = deleteGroup(input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-02-03"
+    title: "Add User to Group"
+    as_a: "System Administrator"
+    i_want: "to add users to groups"
+    so_that: "users have the appropriate permissions and access"
+
+    acceptance_criteria:
+      - condition: "Valid user ID and group name provided"
+        expected: "User is added to group successfully"
+        test: "expect(result.success).toBe(true)"
+
+      - condition: "User does not exist"
+        expected: "Error is thrown with 'User not found' message"
+        test: "expect(promise).rejects.toThrow(/user not found/i)"
+
+      - condition: "Group does not exist"
+        expected: "Error is thrown with 'Group not found' message"
+        test: "expect(promise).rejects.toThrow(/group not found/i)"
+
+      - condition: "User already in group"
+        expected: "No-op, returns success (idempotent)"
+        test: "expect(result.success).toBe(true)"
+
+    edge_cases:
+      - scenario: "Add user to multiple groups simultaneously"
+        expected_behavior: "Support batch operations for efficiency"
+
+      - scenario: "User is inactive"
+        expected_behavior: "Allow addition but warn admin"
+
+    test_scenarios:
+      - name: "should add user to group successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+          input:
+            userId: "user-123"
+            groupName: "pmbook-user"
+        act: "const result = await addUserToGroup(input.userId, input.groupName)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.cognito', operation: 'adminAddUserToGroup', data: { Username: 'user-123', GroupName: 'pmbook-user' } })"
+
+      - name: "should handle user not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "UserNotFoundException: User not found"
+          input:
+            userId: "nonexistent-user"
+            groupName: "pmbook-user"
+        act: "const promise = addUserToGroup(input.userId, input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/user not found/i)"
+
+      - name: "should handle group not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "ResourceNotFoundException: Group not found"
+          input:
+            userId: "user-123"
+            groupName: "nonexistent-group"
+        act: "const promise = addUserToGroup(input.userId, input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/group not found/i)"
+
+      - name: "should be idempotent (user already in group)"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+          input:
+            userId: "user-123"
+            groupName: "pmbook-user"
+        act: "const result = await addUserToGroup(input.userId, input.groupName)"
+        assert:
+          - "expect(result.success).toBe(true)"
+
+  - id: "US-02-04"
+    title: "Remove User from Group"
+    as_a: "System Administrator"
+    i_want: "to remove users from groups"
+    so_that: "users no longer have access granted by that group"
+
+    acceptance_criteria:
+      - condition: "Valid user ID and group name provided"
+        expected: "User is removed from group successfully"
+        test: "expect(result.success).toBe(true)"
+
+      - condition: "User does not exist"
+        expected: "Error is thrown with 'User not found' message"
+        test: "expect(promise).rejects.toThrow(/user not found/i)"
+
+      - condition: "Group does not exist"
+        expected: "Error is thrown with 'Group not found' message"
+        test: "expect(promise).rejects.toThrow(/group not found/i)"
+
+      - condition: "User not in group"
+        expected: "No-op, returns success (idempotent)"
+        test: "expect(result.success).toBe(true)"
+
+    edge_cases:
+      - scenario: "Remove user from all groups"
+        expected_behavior: "Support batch removal for efficiency"
+
+      - scenario: "Remove last admin from captify-admin group"
+        expected_behavior: "Prevent removal to avoid lockout"
+
+    test_scenarios:
+      - name: "should remove user from group successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+          input:
+            userId: "user-123"
+            groupName: "pmbook-user"
+        act: "const result = await removeUserFromGroup(input.userId, input.groupName)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.cognito', operation: 'adminRemoveUserFromGroup', data: { Username: 'user-123', GroupName: 'pmbook-user' } })"
+
+      - name: "should handle user not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "UserNotFoundException: User not found"
+          input:
+            userId: "nonexistent-user"
+            groupName: "pmbook-user"
+        act: "const promise = removeUserFromGroup(input.userId, input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/user not found/i)"
+
+      - name: "should be idempotent (user not in group)"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+          input:
+            userId: "user-123"
+            groupName: "pmbook-user"
+        act: "const result = await removeUserFromGroup(input.userId, input.groupName)"
+        assert:
+          - "expect(result.success).toBe(true)"
+
+      - name: "should prevent removing last admin"
+        type: "unit"
+        arrange:
+          mocks:
+            listUsersInGroup:
+              resolves:
+                users: [{ Username: "user-123" }]
+          input:
+            userId: "user-123"
+            groupName: "captify-admin"
+        act: "const promise = removeUserFromGroup(input.userId, input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/cannot remove last admin/i)"
+
+  - id: "US-02-05"
+    title: "List All Groups"
+    as_a: "System Administrator"
+    i_want: "to view all user groups"
+    so_that: "I can manage group membership and access control"
+
+    acceptance_criteria:
+      - condition: "No filters applied"
+        expected: "Returns all groups with member counts"
+        test: "expect(result.groups).toBeDefined()"
+
+      - condition: "Empty result set"
+        expected: "Returns empty array"
+        test: "expect(result.groups).toHaveLength(0)"
+
+      - condition: "Pagination token provided"
+        expected: "Returns next page of results"
+        test: "expect(result.nextToken).toBeDefined()"
+
+    edge_cases:
+      - scenario: "Many groups (100+)"
+        expected_behavior: "Efficient pagination with cursor-based navigation"
+
+      - scenario: "Include member counts"
+        expected_behavior: "Optionally fetch member count per group"
+
+    test_scenarios:
+      - name: "should list all groups"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                groups:
+                  - GroupName: "captify-admin"
+                    Description: "Platform administrators"
+                    UserPoolId: "us-east-1_abc123"
+                  - GroupName: "pmbook-user"
+                    Description: "PMBook users"
+                    UserPoolId: "us-east-1_abc123"
+                nextToken: null
+          input:
+            options: {}
+        act: "const result = await listGroups(input.options)"
+        assert:
+          - "expect(result.groups).toHaveLength(2)"
+          - "expect(result.groups[0].GroupName).toBe('captify-admin')"
+          - "expect(result.groups[1].GroupName).toBe('pmbook-user')"
+
+      - name: "should handle pagination"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                groups:
+                  - GroupName: "group-1"
+                    Description: "Group 1"
+                nextToken: "token-123"
+          input:
+            options:
+              limit: 1
+        act: "const result = await listGroups(input.options)"
+        assert:
+          - "expect(result.groups).toHaveLength(1)"
+          - "expect(result.nextToken).toBe('token-123')"
+
+      - name: "should return empty array when no groups"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                groups: []
+                nextToken: null
+          input:
+            options: {}
+        act: "const result = await listGroups(input.options)"
+        assert:
+          - "expect(result.groups).toHaveLength(0)"
+          - "expect(result.nextToken).toBeNull()"
+
+  - id: "US-02-06"
+    title: "Get Group Details with Members"
+    as_a: "System Administrator"
+    i_want: "to view detailed information about a group including its members"
+    so_that: "I can audit group membership and permissions"
+
+    acceptance_criteria:
+      - condition: "Valid group name is provided"
+        expected: "Returns group details with member list"
+        test: "expect(result.group.GroupName).toBe(groupName)"
+
+      - condition: "Group does not exist"
+        expected: "Error is thrown with 'Group not found' message"
+        test: "expect(promise).rejects.toThrow(/not found/i)"
+
+      - condition: "Group has no members"
+        expected: "Returns group with empty members array"
+        test: "expect(result.members).toHaveLength(0)"
+
+    test_scenarios:
+      - name: "should get group details with members"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    group:
+                      GroupName: "pmbook-admin"
+                      Description: "PMBook administrators"
+                - resolves:
+                    users:
+                      - Username: "user-1"
+                        Attributes: [{ Name: "email", Value: "user1@example.com" }]
+                      - Username: "user-2"
+                        Attributes: [{ Name: "email", Value: "user2@example.com" }]
+          input:
+            groupName: "pmbook-admin"
+        act: "const result = await getGroup(input.groupName)"
+        assert:
+          - "expect(result.group.GroupName).toBe('pmbook-admin')"
+          - "expect(result.members).toHaveLength(2)"
+          - "expect(result.members[0].Username).toBe('user-1')"
+
+      - name: "should handle group not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "ResourceNotFoundException: Group not found"
+          input:
+            groupName: "nonexistent-group"
+        act: "const promise = getGroup(input.groupName)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+      - name: "should return empty members for group with no users"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    group:
+                      GroupName: "empty-group"
+                      Description: "Empty group"
+                - resolves:
+                    users: []
+          input:
+            groupName: "empty-group"
+        act: "const result = await getGroup(input.groupName)"
+        assert:
+          - "expect(result.group.GroupName).toBe('empty-group')"
+          - "expect(result.members).toHaveLength(0)"

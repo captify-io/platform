@@ -1,0 +1,308 @@
+feature:
+  id: "01"
+  name: "Message Actions Component"
+  priority: "P0"
+  story_points: 3
+  estimated_hours: 8
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/components/ui"
+  - "sonner"
+
+aws_services:
+  - dynamodb
+
+tables:
+  - core-message-feedback
+
+indexes:
+  - messageId-index
+  - userId-createdAt-index
+  - type-createdAt-index
+
+stories:
+  - id: "US-01-01"
+    title: "Copy message content to clipboard"
+    as_a: "user"
+    i_want: "to copy message content with one click"
+    so_that: "I can paste it into other applications"
+
+    acceptance_criteria:
+      - condition: "When I click the copy button on any message"
+        expected: "The message content is copied to clipboard and I see visual feedback"
+        test: "expect(navigator.clipboard.writeText).toHaveBeenCalledWith(content)"
+
+      - condition: "When copy succeeds"
+        expected: "A checkmark icon appears for 2 seconds and a toast notification shows"
+        test: "expect(screen.getByTitle('Copy')).toHaveClass('text-primary')"
+
+      - condition: "When copy fails"
+        expected: "An error toast notification is shown"
+        test: "expect(toast.error).toHaveBeenCalledWith('Failed to copy')"
+
+    edge_cases:
+      - scenario: "Clipboard API not available"
+        expected_behavior: "Graceful fallback or clear error message"
+
+      - scenario: "Very long message content (>100KB)"
+        expected_behavior: "Copy completes successfully without hanging"
+
+    test_scenarios:
+      - name: "should copy message content to clipboard"
+        type: "unit"
+        arrange:
+          mocks:
+            navigator.clipboard.writeText:
+              resolves: true
+          input:
+            messageId: "msg-123"
+            content: "Hello World"
+        act: "await userEvent.click(screen.getByTitle('Copy'))"
+        assert:
+          - "expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Hello World')"
+          - "expect(toast.success).toHaveBeenCalledWith('Copied to clipboard')"
+
+      - name: "should show check icon after successful copy"
+        type: "unit"
+        arrange:
+          mocks:
+            navigator.clipboard.writeText:
+              resolves: true
+        act: "await userEvent.click(screen.getByTitle('Copy'))"
+        assert:
+          - "expect(screen.getByRole('button')).toContainElement(screen.getByTestId('check-icon'))"
+
+      - name: "should handle copy failure gracefully"
+        type: "unit"
+        arrange:
+          mocks:
+            navigator.clipboard.writeText:
+              rejects: new Error('Clipboard access denied')
+        act: "await userEvent.click(screen.getByTitle('Copy'))"
+        assert:
+          - "expect(toast.error).toHaveBeenCalledWith('Failed to copy')"
+
+  - id: "US-01-02"
+    title: "Provide feedback on assistant messages"
+    as_a: "user"
+    i_want: "to like or dislike assistant responses"
+    so_that: "the system can learn from my feedback and improve"
+
+    acceptance_criteria:
+      - condition: "When viewing an assistant message"
+        expected: "I see like and dislike buttons"
+        test: "expect(screen.getByTitle('Like')).toBeInTheDocument()"
+
+      - condition: "When I click like"
+        expected: "Feedback is saved to database with type 'like'"
+        test: "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'put', table: 'core-message-feedback' }))"
+
+      - condition: "When I click the same feedback button again"
+        expected: "Feedback is removed (toggle behavior)"
+        test: "expect(feedbackType).toBe(null)"
+
+      - condition: "When viewing a user message"
+        expected: "Like/dislike buttons are not shown"
+        test: "expect(screen.queryByTitle('Like')).not.toBeInTheDocument()"
+
+    edge_cases:
+      - scenario: "Network failure during feedback save"
+        expected_behavior: "Show error toast and revert UI to previous state"
+
+      - scenario: "User clicks multiple times rapidly"
+        expected_behavior: "Debounce and only process last action"
+
+    test_scenarios:
+      - name: "should show like/dislike buttons for assistant messages"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: false
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.getByTitle('Like')).toBeInTheDocument()"
+          - "expect(screen.getByTitle('Dislike')).toBeInTheDocument()"
+
+      - name: "should not show like/dislike for user messages"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: true
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.queryByTitle('Like')).not.toBeInTheDocument()"
+          - "expect(screen.queryByTitle('Dislike')).not.toBeInTheDocument()"
+
+      - name: "should save like feedback to database"
+        type: "integration"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves: { success: true }
+          input:
+            messageId: "msg-123"
+            isUserMessage: false
+        act: "await userEvent.click(screen.getByTitle('Like'))"
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ service: 'platform.dynamodb', operation: 'put', table: 'core-message-feedback' }))"
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ Item: expect.objectContaining({ type: 'like', messageId: 'msg-123' }) }) }))"
+
+      - name: "should toggle feedback on second click"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves: { success: true }
+        act: |
+          await userEvent.click(screen.getByTitle('Like'))
+          await userEvent.click(screen.getByTitle('Like'))
+        assert:
+          - "expect(screen.getByTitle('Like')).not.toHaveClass('text-primary')"
+
+      - name: "should handle feedback save error"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: new Error('Network error')
+        act: "await userEvent.click(screen.getByTitle('Like'))"
+        assert:
+          - "expect(toast.error).toHaveBeenCalledWith('Failed to save feedback')"
+          - "expect(screen.getByTitle('Like')).not.toHaveClass('text-primary')"
+
+  - id: "US-01-03"
+    title: "Edit user messages inline"
+    as_a: "user"
+    i_want: "to edit my sent messages"
+    so_that: "I can correct mistakes or clarify my request"
+
+    acceptance_criteria:
+      - condition: "When viewing my message"
+        expected: "I see an edit button"
+        test: "expect(screen.getByTitle('Edit')).toBeInTheDocument()"
+
+      - condition: "When I click edit"
+        expected: "The onEdit callback is called with the message ID"
+        test: "expect(onEdit).toHaveBeenCalledWith('msg-123')"
+
+      - condition: "When viewing assistant messages"
+        expected: "Edit button is not shown"
+        test: "expect(screen.queryByTitle('Edit')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should show edit button for user messages"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: true
+            onEdit: jest.fn()
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.getByTitle('Edit')).toBeInTheDocument()"
+
+      - name: "should call onEdit when clicked"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: true
+            onEdit: jest.fn()
+        act: "await userEvent.click(screen.getByTitle('Edit'))"
+        assert:
+          - "expect(input.onEdit).toHaveBeenCalledWith('msg-123')"
+
+  - id: "US-01-04"
+    title: "Delete user messages"
+    as_a: "user"
+    i_want: "to delete messages I've sent"
+    so_that: "I can remove mistakes or unwanted content"
+
+    acceptance_criteria:
+      - condition: "When viewing my message"
+        expected: "I see a delete button"
+        test: "expect(screen.getByTitle('Delete')).toBeInTheDocument()"
+
+      - condition: "When I click delete"
+        expected: "The onDelete callback is called with the message ID"
+        test: "expect(onDelete).toHaveBeenCalledWith('msg-123')"
+
+      - condition: "When viewing assistant messages"
+        expected: "Delete button is not shown"
+        test: "expect(screen.queryByTitle('Delete')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should show delete button for user messages"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: true
+            onDelete: jest.fn()
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.getByTitle('Delete')).toBeInTheDocument()"
+
+      - name: "should call onDelete when clicked"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: true
+            onDelete: jest.fn()
+        act: "await userEvent.click(screen.getByTitle('Delete'))"
+        assert:
+          - "expect(input.onDelete).toHaveBeenCalledWith('msg-123')"
+
+  - id: "US-01-05"
+    title: "Retry assistant response generation"
+    as_a: "user"
+    i_want: "to regenerate an assistant's response"
+    so_that: "I can get a different or better answer"
+
+    acceptance_criteria:
+      - condition: "When viewing an assistant message and onRetry is provided"
+        expected: "I see a retry button"
+        test: "expect(screen.getByTitle('Retry')).toBeInTheDocument()"
+
+      - condition: "When I click retry"
+        expected: "The onRetry callback is called"
+        test: "expect(onRetry).toHaveBeenCalled()"
+
+    test_scenarios:
+      - name: "should show retry button for assistant messages when onRetry provided"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: false
+            onRetry: jest.fn()
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.getByTitle('Retry')).toBeInTheDocument()"
+
+      - name: "should not show retry when onRetry not provided"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: false
+        act: "render(<MessageActions {...input} />)"
+        assert:
+          - "expect(screen.queryByTitle('Retry')).not.toBeInTheDocument()"
+
+      - name: "should call onRetry when clicked"
+        type: "unit"
+        arrange:
+          input:
+            messageId: "msg-123"
+            isUserMessage: false
+            onRetry: jest.fn()
+        act: "await userEvent.click(screen.getByTitle('Retry'))"
+        assert:
+          - "expect(input.onRetry).toHaveBeenCalledWith('msg-123')"

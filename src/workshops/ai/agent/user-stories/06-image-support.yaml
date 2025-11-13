@@ -1,0 +1,313 @@
+feature:
+  id: "06"
+  name: "Image Support"
+  priority: "P2"
+  story_points: 8
+  estimated_hours: 16
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/services/aws/s3"
+  - "@captify-io/core/services/aws/bedrock"
+  - "@captify-io/core/components/ui"
+
+aws_services:
+  - s3
+  - bedrock
+
+tables: []
+
+indexes: []
+
+stories:
+  - id: "US-06-01"
+    title: "Display images in message content"
+    as_a: "user"
+    i_want: "to see images embedded in assistant messages"
+    so_that: "I can view visual content generated or referenced by the AI"
+
+    acceptance_criteria:
+      - condition: "When message contains image message part"
+        expected: "Image is displayed inline with proper sizing"
+        test: "expect(screen.getByRole('img')).toBeInTheDocument()"
+
+      - condition: "When image is loading"
+        expected: "Loading skeleton is shown"
+        test: "expect(screen.getByTestId('image-skeleton')).toBeInTheDocument()"
+
+      - condition: "When image fails to load"
+        expected: "Error placeholder with retry button is shown"
+        test: "expect(screen.getByText('Failed to load image')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should render image when image part exists"
+        type: "unit"
+        arrange:
+          input:
+            message:
+              parts:
+                - type: "image"
+                  url: "https://example.com/image.jpg"
+                  alt: "Example diagram"
+        act: "render(<MessageBubble {...input} />)"
+        assert:
+          - "expect(screen.getByRole('img')).toBeInTheDocument()"
+          - "expect(screen.getByRole('img')).toHaveAttribute('src', 'https://example.com/image.jpg')"
+          - "expect(screen.getByRole('img')).toHaveAttribute('alt', 'Example diagram')"
+
+      - name: "should show loading skeleton while image loads"
+        type: "unit"
+        arrange:
+          input:
+            message:
+              parts:
+                - type: "image"
+                  url: "https://example.com/image.jpg"
+        act: "render(<MessageBubble {...input} />)"
+        assert:
+          - "expect(screen.getByTestId('image-skeleton')).toBeInTheDocument()"
+
+      - name: "should show error state when image fails to load"
+        type: "unit"
+        arrange:
+          input:
+            message:
+              parts:
+                - type: "image"
+                  url: "https://invalid.com/broken.jpg"
+        act: |
+          render(<MessageBubble {...input} />)
+          fireEvent.error(screen.getByRole('img'))
+        assert:
+          - "expect(screen.getByText('Failed to load image')).toBeInTheDocument()"
+          - "expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()"
+
+  - id: "US-06-02"
+    title: "Upload images to conversation"
+    as_a: "user"
+    i_want: "to upload images to share with the agent"
+    so_that: "I can ask questions about visual content"
+
+    acceptance_criteria:
+      - condition: "When I click the image upload button"
+        expected: "File picker opens for image selection"
+        test: "expect(screen.getByLabelText('Upload image')).toBeInTheDocument()"
+
+      - condition: "When I select an image"
+        expected: "Image is uploaded to S3 and preview is shown"
+        test: "expect(s3.upload).toHaveBeenCalled()"
+
+      - condition: "When upload completes"
+        expected: "Image is added to message input as attachment"
+        test: "expect(screen.getByTestId('image-preview')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should open file picker when upload button clicked"
+        type: "unit"
+        arrange: {}
+        act: "await userEvent.click(screen.getByRole('button', { name: /upload image/i }))"
+        assert:
+          - "expect(screen.getByLabelText('Upload image')).toBeInTheDocument()"
+
+      - name: "should upload image to S3 when file selected"
+        type: "integration"
+        arrange:
+          mocks:
+            s3.upload:
+              resolves:
+                url: "https://s3.amazonaws.com/bucket/image.jpg"
+          input:
+            file: "test.jpg"
+            fileType: "image/jpeg"
+        act: |
+          const file = new File(['image'], input.file, { type: input.fileType })
+          const inputEl = screen.getByLabelText('Upload image')
+          await userEvent.upload(inputEl, file)
+        assert:
+          - "expect(s3.upload).toHaveBeenCalled()"
+          - "expect(s3.upload).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'image/jpeg' }))"
+
+      - name: "should show preview after upload"
+        type: "unit"
+        arrange:
+          mocks:
+            s3.upload:
+              resolves:
+                url: "https://s3.amazonaws.com/bucket/image.jpg"
+          input:
+            file: "test.jpg"
+            fileType: "image/jpeg"
+        act: |
+          const file = new File(['image'], input.file, { type: input.fileType })
+          await userEvent.upload(screen.getByLabelText('Upload image'), file)
+          await waitFor(() => screen.getByTestId('image-preview'))
+        assert:
+          - "expect(screen.getByTestId('image-preview')).toBeInTheDocument()"
+          - "expect(screen.getByRole('img')).toHaveAttribute('src', 'https://s3.amazonaws.com/bucket/image.jpg')"
+
+  - id: "US-06-03"
+    title: "Generate images using AI"
+    as_a: "user"
+    i_want: "to request image generation from the agent"
+    so_that: "I can create visual content through conversation"
+
+    acceptance_criteria:
+      - condition: "When agent calls image generation tool"
+        expected: "Image is generated via Bedrock Stability AI"
+        test: "expect(bedrock.generateImage).toHaveBeenCalled()"
+
+      - condition: "When generation is in progress"
+        expected: "Loading state with progress indicator is shown"
+        test: "expect(screen.getByText('Generating image...')).toBeInTheDocument()"
+
+      - condition: "When generation completes"
+        expected: "Generated image is displayed in message"
+        test: "expect(screen.getByRole('img')).toHaveAttribute('src', expect.stringContaining('s3'))"
+
+    test_scenarios:
+      - name: "should call Bedrock when generation requested"
+        type: "integration"
+        arrange:
+          mocks:
+            bedrock.generateImage:
+              resolves:
+                images:
+                  - base64: "iVBORw0KGgoAAAANS..."
+                    seed: 12345
+        act: |
+          await sendMessage({ text: "Generate an image of a sunset" })
+          await waitFor(() => bedrock.generateImage)
+        assert:
+          - "expect(bedrock.generateImage).toHaveBeenCalled()"
+          - "expect(bedrock.generateImage).toHaveBeenCalledWith(expect.objectContaining({ prompt: expect.stringContaining('sunset') }))"
+
+      - name: "should show loading state during generation"
+        type: "unit"
+        arrange:
+          input:
+            status: "generating"
+            prompt: "A sunset over mountains"
+        act: "render(<ImageGenerationStatus {...input} />)"
+        assert:
+          - "expect(screen.getByText('Generating image...')).toBeInTheDocument()"
+          - "expect(screen.getByRole('progressbar')).toBeInTheDocument()"
+
+      - name: "should display generated image when complete"
+        type: "integration"
+        arrange:
+          mocks:
+            bedrock.generateImage:
+              resolves:
+                images:
+                  - base64: "iVBORw0KGgoAAAANS..."
+            s3.upload:
+              resolves:
+                url: "https://s3.amazonaws.com/bucket/generated-123.jpg"
+        act: |
+          await sendMessage({ text: "Generate an image of a sunset" })
+          await waitFor(() => screen.getByRole('img'))
+        assert:
+          - "expect(screen.getByRole('img')).toBeInTheDocument()"
+          - "expect(screen.getByRole('img')).toHaveAttribute('src', 'https://s3.amazonaws.com/bucket/generated-123.jpg')"
+
+  - id: "US-06-04"
+    title: "View image in full-screen modal"
+    as_a: "user"
+    i_want: "to click on an image to view it in full size"
+    so_that: "I can see details more clearly"
+
+    acceptance_criteria:
+      - condition: "When I click on an image"
+        expected: "Full-screen modal opens with the image"
+        test: "expect(screen.getByRole('dialog')).toBeInTheDocument()"
+
+      - condition: "When modal is open"
+        expected: "Image is displayed at full resolution with zoom controls"
+        test: "expect(screen.getByRole('button', { name: /zoom/i })).toBeInTheDocument()"
+
+      - condition: "When I close the modal"
+        expected: "Modal closes and returns to message view"
+        test: "expect(screen.queryByRole('dialog')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should open modal when image clicked"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image.jpg"
+            alt: "Example"
+        act: "await userEvent.click(screen.getByRole('img'))"
+        assert:
+          - "expect(screen.getByRole('dialog')).toBeInTheDocument()"
+          - "expect(screen.getByRole('dialog')).toContainElement(screen.getAllByRole('img')[1])"
+
+      - name: "should show zoom controls in modal"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image.jpg"
+        act: "await userEvent.click(screen.getByRole('img'))"
+        assert:
+          - "expect(screen.getByRole('button', { name: /zoom in/i })).toBeInTheDocument()"
+          - "expect(screen.getByRole('button', { name: /zoom out/i })).toBeInTheDocument()"
+
+      - name: "should close modal when close button clicked"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image.jpg"
+        act: |
+          await userEvent.click(screen.getByRole('img'))
+          await userEvent.click(screen.getByRole('button', { name: /close/i }))
+        assert:
+          - "expect(screen.queryByRole('dialog')).not.toBeInTheDocument()"
+
+  - id: "US-06-05"
+    title: "Optimize image loading performance"
+    as_a: "user"
+    i_want: "images to load efficiently without blocking the page"
+    so_that: "I can continue reading while images load"
+
+    acceptance_criteria:
+      - condition: "When scrolling through messages with images"
+        expected: "Images load lazily as they enter viewport"
+        test: "expect(img).toHaveAttribute('loading', 'lazy')"
+
+      - condition: "When image is large"
+        expected: "Responsive sizes are used for different viewports"
+        test: "expect(img).toHaveAttribute('srcset')"
+
+      - condition: "When bandwidth is limited"
+        expected: "Lower resolution versions load first"
+        test: "expect(img).toHaveAttribute('src', expect.stringContaining('thumbnail'))"
+
+    test_scenarios:
+      - name: "should use lazy loading for images"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image.jpg"
+        act: "render(<ImageMessage {...input} />)"
+        assert:
+          - "expect(screen.getByRole('img')).toHaveAttribute('loading', 'lazy')"
+
+      - name: "should use srcset for responsive images"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image.jpg"
+            srcset: "https://example.com/image-800.jpg 800w, https://example.com/image-1200.jpg 1200w"
+        act: "render(<ImageMessage {...input} />)"
+        assert:
+          - "expect(screen.getByRole('img')).toHaveAttribute('srcset')"
+
+      - name: "should load thumbnail first for large images"
+        type: "unit"
+        arrange:
+          input:
+            src: "https://example.com/image-large.jpg"
+            thumbnail: "https://example.com/image-thumb.jpg"
+        act: "render(<ImageMessage {...input} />)"
+        assert:
+          - "expect(screen.getByRole('img')).toHaveAttribute('src', 'https://example.com/image-thumb.jpg')"

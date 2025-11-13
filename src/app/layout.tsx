@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { SessionProvider, useSession } from "next-auth/react";
 import {
   CaptifyProvider,
@@ -18,39 +18,28 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     (window.location.pathname.startsWith("/auth/") ||
      window.location.pathname.startsWith("/api/auth/"));
 
-  // Handle redirect to sign-in only when session status changes
-  // This prevents page reload on every render (e.g., when switching browser tabs)
-  useEffect(() => {
-    // Skip auth check for auth pages to prevent infinite loop
-    if (isAuthPage) {
-      return;
-    }
-
-    // If no session, session error, or expired tokens, redirect to sign-in
-    if (
-      status === "unauthenticated" ||
-      (!session?.user && status !== "loading") ||
-      (session as any)?.error === "RefreshAccessTokenError"
-    ) {
-      // Clear storage on error
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-      window.location.href = "/api/auth/signin";
-    }
-  }, [status, session, isAuthPage]);
-
-  // If loading, show nothing (brief flash only)
-  if (status === "loading") {
-    return null;
-  }
-
   // Skip auth check for auth pages to prevent infinite loop
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  // If no session, show nothing while redirecting
-  if (status === "unauthenticated" || !session?.user) {
+  // If no session or token refresh error, redirect to sign-in
+  if (
+    status === "unauthenticated" ||
+    (!session?.user && status !== "loading") ||
+    (session as any)?.error === "RefreshAccessTokenError"
+  ) {
+    if (typeof window !== "undefined") {
+      // Clear storage and sign out properly
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      window.location.href = "/api/auth/signout?callbackUrl=/api/auth/signin";
+    }
+    return null;
+  }
+
+  // If loading, show nothing (brief flash only)
+  if (status === "loading") {
     return null;
   }
 

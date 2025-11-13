@@ -1,0 +1,513 @@
+# Admin Application - Access Requests Feature
+# User stories for self-service access request workflow
+
+feature:
+  id: "04"
+  name: "Access Requests"
+  priority: "P1"
+  story_points: 5
+  estimated_hours: 12
+
+dependencies:
+  - "01-user-management"
+  - "02-group-management"
+  - "03-application-management"
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/types"
+
+aws_services:
+  - dynamodb
+  - ses
+  - sns
+  - cognito
+
+tables:
+  - core-access-request
+
+indexes:
+  - userId-createdAt-index
+  - appSlug-status-index
+  - status-createdAt-index
+
+stories:
+  - id: "US-04-01"
+    title: "Submit Access Request"
+    as_a: "Platform User"
+    i_want: "to request access to an application"
+    so_that: "I can use the application once approved"
+
+    acceptance_criteria:
+      - condition: "Valid app slug and reason provided"
+        expected: "Request is created with pending status"
+        test: "expect(result.request.status).toBe('pending')"
+
+      - condition: "User already has pending request for same app"
+        expected: "Error with 'duplicate request' message"
+        test: "expect(promise).rejects.toThrow(/duplicate request/i)"
+
+      - condition: "App does not exist"
+        expected: "Error with 'App not found' message"
+        test: "expect(promise).rejects.toThrow(/app not found/i)"
+
+    edge_cases:
+      - scenario: "User already has access to app"
+        expected_behavior: "Allow request but flag as 'already has access'"
+
+      - scenario: "Empty reason provided"
+        expected_behavior: "Reject with validation error"
+
+    test_scenarios:
+      - name: "should create access request successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item:
+                      id: "app-pmbook-001"
+                      name: "PMBook"
+                      slug: "pmbook"
+                      requiredGroups: ["pmbook-user"]
+                - resolves:
+                    items: []
+                - resolves:
+                    item:
+                      id: "request-123"
+                      userId: "user-123"
+                      appSlug: "pmbook"
+                      appName: "PMBook"
+                      status: "pending"
+                      reason: "Need access for project work"
+                      createdAt: "2025-11-04T10:00:00Z"
+          input:
+            userId: "user-123"
+            appSlug: "pmbook"
+            reason: "Need access for project work"
+        act: "const result = await createAccessRequest(input.userId, input.appSlug, input.reason)"
+        assert:
+          - "expect(result.request).toBeDefined()"
+          - "expect(result.request.status).toBe('pending')"
+          - "expect(result.request.appSlug).toBe('pmbook')"
+          - "expect(result.request.reason).toBe('Need access for project work')"
+
+      - name: "should prevent duplicate pending requests"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item: { id: "app-pmbook-001", name: "PMBook" }
+                - resolves:
+                    items:
+                      - id: "request-existing"
+                        status: "pending"
+                        appSlug: "pmbook"
+          input:
+            userId: "user-123"
+            appSlug: "pmbook"
+            reason: "Need access"
+        act: "const promise = createAccessRequest(input.userId, input.appSlug, input.reason)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/duplicate request/i)"
+
+      - name: "should validate app exists"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item: null
+          input:
+            userId: "user-123"
+            appSlug: "nonexistent-app"
+            reason: "Need access"
+        act: "const promise = createAccessRequest(input.userId, input.appSlug, input.reason)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/app not found/i)"
+
+      - name: "should validate reason is provided"
+        type: "unit"
+        arrange:
+          input:
+            userId: "user-123"
+            appSlug: "pmbook"
+            reason: ""
+        act: "const promise = createAccessRequest(input.userId, input.appSlug, input.reason)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/reason is required/i)"
+
+  - id: "US-04-02"
+    title: "List Access Requests"
+    as_a: "System Administrator"
+    i_want: "to view all access requests with filters"
+    so_that: "I can review and manage pending requests"
+
+    acceptance_criteria:
+      - condition: "No filters applied"
+        expected: "Returns all requests sorted by date"
+        test: "expect(result.requests).toBeDefined()"
+
+      - condition: "Filter by status"
+        expected: "Returns only requests with that status"
+        test: "expect(result.requests.every(r => r.status === filterStatus)).toBe(true)"
+
+      - condition: "Filter by app slug"
+        expected: "Returns only requests for that app"
+        test: "expect(result.requests.every(r => r.appSlug === filterApp)).toBe(true)"
+
+    test_scenarios:
+      - name: "should list all access requests"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "request-1"
+                    userId: "user-123"
+                    appSlug: "pmbook"
+                    status: "pending"
+                    createdAt: "2025-11-04T10:00:00Z"
+                  - id: "request-2"
+                    userId: "user-456"
+                    appSlug: "aihub"
+                    status: "pending"
+                    createdAt: "2025-11-04T09:00:00Z"
+          input:
+            options: {}
+        act: "const result = await listAccessRequests(input.options)"
+        assert:
+          - "expect(result.requests).toHaveLength(2)"
+          - "expect(result.requests[0].id).toBe('request-1')"
+
+      - name: "should filter by status"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "request-1"
+                    status: "pending"
+          input:
+            options:
+              status: "pending"
+        act: "const result = await listAccessRequests(input.options)"
+        assert:
+          - "expect(result.requests).toHaveLength(1)"
+          - "expect(result.requests[0].status).toBe('pending')"
+
+      - name: "should filter by app slug"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "request-1"
+                    appSlug: "pmbook"
+          input:
+            options:
+              appSlug: "pmbook"
+        act: "const result = await listAccessRequests(input.options)"
+        assert:
+          - "expect(result.requests).toHaveLength(1)"
+          - "expect(result.requests[0].appSlug).toBe('pmbook')"
+
+  - id: "US-04-03"
+    title: "Approve Access Request"
+    as_a: "System Administrator"
+    i_want: "to approve a user's access request"
+    so_that: "they can be granted access to the application"
+
+    acceptance_criteria:
+      - condition: "Valid request ID and groups provided"
+        expected: "Request is approved, user added to groups"
+        test: "expect(result.request.status).toBe('approved')"
+
+      - condition: "Request not found"
+        expected: "Error with 'Request not found' message"
+        test: "expect(promise).rejects.toThrow(/not found/i)"
+
+      - condition: "Request already processed"
+        expected: "Error with 'already processed' message"
+        test: "expect(promise).rejects.toThrow(/already processed/i)"
+
+    edge_cases:
+      - scenario: "User already in requested groups"
+        expected_behavior: "Still mark as approved, groups are idempotent"
+
+      - scenario: "Groups don't exist"
+        expected_behavior: "Rollback approval, return error"
+
+    test_scenarios:
+      - name: "should approve request successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item:
+                      id: "request-123"
+                      userId: "user-123"
+                      appSlug: "pmbook"
+                      status: "pending"
+                - resolves:
+                    success: true
+                - resolves:
+                    item:
+                      id: "request-123"
+                      status: "approved"
+                      reviewedBy: "admin-456"
+                      reviewedAt: "2025-11-04T11:00:00Z"
+                      groupsGranted: ["pmbook-user"]
+          input:
+            requestId: "request-123"
+            groups: ["pmbook-user"]
+            adminId: "admin-456"
+            notes: "Approved for project work"
+        act: "const result = await approveRequest(input.requestId, input.groups, input.adminId, input.notes)"
+        assert:
+          - "expect(result.request.status).toBe('approved')"
+          - "expect(result.request.reviewedBy).toBe('admin-456')"
+          - "expect(result.request.groupsGranted).toContain('pmbook-user')"
+
+      - name: "should prevent approving already processed request"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "request-123"
+                  status: "approved"
+          input:
+            requestId: "request-123"
+            groups: ["pmbook-user"]
+            adminId: "admin-456"
+        act: "const promise = approveRequest(input.requestId, input.groups, input.adminId)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/already processed/i)"
+
+      - name: "should throw error if request not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item: null
+          input:
+            requestId: "nonexistent"
+            groups: ["pmbook-user"]
+            adminId: "admin-456"
+        act: "const promise = approveRequest(input.requestId, input.groups, input.adminId)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-04-04"
+    title: "Deny Access Request"
+    as_a: "System Administrator"
+    i_want: "to deny a user's access request"
+    so_that: "inappropriate requests are rejected with reason"
+
+    acceptance_criteria:
+      - condition: "Valid request ID and reason provided"
+        expected: "Request is denied with reason recorded"
+        test: "expect(result.request.status).toBe('denied')"
+
+      - condition: "No reason provided"
+        expected: "Error with 'denial reason required' message"
+        test: "expect(promise).rejects.toThrow(/reason required/i)"
+
+      - condition: "Request already processed"
+        expected: "Error with 'already processed' message"
+        test: "expect(promise).rejects.toThrow(/already processed/i)"
+
+    test_scenarios:
+      - name: "should deny request successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item:
+                      id: "request-123"
+                      userId: "user-123"
+                      appSlug: "pmbook"
+                      status: "pending"
+                - resolves:
+                    item:
+                      id: "request-123"
+                      status: "denied"
+                      reviewedBy: "admin-456"
+                      reviewedAt: "2025-11-04T11:00:00Z"
+                      denialReason: "Insufficient justification"
+          input:
+            requestId: "request-123"
+            adminId: "admin-456"
+            reason: "Insufficient justification"
+        act: "const result = await denyRequest(input.requestId, input.adminId, input.reason)"
+        assert:
+          - "expect(result.request.status).toBe('denied')"
+          - "expect(result.request.denialReason).toBe('Insufficient justification')"
+          - "expect(result.request.reviewedBy).toBe('admin-456')"
+
+      - name: "should require denial reason"
+        type: "unit"
+        arrange:
+          input:
+            requestId: "request-123"
+            adminId: "admin-456"
+            reason: ""
+        act: "const promise = denyRequest(input.requestId, input.adminId, input.reason)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/reason required/i)"
+
+      - name: "should prevent denying already processed request"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "request-123"
+                  status: "approved"
+          input:
+            requestId: "request-123"
+            adminId: "admin-456"
+            reason: "Not needed"
+        act: "const promise = denyRequest(input.requestId, input.adminId, input.reason)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/already processed/i)"
+
+  - id: "US-04-05"
+    title: "Get Request Details"
+    as_a: "System Administrator"
+    i_want: "to view detailed information about an access request"
+    so_that: "I can make an informed approval/denial decision"
+
+    acceptance_criteria:
+      - condition: "Valid request ID provided"
+        expected: "Returns request with user info and app info"
+        test: "expect(result.request).toBeDefined()"
+
+      - condition: "Request not found"
+        expected: "Error with 404 status"
+        test: "expect(error.status).toBe(404)"
+
+      - condition: "Include user's current groups"
+        expected: "Returns user's existing group memberships"
+        test: "expect(result.userGroups).toBeDefined()"
+
+    test_scenarios:
+      - name: "should get request details successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item:
+                      id: "request-123"
+                      userId: "user-123"
+                      userName: "John Doe"
+                      userEmail: "john@example.com"
+                      appSlug: "pmbook"
+                      appName: "PMBook"
+                      status: "pending"
+                      reason: "Need access for project"
+                      createdAt: "2025-11-04T10:00:00Z"
+                - resolves:
+                    groups: ["captify-user"]
+                - resolves:
+                    item:
+                      id: "app-pmbook-001"
+                      requiredGroups: ["pmbook-user"]
+          input:
+            requestId: "request-123"
+            includeUserInfo: true
+        act: "const result = await getRequestDetails(input.requestId, input.includeUserInfo)"
+        assert:
+          - "expect(result.request).toBeDefined()"
+          - "expect(result.request.userName).toBe('John Doe')"
+          - "expect(result.userGroups).toContain('captify-user')"
+          - "expect(result.appRequiredGroups).toContain('pmbook-user')"
+
+      - name: "should throw error if request not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item: null
+          input:
+            requestId: "nonexistent"
+        act: "const promise = getRequestDetails(input.requestId)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-04-06"
+    title: "Get User's Request History"
+    as_a: "Platform User"
+    i_want: "to view my access request history"
+    so_that: "I can track the status of my requests"
+
+    acceptance_criteria:
+      - condition: "Valid user ID provided"
+        expected: "Returns user's requests sorted by date"
+        test: "expect(result.requests).toBeDefined()"
+
+      - condition: "User has no requests"
+        expected: "Returns empty array"
+        test: "expect(result.requests).toHaveLength(0)"
+
+      - condition: "Include app details"
+        expected: "Each request includes app name and info"
+        test: "expect(result.requests[0].appName).toBeDefined()"
+
+    test_scenarios:
+      - name: "should get user's request history"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "request-1"
+                    userId: "user-123"
+                    appSlug: "pmbook"
+                    appName: "PMBook"
+                    status: "approved"
+                    createdAt: "2025-11-03T10:00:00Z"
+                  - id: "request-2"
+                    userId: "user-123"
+                    appSlug: "aihub"
+                    appName: "AI Hub"
+                    status: "pending"
+                    createdAt: "2025-11-04T10:00:00Z"
+          input:
+            userId: "user-123"
+        act: "const result = await getUserRequests(input.userId)"
+        assert:
+          - "expect(result.requests).toHaveLength(2)"
+          - "expect(result.requests[0].userId).toBe('user-123')"
+          - "expect(result.requests[0].status).toBe('approved')"
+
+      - name: "should return empty array for user with no requests"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items: []
+          input:
+            userId: "user-no-requests"
+        act: "const result = await getUserRequests(input.userId)"
+        assert:
+          - "expect(result.requests).toHaveLength(0)"

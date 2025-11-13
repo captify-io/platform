@@ -1,0 +1,346 @@
+feature:
+  id: "04"
+  name: "Chain of Thought Visualization"
+  priority: "P1"
+  story_points: 8
+  estimated_hours: 16
+
+dependencies:
+  - "03" # Context Display (uses similar collapsible pattern)
+
+services_required:
+  - "@captify-io/core/components/ui"
+  - "@captify-io/core/lib/utils"
+
+aws_services: []
+
+tables: []
+
+indexes: []
+
+stories:
+  - id: "US-04-01"
+    title: "View reasoning steps for assistant responses"
+    as_a: "user"
+    i_want: "to see the AI's reasoning steps before the final answer"
+    so_that: "I can understand how the AI arrived at its conclusion"
+
+    acceptance_criteria:
+      - condition: "When message has reasoning metadata"
+        expected: "Reasoning steps are displayed in a collapsible section"
+        test: "expect(screen.getByText('Reasoning')).toBeInTheDocument()"
+
+      - condition: "When reasoning section is collapsed"
+        expected: "Only the title and step count are visible"
+        test: "expect(screen.getByText('3 steps')).toBeInTheDocument()"
+
+      - condition: "When reasoning section is expanded"
+        expected: "All reasoning steps are visible with titles and content"
+        test: "expect(screen.getByText('Step 1:')).toBeInTheDocument()"
+
+      - condition: "When message has no reasoning metadata"
+        expected: "Reasoning section is not displayed"
+        test: "expect(screen.queryByText('Reasoning')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display reasoning section when metadata exists"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Analyze the question"
+                content: "The user is asking about contract renewal dates"
+              - step: 2
+                title: "Query the database"
+                content: "Search for contracts with renewal dates in Q1 2025"
+              - step: 3
+                title: "Format the results"
+                content: "Present the data in a table format"
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.getByText('Reasoning')).toBeInTheDocument()"
+          - "expect(screen.getByText('3 steps')).toBeInTheDocument()"
+
+      - name: "should expand to show all steps when clicked"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Analyze the question"
+                content: "The user is asking about contract renewal dates"
+        act: |
+          render(<ChainOfThought {...input} />)
+          await userEvent.click(screen.getByText('Reasoning'))
+        assert:
+          - "expect(screen.getByText('Step 1:')).toBeInTheDocument()"
+          - "expect(screen.getByText('Analyze the question')).toBeInTheDocument()"
+          - "expect(screen.getByText('The user is asking about contract renewal dates')).toBeInTheDocument()"
+
+      - name: "should not display when no reasoning metadata"
+        type: "unit"
+        arrange:
+          input:
+            reasoning: null
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.queryByText('Reasoning')).not.toBeInTheDocument()"
+
+  - id: "US-04-02"
+    title: "Display tool calls within reasoning steps"
+    as_a: "user"
+    i_want: "to see which tools were called during reasoning"
+    so_that: "I can understand what data sources informed the answer"
+
+    acceptance_criteria:
+      - condition: "When reasoning step includes tool calls"
+        expected: "Tool names are displayed with icons"
+        test: "expect(screen.getByText('queryDatabase')).toBeInTheDocument()"
+
+      - condition: "When clicking on a tool name"
+        expected: "Tool details are shown (input/output)"
+        test: "expect(onToolClick).toHaveBeenCalledWith('tool-123')"
+
+      - condition: "When step has no tool calls"
+        expected: "Only step content is shown"
+        test: "expect(screen.queryByTestId('tool-badge')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display tool badges for steps with tool calls"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Query the database"
+                content: "Searching for contracts..."
+                toolCalls:
+                  - "queryDatabase"
+                  - "fetchContractDetails"
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.getByText('queryDatabase')).toBeInTheDocument()"
+          - "expect(screen.getByText('fetchContractDetails')).toBeInTheDocument()"
+
+      - name: "should call onToolClick when tool badge clicked"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Query"
+                content: "Searching..."
+                toolCalls: ["queryDatabase"]
+            onToolClick: jest.fn()
+        act: "await userEvent.click(screen.getByText('queryDatabase'))"
+        assert:
+          - "expect(input.onToolClick).toHaveBeenCalledWith('queryDatabase')"
+
+      - name: "should not show tool section when no tools called"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Analyze"
+                content: "Thinking..."
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.queryByTestId('tool-badge')).not.toBeInTheDocument()"
+
+  - id: "US-04-03"
+    title: "Show duration for each reasoning step"
+    as_a: "user"
+    i_want: "to see how long each reasoning step took"
+    so_that: "I can understand performance and where time was spent"
+
+    acceptance_criteria:
+      - condition: "When reasoning step includes duration"
+        expected: "Duration is displayed in human-readable format"
+        test: "expect(screen.getByText('1.2s')).toBeInTheDocument()"
+
+      - condition: "When step took less than 1 second"
+        expected: "Duration shows in milliseconds"
+        test: "expect(screen.getByText('350ms')).toBeInTheDocument()"
+
+      - condition: "When step has no duration"
+        expected: "Duration is not displayed"
+        test: "expect(screen.queryByText(/ms|s/)).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display duration in seconds for long steps"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Query"
+                content: "Searching..."
+                duration: 1234
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.getByText('1.2s')).toBeInTheDocument()"
+
+      - name: "should display duration in milliseconds for fast steps"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Analyze"
+                content: "Thinking..."
+                duration: 350
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.getByText('350ms')).toBeInTheDocument()"
+
+      - name: "should not display duration when not provided"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Step"
+                content: "Content"
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.queryByText(/ms|s/)).not.toBeInTheDocument()"
+
+  - id: "US-04-04"
+    title: "Collapse and expand individual reasoning steps"
+    as_a: "user"
+    i_want: "to collapse individual steps I've already reviewed"
+    so_that: "I can focus on specific parts of the reasoning"
+
+    acceptance_criteria:
+      - condition: "When a reasoning step is displayed"
+        expected: "Step has expand/collapse icon"
+        test: "expect(screen.getByRole('button', { name: /expand|collapse/i })).toBeInTheDocument()"
+
+      - condition: "When I click to collapse a step"
+        expected: "Step content is hidden, only title remains visible"
+        test: "expect(screen.queryByText('Step content...')).not.toBeVisible()"
+
+      - condition: "When I expand a collapsed step"
+        expected: "Step content becomes visible again"
+        test: "expect(screen.getByText('Step content...')).toBeVisible()"
+
+    test_scenarios:
+      - name: "should start with all steps expanded"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Step 1"
+                content: "Content 1"
+              - step: 2
+                title: "Step 2"
+                content: "Content 2"
+        act: |
+          render(<ChainOfThought {...input} />)
+          await userEvent.click(screen.getByText('Reasoning'))
+        assert:
+          - "expect(screen.getByText('Content 1')).toBeVisible()"
+          - "expect(screen.getByText('Content 2')).toBeVisible()"
+
+      - name: "should collapse step when collapse button clicked"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Step 1"
+                content: "Content 1"
+        act: |
+          render(<ChainOfThought {...input} />)
+          await userEvent.click(screen.getByText('Reasoning'))
+          const collapseBtn = screen.getAllByRole('button').find(btn => btn.getAttribute('aria-label')?.includes('Collapse'))
+          await userEvent.click(collapseBtn)
+        assert:
+          - "expect(screen.queryByText('Content 1')).not.toBeVisible()"
+          - "expect(screen.getByText('Step 1')).toBeVisible()"
+
+      - name: "should expand collapsed step when expand button clicked"
+        type: "unit"
+        arrange:
+          input:
+            reasoning:
+              - step: 1
+                title: "Step 1"
+                content: "Content 1"
+        act: |
+          render(<ChainOfThought {...input} />)
+          await userEvent.click(screen.getByText('Reasoning'))
+          const collapseBtn = screen.getAllByRole('button').find(btn => btn.getAttribute('aria-label')?.includes('Collapse'))
+          await userEvent.click(collapseBtn)
+          const expandBtn = screen.getAllByRole('button').find(btn => btn.getAttribute('aria-label')?.includes('Expand'))
+          await userEvent.click(expandBtn)
+        assert:
+          - "expect(screen.getByText('Content 1')).toBeVisible()"
+
+  - id: "US-04-05"
+    title: "Persist reasoning visibility preference"
+    as_a: "user"
+    i_want: "my reasoning section expanded/collapsed state to be remembered"
+    so_that: "I don't have to re-expand it on every message"
+
+    acceptance_criteria:
+      - condition: "When I expand the reasoning section"
+        expected: "Preference is saved to localStorage"
+        test: "expect(localStorage.setItem).toHaveBeenCalledWith('reasoningExpanded', 'true')"
+
+      - condition: "When I reload and reasoning section was expanded"
+        expected: "Section starts in expanded state"
+        test: "expect(screen.getByText('Step 1:')).toBeVisible()"
+
+      - condition: "When I collapse the reasoning section"
+        expected: "Preference is saved to localStorage"
+        test: "expect(localStorage.setItem).toHaveBeenCalledWith('reasoningExpanded', 'false')"
+
+    test_scenarios:
+      - name: "should save expanded state to localStorage"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.setItem: jest.fn()
+          input:
+            reasoning:
+              - step: 1
+                title: "Step"
+                content: "Content"
+        act: "await userEvent.click(screen.getByText('Reasoning'))"
+        assert:
+          - "expect(localStorage.setItem).toHaveBeenCalledWith('reasoningExpanded', 'true')"
+
+      - name: "should restore expanded state from localStorage"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.getItem:
+              returns: 'true'
+          input:
+            reasoning:
+              - step: 1
+                title: "Step"
+                content: "Content"
+        act: "render(<ChainOfThought {...input} />)"
+        assert:
+          - "expect(screen.getByText('Content')).toBeVisible()"
+
+      - name: "should save collapsed state to localStorage"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.setItem: jest.fn()
+            localStorage.getItem:
+              returns: 'true'
+          input:
+            reasoning:
+              - step: 1
+                title: "Step"
+                content: "Content"
+        act: "await userEvent.click(screen.getByText('Reasoning'))"
+        assert:
+          - "expect(localStorage.setItem).toHaveBeenCalledWith('reasoningExpanded', 'false')"

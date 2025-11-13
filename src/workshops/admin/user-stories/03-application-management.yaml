@@ -1,0 +1,481 @@
+# Admin Application - Application Management Feature
+# User stories for managing platform applications in the admin panel
+
+feature:
+  id: "03"
+  name: "Application Management"
+  priority: "P0"
+  story_points: 5
+  estimated_hours: 12
+
+dependencies:
+  - "01-user-management"
+  - "02-group-management"
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/types"
+
+aws_services:
+  - dynamodb
+  - sts
+  - iam
+
+tables:
+  - core-app
+
+indexes:
+  - slug-index
+  - category-index
+  - status-index
+
+pm2_integration: true
+
+stories:
+  - id: "US-03-01"
+    title: "List All Applications"
+    as_a: "System Administrator"
+    i_want: "to view all registered platform applications"
+    so_that: "I can manage and monitor the application ecosystem"
+
+    acceptance_criteria:
+      - condition: "No filters applied"
+        expected: "Returns all applications with metadata"
+        test: "expect(result.apps).toBeDefined()"
+
+      - condition: "Filter by category"
+        expected: "Returns only apps in that category"
+        test: "expect(result.apps.every(a => a.category === filterCategory)).toBe(true)"
+
+      - condition: "Include PM2 health status"
+        expected: "Each app shows online/offline status"
+        test: "expect(result.apps[0]).toHaveProperty('health')"
+
+    edge_cases:
+      - scenario: "PM2 not running"
+        expected_behavior: "Show apps but mark health as 'unknown'"
+
+      - scenario: "App in DynamoDB but not in PM2"
+        expected_behavior: "Show as 'not deployed'"
+
+    test_scenarios:
+      - name: "should list all applications"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "app-platform-001"
+                    name: "Platform"
+                    slug: "platform"
+                    category: "system"
+                    port: 3000
+                    status: "active"
+                    useSharedPool: true
+                  - id: "app-pmbook-001"
+                    name: "PMBook"
+                    slug: "pmbook"
+                    category: "application"
+                    port: 3001
+                    status: "active"
+                    identityPoolId: "us-east-1:pmbook-pool-123"
+          input:
+            options: {}
+        act: "const result = await listApps(input.options)"
+        assert:
+          - "expect(result.apps).toHaveLength(2)"
+          - "expect(result.apps[0].name).toBe('Platform')"
+          - "expect(result.apps[1].identityPoolId).toBeDefined()"
+
+      - name: "should filter apps by category"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - id: "app-platform-001"
+                    name: "Platform"
+                    category: "system"
+          input:
+            options:
+              category: "system"
+        act: "const result = await listApps(input.options)"
+        assert:
+          - "expect(result.apps).toHaveLength(1)"
+          - "expect(result.apps[0].category).toBe('system')"
+
+      - name: "should include PM2 health status"
+        type: "integration"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items: [{ id: "app-001", name: "Test App", port: 3000 }]
+            pm2.list:
+              resolves:
+                - name: "platform"
+                  pm_id: 0
+                  status: "online"
+                  cpu: 2.5
+                  memory: 123456789
+          input:
+            options:
+              includeHealth: true
+        act: "const result = await listApps(input.options)"
+        assert:
+          - "expect(result.apps[0].health).toBeDefined()"
+          - "expect(result.apps[0].health.status).toBe('online')"
+
+  - id: "US-03-02"
+    title: "Get Application Details"
+    as_a: "System Administrator"
+    i_want: "to view detailed information about a specific application"
+    so_that: "I can review its configuration and health status"
+
+    acceptance_criteria:
+      - condition: "Valid app ID provided"
+        expected: "Returns complete app configuration"
+        test: "expect(result.app).toHaveProperty('name')"
+
+      - condition: "App not found"
+        expected: "Error with 'App not found' message"
+        test: "expect(promise).rejects.toThrow(/not found/i)"
+
+      - condition: "Include Identity Pool details"
+        expected: "If app has dedicated pool, return pool configuration"
+        test: "expect(result.poolInfo).toBeDefined()"
+
+    test_scenarios:
+      - name: "should get app details successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "app-pmbook-001"
+                  name: "PMBook"
+                  slug: "pmbook"
+                  port: 3001
+                  identityPoolId: "us-east-1:pmbook-pool-123"
+                  poolConfig:
+                    authenticatedRole: "arn:aws:iam::123456789:role/pmbook-auth"
+          input:
+            appId: "app-pmbook-001"
+        act: "const result = await getApp(input.appId)"
+        assert:
+          - "expect(result.app).toBeDefined()"
+          - "expect(result.app.name).toBe('PMBook')"
+          - "expect(result.app.identityPoolId).toBe('us-east-1:pmbook-pool-123')"
+
+      - name: "should throw error if app not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item: null
+          input:
+            appId: "nonexistent"
+        act: "const promise = getApp(input.appId)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+      - name: "should include pool info for dedicated pools"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    item:
+                      id: "app-001"
+                      identityPoolId: "us-east-1:pool-123"
+                      poolConfig:
+                        authenticatedRole: "arn:aws:iam::123:role/auth"
+                - resolves:
+                    IdentityPoolId: "us-east-1:pool-123"
+                    IdentityPoolName: "pmbook-pool"
+          input:
+            appId: "app-001"
+            includePoolInfo: true
+        act: "const result = await getApp(input.appId, input.includePoolInfo)"
+        assert:
+          - "expect(result.poolInfo).toBeDefined()"
+          - "expect(result.poolInfo.IdentityPoolName).toBe('pmbook-pool')"
+
+  - id: "US-03-03"
+    title: "Update Application Configuration"
+    as_a: "System Administrator"
+    i_want: "to update application settings"
+    so_that: "I can change app name, description, required groups, etc."
+
+    acceptance_criteria:
+      - condition: "Valid updates provided"
+        expected: "App configuration is updated"
+        test: "expect(result.app.name).toBe(updatedName)"
+
+      - condition: "App not found"
+        expected: "Error with 404 status"
+        test: "expect(error.status).toBe(404)"
+
+      - condition: "Invalid slug format"
+        expected: "Validation error"
+        test: "expect(error.message).toMatch(/invalid slug/i)"
+
+    test_scenarios:
+      - name: "should update app configuration"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "app-001"
+                  name: "Updated App Name"
+                  description: "New description"
+                  requiredGroups: ["new-group"]
+          input:
+            appId: "app-001"
+            updates:
+              name: "Updated App Name"
+              description: "New description"
+              requiredGroups: ["new-group"]
+        act: "const result = await updateApp(input.appId, input.updates)"
+        assert:
+          - "expect(result.app.name).toBe('Updated App Name')"
+          - "expect(result.app.description).toBe('New description')"
+          - "expect(result.app.requiredGroups).toContain('new-group')"
+
+      - name: "should validate slug format"
+        type: "unit"
+        arrange:
+          input:
+            appId: "app-001"
+            updates:
+              slug: "Invalid Slug!"
+        act: "const promise = updateApp(input.appId, input.updates)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/invalid slug/i)"
+
+      - name: "should throw error if app not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "App not found"
+          input:
+            appId: "nonexistent"
+            updates:
+              name: "New Name"
+        act: "const promise = updateApp(input.appId, input.updates)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-03-04"
+    title: "Assign Dedicated Identity Pool to App"
+    as_a: "System Administrator"
+    i_want: "to assign a dedicated AWS Identity Pool to an application"
+    so_that: "the app has isolated credentials and custom IAM policies"
+
+    acceptance_criteria:
+      - condition: "Valid pool ID and config provided"
+        expected: "App is updated with dedicated pool"
+        test: "expect(result.app.identityPoolId).toBe(poolId)"
+
+      - condition: "Pool does not exist"
+        expected: "Error with 'Pool not found' message"
+        test: "expect(promise).rejects.toThrow(/pool not found/i)"
+
+      - condition: "IAM role ARN invalid"
+        expected: "Validation error"
+        test: "expect(error.message).toMatch(/invalid arn/i)"
+
+    test_scenarios:
+      - name: "should assign dedicated pool successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              onCall:
+                - resolves:
+                    IdentityPoolId: "us-east-1:pool-123"
+                    IdentityPoolName: "pmbook-pool"
+                - resolves:
+                    item:
+                      id: "app-pmbook-001"
+                      identityPoolId: "us-east-1:pool-123"
+                      useSharedPool: false
+                      poolConfig:
+                        authenticatedRole: "arn:aws:iam::123:role/pmbook-auth"
+          input:
+            appId: "app-pmbook-001"
+            poolId: "us-east-1:pool-123"
+            poolConfig:
+              authenticatedRole: "arn:aws:iam::123:role/pmbook-auth"
+        act: "const result = await assignIdentityPool(input.appId, input.poolId, input.poolConfig)"
+        assert:
+          - "expect(result.app.identityPoolId).toBe('us-east-1:pool-123')"
+          - "expect(result.app.useSharedPool).toBe(false)"
+          - "expect(result.app.poolConfig.authenticatedRole).toBe('arn:aws:iam::123:role/pmbook-auth')"
+
+      - name: "should validate pool exists"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "ResourceNotFoundException: Identity pool not found"
+          input:
+            appId: "app-001"
+            poolId: "us-east-1:nonexistent"
+            poolConfig:
+              authenticatedRole: "arn:aws:iam::123:role/auth"
+        act: "const promise = assignIdentityPool(input.appId, input.poolId, input.poolConfig)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/pool not found/i)"
+
+      - name: "should validate IAM role ARN format"
+        type: "unit"
+        arrange:
+          input:
+            appId: "app-001"
+            poolId: "us-east-1:pool-123"
+            poolConfig:
+              authenticatedRole: "invalid-arn"
+        act: "const promise = assignIdentityPool(input.appId, input.poolId, input.poolConfig)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/invalid arn/i)"
+
+  - id: "US-03-05"
+    title: "Remove Dedicated Identity Pool (Switch to Shared)"
+    as_a: "System Administrator"
+    i_want: "to switch an app from dedicated pool back to shared platform pool"
+    so_that: "the app uses centralized credentials again"
+
+    acceptance_criteria:
+      - condition: "App has dedicated pool"
+        expected: "Pool is removed, useSharedPool set to true"
+        test: "expect(result.app.useSharedPool).toBe(true)"
+
+      - condition: "App already uses shared pool"
+        expected: "No-op, return success"
+        test: "expect(result.app.useSharedPool).toBe(true)"
+
+    test_scenarios:
+      - name: "should remove dedicated pool successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "app-001"
+                  identityPoolId: null
+                  useSharedPool: true
+                  poolConfig: null
+          input:
+            appId: "app-001"
+        act: "const result = await removeIdentityPool(input.appId)"
+        assert:
+          - "expect(result.app.useSharedPool).toBe(true)"
+          - "expect(result.app.identityPoolId).toBeNull()"
+          - "expect(result.app.poolConfig).toBeNull()"
+
+      - name: "should be idempotent (already using shared)"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "app-001"
+                  useSharedPool: true
+                  identityPoolId: null
+          input:
+            appId: "app-001"
+        act: "const result = await removeIdentityPool(input.appId)"
+        assert:
+          - "expect(result.app.useSharedPool).toBe(true)"
+
+  - id: "US-03-06"
+    title: "Get PM2 Process Health Status"
+    as_a: "System Administrator"
+    i_want: "to view real-time health metrics for PM2 processes"
+    so_that: "I can monitor application uptime and resource usage"
+
+    acceptance_criteria:
+      - condition: "PM2 is running"
+        expected: "Returns process list with CPU, memory, uptime"
+        test: "expect(result.processes[0]).toHaveProperty('cpu')"
+
+      - condition: "PM2 is not running"
+        expected: "Returns error or empty array with warning"
+        test: "expect(result.warning).toMatch(/pm2 not available/i)"
+
+      - condition: "Specific app requested"
+        expected: "Returns only that app's process"
+        test: "expect(result.processes).toHaveLength(1)"
+
+    test_scenarios:
+      - name: "should get PM2 health status"
+        type: "integration"
+        arrange:
+          mocks:
+            pm2.list:
+              resolves:
+                - name: "platform"
+                  pm_id: 0
+                  status: "online"
+                  cpu: 2.5
+                  memory: 123456789
+                  pm2_env:
+                    uptime: 86400000
+                    restart_time: 0
+                - name: "pmbook"
+                  pm_id: 1
+                  status: "online"
+                  cpu: 1.8
+                  memory: 98765432
+                  pm2_env:
+                    uptime: 86400000
+                    restart_time: 0
+          input:
+            options: {}
+        act: "const result = await getPM2Health(input.options)"
+        assert:
+          - "expect(result.processes).toHaveLength(2)"
+          - "expect(result.processes[0].name).toBe('platform')"
+          - "expect(result.processes[0].status).toBe('online')"
+          - "expect(result.processes[0].cpu).toBe(2.5)"
+
+      - name: "should filter by app name"
+        type: "integration"
+        arrange:
+          mocks:
+            pm2.list:
+              resolves:
+                - name: "pmbook"
+                  pm_id: 1
+                  status: "online"
+          input:
+            options:
+              appName: "pmbook"
+        act: "const result = await getPM2Health(input.options)"
+        assert:
+          - "expect(result.processes).toHaveLength(1)"
+          - "expect(result.processes[0].name).toBe('pmbook')"
+
+      - name: "should handle PM2 not running"
+        type: "integration"
+        arrange:
+          mocks:
+            pm2.connect:
+              rejects: "PM2 daemon not running"
+          input:
+            options: {}
+        act: "const result = await getPM2Health(input.options)"
+        assert:
+          - "expect(result.processes).toHaveLength(0)"
+          - "expect(result.warning).toMatch(/pm2 not available/i)"

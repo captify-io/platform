@@ -1,0 +1,268 @@
+feature:
+  id: "02"
+  name: "Enhanced Code Blocks"
+  priority: "P1"
+  story_points: 3
+  estimated_hours: 6
+
+dependencies: []
+
+services_required:
+  - "react-syntax-highlighter"
+  - "sonner"
+
+aws_services: []
+
+tables: []
+
+indexes: []
+
+stories:
+  - id: "US-02-01"
+    title: "View code with syntax highlighting"
+    as_a: "developer"
+    i_want: "to see code with proper syntax highlighting"
+    so_that: "I can read and understand code easily"
+
+    acceptance_criteria:
+      - condition: "When a message contains a code block"
+        expected: "Code is rendered with syntax highlighting based on language"
+        test: "expect(screen.getByText('const')).toHaveClass('token')"
+
+      - condition: "When language is specified in markdown fence"
+        expected: "Appropriate syntax highlighting is applied"
+        test: "expect(SyntaxHighlighter).toHaveBeenCalledWith(expect.objectContaining({ language: 'typescript' }))"
+
+      - condition: "When language is unknown"
+        expected: "Code is rendered with 'text' highlighting (no errors)"
+        test: "expect(SyntaxHighlighter).toHaveBeenCalledWith(expect.objectContaining({ language: 'text' }))"
+
+    test_scenarios:
+      - name: "should render code with syntax highlighting"
+        type: "unit"
+        arrange:
+          input:
+            language: "typescript"
+            code: "const x = 1;"
+        act: "render(<CodeBlock {...input} />)"
+        assert:
+          - "expect(screen.getByText('const')).toBeInTheDocument()"
+          - "expect(SyntaxHighlighter).toHaveBeenCalled()"
+
+      - name: "should detect language from className"
+        type: "unit"
+        arrange:
+          input:
+            className: "language-typescript"
+            children: "const x = 1;"
+        act: "const { language } = parseCodeProps(input)"
+        assert:
+          - "expect(language).toBe('typescript')"
+
+      - name: "should fallback to 'text' for unknown language"
+        type: "unit"
+        arrange:
+          input:
+            className: "language-unknown"
+            children: "some code"
+        act: "const { language } = parseCodeProps(input)"
+        assert:
+          - "expect(language).toBe('text')"
+
+  - id: "US-02-02"
+    title: "Toggle line numbers"
+    as_a: "developer"
+    i_want: "to toggle line numbers on and off"
+    so_that: "I can reference specific lines when needed"
+
+    acceptance_criteria:
+      - condition: "When viewing a code block"
+        expected: "Line numbers are shown by default"
+        test: "expect(screen.getByRole('checkbox')).toBeChecked()"
+
+      - condition: "When I toggle line numbers off"
+        expected: "Line numbers are hidden and preference is saved"
+        test: "expect(localStorage.getItem('codeBlockPrefs')).toContain('\"showLineNumbers\":false')"
+
+      - condition: "When I reload the page"
+        expected: "My line number preference is remembered"
+        test: "expect(screen.getByRole('checkbox')).toHaveProperty('checked', savedPreference)"
+
+    test_scenarios:
+      - name: "should show line numbers by default"
+        type: "unit"
+        arrange: {}
+        act: "render(<CodeBlock code='const x = 1;' language='typescript' />)"
+        assert:
+          - "expect(SyntaxHighlighter).toHaveBeenCalledWith(expect.objectContaining({ showLineNumbers: true }))"
+
+      - name: "should toggle line numbers"
+        type: "unit"
+        arrange: {}
+        act: |
+          render(<CodeBlock code='const x = 1;' language='typescript' />)
+          await userEvent.click(screen.getByRole('checkbox'))
+        assert:
+          - "expect(SyntaxHighlighter).toHaveBeenLastCalledWith(expect.objectContaining({ showLineNumbers: false }))"
+
+      - name: "should persist preference to localStorage"
+        type: "unit"
+        arrange:
+          mocks:
+            localStorage.setItem: jest.fn()
+        act: |
+          render(<CodeBlock code='const x = 1;' language='typescript' />)
+          await userEvent.click(screen.getByRole('checkbox'))
+        assert:
+          - "expect(localStorage.setItem).toHaveBeenCalledWith('codeBlockPrefs', expect.stringContaining('\"showLineNumbers\":false'))"
+
+  - id: "US-02-03"
+    title: "Copy code without line numbers"
+    as_a: "developer"
+    i_want: "to copy code without line numbers included"
+    so_that: "I can paste it directly into my editor"
+
+    acceptance_criteria:
+      - condition: "When I click the copy button"
+        expected: "Only the code content is copied, not line numbers"
+        test: "expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1;\\nconst y = 2;')"
+
+      - condition: "When copy succeeds"
+        expected: "Copy icon changes to check icon and toast shows"
+        test: "expect(screen.getByTestId('check-icon')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should copy code without line numbers"
+        type: "unit"
+        arrange:
+          mocks:
+            navigator.clipboard.writeText:
+              resolves: true
+          input:
+            code: "const x = 1;\\nconst y = 2;"
+            language: "typescript"
+            showLineNumbers: true
+        act: |
+          render(<CodeBlock {...input} />)
+          await userEvent.click(screen.getByTitle('Copy code'))
+        assert:
+          - "expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1;\\nconst y = 2;')"
+          - "expect(navigator.clipboard.writeText).not.toHaveBeenCalledWith(expect.stringContaining('1  '))"
+
+      - name: "should show visual feedback after copy"
+        type: "unit"
+        arrange:
+          mocks:
+            navigator.clipboard.writeText:
+              resolves: true
+        act: |
+          render(<CodeBlock code='const x = 1;' language='typescript' />)
+          await userEvent.click(screen.getByTitle('Copy code'))
+        assert:
+          - "expect(screen.getByTestId('check-icon')).toBeInTheDocument()"
+          - "expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Copied'))"
+
+  - id: "US-02-04"
+    title: "Expand and collapse long code blocks"
+    as_a: "user"
+    i_want: "long code blocks to be collapsed by default"
+    so_that: "my chat window doesn't get cluttered"
+
+    acceptance_criteria:
+      - condition: "When code has more than 20 lines"
+        expected: "Code block is collapsed showing only first 20 lines"
+        test: "expect(screen.getByRole('region')).toHaveStyle({ maxHeight: '400px' })"
+
+      - condition: "When I click 'Show more'"
+        expected: "Code block expands to show all lines"
+        test: "expect(screen.getByRole('region')).not.toHaveStyle({ maxHeight: '400px' })"
+
+      - condition: "When code has 20 or fewer lines"
+        expected: "No expand button is shown"
+        test: "expect(screen.queryByText(/Show.*more/)).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should collapse code blocks longer than 20 lines"
+        type: "unit"
+        arrange:
+          input:
+            code: Array(30).fill('const x = 1;').join('\\n')
+            language: "typescript"
+        act: "render(<CodeBlock {...input} />)"
+        assert:
+          - "expect(screen.getByText(/Show 10 more lines/)).toBeInTheDocument()"
+          - "expect(screen.getByRole('region')).toHaveStyle({ maxHeight: '400px' })"
+
+      - name: "should not show expand button for short code"
+        type: "unit"
+        arrange:
+          input:
+            code: Array(15).fill('const x = 1;').join('\\n')
+            language: "typescript"
+        act: "render(<CodeBlock {...input} />)"
+        assert:
+          - "expect(screen.queryByText(/Show.*more/)).not.toBeInTheDocument()"
+
+      - name: "should expand when button clicked"
+        type: "unit"
+        arrange:
+          input:
+            code: Array(30).fill('const x = 1;').join('\\n')
+            language: "typescript"
+        act: |
+          render(<CodeBlock {...input} />)
+          await userEvent.click(screen.getByText(/Show 10 more lines/))
+        assert:
+          - "expect(screen.getByText(/Show less/)).toBeInTheDocument()"
+          - "expect(screen.getByRole('region')).not.toHaveStyle({ maxHeight: '400px' })"
+
+      - name: "should collapse again when 'Show less' clicked"
+        type: "unit"
+        arrange:
+          input:
+            code: Array(30).fill('const x = 1;').join('\\n')
+            language: "typescript"
+        act: |
+          render(<CodeBlock {...input} />)
+          await userEvent.click(screen.getByText(/Show 10 more lines/))
+          await userEvent.click(screen.getByText(/Show less/))
+        assert:
+          - "expect(screen.getByText(/Show 10 more lines/)).toBeInTheDocument()"
+          - "expect(screen.getByRole('region')).toHaveStyle({ maxHeight: '400px' })"
+
+  - id: "US-02-05"
+    title: "Display language badge"
+    as_a: "developer"
+    i_want: "to see what programming language the code is"
+    so_that: "I know how to interpret and use it"
+
+    acceptance_criteria:
+      - condition: "When viewing a code block"
+        expected: "Language badge is visible in header"
+        test: "expect(screen.getByText('typescript')).toBeInTheDocument()"
+
+      - condition: "When language is 'text' or unknown"
+        expected: "Badge shows 'text' or is hidden"
+        test: "expect(screen.getByText('text')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should show language badge"
+        type: "unit"
+        arrange:
+          input:
+            code: "const x = 1;"
+            language: "typescript"
+        act: "render(<CodeBlock {...input} />)"
+        assert:
+          - "expect(screen.getByText('typescript')).toBeInTheDocument()"
+          - "expect(screen.getByText('typescript')).toHaveClass('language-badge')"
+
+      - name: "should show 'text' for unknown language"
+        type: "unit"
+        arrange:
+          input:
+            code: "some code"
+            language: "unknown"
+        act: "render(<CodeBlock {...input} />)"
+        assert:
+          - "expect(screen.getByText('text')).toBeInTheDocument()"

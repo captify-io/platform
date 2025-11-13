@@ -1,0 +1,367 @@
+# Admin Application - User Management Feature
+# User stories for managing users in the admin panel
+
+feature:
+  id: "01"
+  name: "User Management"
+  priority: "P0"
+  story_points: 5
+  estimated_hours: 12
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/types"
+
+aws_services:
+  - dynamodb
+  - cognito
+
+tables:
+  - core-user
+
+indexes:
+  - email-index
+  - status-index
+
+stories:
+  - id: "US-01-01"
+    title: "Fetch User by ID"
+    as_a: "System Administrator"
+    i_want: "to retrieve user details by their unique ID"
+    so_that: "I can view and manage individual user accounts"
+
+    acceptance_criteria:
+      - condition: "Valid user ID is provided"
+        expected: "User object is returned with all properties"
+        test: "expect(result).toHaveProperty('id')"
+
+      - condition: "User ID does not exist"
+        expected: "Error is thrown with 'User not found' message"
+        test: "expect(promise).rejects.toThrow('User not found')"
+
+      - condition: "Empty user ID is provided"
+        expected: "Error is thrown with 'User ID is required' message"
+        test: "expect(promise).rejects.toThrow('User ID is required')"
+
+    edge_cases:
+      - scenario: "User ID with special characters"
+        expected_behavior: "Should sanitize and validate ID format"
+
+      - scenario: "Concurrent requests for same user"
+        expected_behavior: "Should return cached result for performance"
+
+    test_scenarios:
+      - name: "should fetch user by ID successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "user-123"
+                  name: "Test User"
+                  email: "test@example.com"
+                  role: "admin"
+                  status: "active"
+          input:
+            userId: "user-123"
+        act: "const result = await getUserById(input.userId)"
+        assert:
+          - "expect(result).toBeDefined()"
+          - "expect(result.id).toBe('user-123')"
+          - "expect(result.email).toBe('test@example.com')"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.dynamodb', operation: 'get', table: 'core-user', data: { Key: { id: 'user-123' } } })"
+
+      - name: "should throw error if user not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item: null
+          input:
+            userId: "nonexistent"
+        act: "const promise = getUserById(input.userId)"
+        assert:
+          - "await expect(promise).rejects.toThrow('User not found')"
+          - "await expect(promise).rejects.toThrow(/nonexistent/)"
+
+      - name: "should throw error if userId is empty"
+        type: "unit"
+        arrange:
+          input:
+            userId: ""
+        act: "const promise = getUserById(input.userId)"
+        assert:
+          - "await expect(promise).rejects.toThrow('User ID is required')"
+
+      - name: "should handle DynamoDB errors gracefully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "DynamoDB service unavailable"
+          input:
+            userId: "user-123"
+        act: "const promise = getUserById(input.userId)"
+        assert:
+          - "await expect(promise).rejects.toThrow()"
+
+  - id: "US-01-02"
+    title: "Create New User"
+    as_a: "System Administrator"
+    i_want: "to create new user accounts"
+    so_that: "team members can access the system"
+
+    acceptance_criteria:
+      - condition: "Valid user data is provided"
+        expected: "User is created with unique ID and timestamp"
+        test: "expect(result.user.id).toBeDefined()"
+
+      - condition: "Email already exists"
+        expected: "Error is thrown with 409 conflict status"
+        test: "expect(error.status).toBe(409)"
+
+      - condition: "Invalid email format"
+        expected: "Validation error is thrown"
+        test: "expect(error.message).toMatch(/invalid email/i)"
+
+    edge_cases:
+      - scenario: "Duplicate email address"
+        expected_behavior: "Return 409 error without creating duplicate"
+
+      - scenario: "Missing required fields"
+        expected_behavior: "Return validation error listing missing fields"
+
+    test_scenarios:
+      - name: "should create user successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "user-new-123"
+                  name: "New User"
+                  email: "newuser@example.com"
+                  role: "user"
+                  status: "active"
+                  createdAt: "2025-11-03T10:00:00Z"
+          input:
+            userData:
+              name: "New User"
+              email: "newuser@example.com"
+              role: "user"
+        act: "const result = await createUser(input.userData)"
+        assert:
+          - "expect(result).toBeDefined()"
+          - "expect(result.id).toBeDefined()"
+          - "expect(result.email).toBe('newuser@example.com')"
+          - "expect(result.createdAt).toBeDefined()"
+
+      - name: "should validate email format"
+        type: "unit"
+        arrange:
+          input:
+            userData:
+              name: "Test User"
+              email: "invalid-email"
+              role: "user"
+        act: "const promise = createUser(input.userData)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/invalid email/i)"
+
+      - name: "should prevent duplicate email"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "ConditionalCheckFailedException: Email already exists"
+          input:
+            userData:
+              name: "Duplicate User"
+              email: "existing@example.com"
+              role: "user"
+        act: "const promise = createUser(input.userData)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/already exists/i)"
+
+  - id: "US-01-03"
+    title: "Update User Details"
+    as_a: "System Administrator"
+    i_want: "to update user account information"
+    so_that: "user profiles stay current and accurate"
+
+    acceptance_criteria:
+      - condition: "Valid user ID and update data provided"
+        expected: "User is updated and new data is returned"
+        test: "expect(result.name).toBe(updatedName)"
+
+      - condition: "User does not exist"
+        expected: "Error is thrown with 404 status"
+        test: "expect(error.status).toBe(404)"
+
+      - condition: "Attempt to change email to existing email"
+        expected: "Error is thrown with conflict message"
+        test: "expect(error.status).toBe(409)"
+
+    edge_cases:
+      - scenario: "Partial update (only some fields)"
+        expected_behavior: "Only specified fields are updated, others remain unchanged"
+
+      - scenario: "Update with no changes"
+        expected_behavior: "No-op, returns current user data"
+
+    test_scenarios:
+      - name: "should update user successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                item:
+                  id: "user-123"
+                  name: "Updated Name"
+                  email: "test@example.com"
+                  role: "admin"
+                  status: "active"
+                  updatedAt: "2025-11-03T10:30:00Z"
+          input:
+            userId: "user-123"
+            updates:
+              name: "Updated Name"
+        act: "const result = await updateUser(input.userId, input.updates)"
+        assert:
+          - "expect(result).toBeDefined()"
+          - "expect(result.name).toBe('Updated Name')"
+          - "expect(result.updatedAt).toBeDefined()"
+
+      - name: "should throw error if user not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "User not found"
+          input:
+            userId: "nonexistent"
+            updates:
+              name: "New Name"
+        act: "const promise = updateUser(input.userId, input.updates)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-01-04"
+    title: "Delete User Account"
+    as_a: "System Administrator"
+    i_want: "to delete user accounts"
+    so_that: "inactive or terminated users are removed from the system"
+
+    acceptance_criteria:
+      - condition: "Valid user ID is provided"
+        expected: "User is deleted and confirmation is returned"
+        test: "expect(result.deleted).toBe(true)"
+
+      - condition: "User does not exist"
+        expected: "Error is thrown with 404 status"
+        test: "expect(error.status).toBe(404)"
+
+      - condition: "Attempt to delete own account"
+        expected: "Error is thrown preventing self-deletion"
+        test: "expect(error.message).toMatch(/cannot delete your own account/i)"
+
+    edge_cases:
+      - scenario: "User has active sessions"
+        expected_behavior: "Delete user and invalidate all sessions"
+
+      - scenario: "User owns resources"
+        expected_behavior: "Either prevent deletion or transfer ownership (business logic decision)"
+
+    test_scenarios:
+      - name: "should delete user successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                deleted: true
+          input:
+            userId: "user-to-delete"
+        act: "const result = await deleteUser(input.userId)"
+        assert:
+          - "expect(result.deleted).toBe(true)"
+          - "expect(apiClient.run).toHaveBeenCalledWith({ service: 'platform.dynamodb', operation: 'delete', table: 'core-user', data: { Key: { id: 'user-to-delete' } } })"
+
+      - name: "should throw error if user not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: "User not found"
+          input:
+            userId: "nonexistent"
+        act: "const promise = deleteUser(input.userId)"
+        assert:
+          - "await expect(promise).rejects.toThrow(/not found/i)"
+
+  - id: "US-01-05"
+    title: "List All Users"
+    as_a: "System Administrator"
+    i_want: "to view a paginated list of all users"
+    so_that: "I can browse and manage the user base"
+
+    acceptance_criteria:
+      - condition: "No filters applied"
+        expected: "Returns first page of users (default 50)"
+        test: "expect(result.items.length).toBeLessThanOrEqual(50)"
+
+      - condition: "Status filter applied"
+        expected: "Returns only users matching status"
+        test: "expect(result.items.every(u => u.status === filterStatus)).toBe(true)"
+
+      - condition: "Pagination token provided"
+        expected: "Returns next page of results"
+        test: "expect(result.nextToken).toBeDefined()"
+
+    edge_cases:
+      - scenario: "Empty result set"
+        expected_behavior: "Return empty array with no nextToken"
+
+      - scenario: "Very large result set (10,000+ users)"
+        expected_behavior: "Efficient pagination with cursor-based navigation"
+
+    test_scenarios:
+      - name: "should list users with default pagination"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - { id: "user-1", name: "User 1", email: "user1@example.com" }
+                  - { id: "user-2", name: "User 2", email: "user2@example.com" }
+                nextToken: "token-123"
+          input:
+            options: {}
+        act: "const result = await listUsers(input.options)"
+        assert:
+          - "expect(result.items).toHaveLength(2)"
+          - "expect(result.nextToken).toBe('token-123')"
+
+      - name: "should filter users by status"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                items:
+                  - { id: "user-1", name: "Active User", status: "active" }
+          input:
+            options:
+              status: "active"
+        act: "const result = await listUsers(input.options)"
+        assert:
+          - "expect(result.items).toHaveLength(1)"
+          - "expect(result.items[0].status).toBe('active')"
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ FilterExpression: expect.stringContaining('status') }) }))"

@@ -1,0 +1,965 @@
+feature:
+  id: ontology-ai-sdk-tool-standardization
+  name: AI SDK Tool Standardization for Enterprise Ontology
+  description: |
+    Standardize all ontology tools for AI SDK 6 with Zod schema validation, enabling GenAI agents
+    to discover, validate, and execute operations across the enterprise knowledge graph with full
+    type safety and runtime validation.
+  priority: P0
+  story_points: 13
+  estimated_weeks: 2
+  owner: Platform Team
+  tags:
+    - ai-sdk
+    - ontology
+    - tools
+    - zod
+    - validation
+    - agents
+
+services:
+  backend:
+    - core/src/services/ontology
+    - core/src/services/agent/tools
+    - core/src/services/aws
+
+  aws_services:
+    - DynamoDB
+    - S3
+    - Glue
+    - Athena
+    - CloudWatch
+    - QuickSight
+    - Kendra
+
+tables:
+  - captify-core-ontology-node
+  - captify-core-ontology-edge
+  - captify-core-tool
+  - captify-core-agent
+
+user_stories:
+  # ==========================================================================
+  # STORY 1: Generic Ontology Tools
+  # ==========================================================================
+  - id: US-TOOL-001
+    title: As a GenAI agent, I want to introspect available entity types
+    description: |
+      I need to discover what entity types are available in the ontology so I can
+      query the appropriate data based on user requests.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I call ontology_types with no parameters
+        When the tool executes
+        Then I receive a list of all entity types with their names, categories, and domains
+
+      - Given I call ontology_types with category filter "entity"
+        When the tool executes
+        Then I only receive entity types in the "entity" category
+
+      - Given I call ontology_types with domain filter "PMBook"
+        When the tool executes
+        Then I only receive entity types in the "PMBook" domain
+
+      - Given I call ontology_types with includeSchemas: true
+        When the tool executes
+        Then each entity type includes its full schema definition
+
+      - Given I provide invalid parameters
+        When the tool validates input
+        Then I receive a descriptive Zod validation error
+
+    test_scenarios:
+      - name: List all entity types
+        type: integration
+        setup: |
+          // Seed ontology with test nodes
+          await seedOntologyNodes([
+            { id: 'test-contract', name: 'Contract', type: 'contract', category: 'entity', domain: 'PMBook' },
+            { id: 'test-user', name: 'User', type: 'user', category: 'entity', domain: 'Core' },
+            { id: 'test-workflow', name: 'Workflow', type: 'workflow', category: 'process', domain: 'Core' }
+          ]);
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params: {}
+            expect:
+              success: true
+              data.length: 3
+              data[0].name: Contract
+              data[0].category: entity
+
+      - name: Filter by category
+        type: integration
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params:
+              category: entity
+            expect:
+              success: true
+              data.length: 2
+              data.every(node => node.category === 'entity'): true
+
+      - name: Filter by domain
+        type: integration
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params:
+              domain: PMBook
+            expect:
+              success: true
+              data.length: 1
+              data[0].domain: PMBook
+
+      - name: Include schemas
+        type: integration
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params:
+              includeSchemas: true
+            expect:
+              success: true
+              data[0].properties.schema: defined
+              data[0].properties.schema.type: object
+
+      - name: Validate parameters with Zod
+        type: unit
+        steps:
+          - action: validate_params
+            tool: ontology_types
+            params:
+              category: 123  # invalid type
+            expect:
+              success: false
+              error.contains: Expected string, received number
+
+  # ==========================================================================
+  # STORY 2: Universal Query Tool
+  # ==========================================================================
+  - id: US-TOOL-002
+    title: As a GenAI agent, I want to query any entity type with dynamic filters
+    description: |
+      I need a universal query tool that works for any entity type, validates filters
+      against the entity's schema, and returns filtered results with pagination.
+
+    priority: P0
+    story_points: 5
+
+    acceptance_criteria:
+      - Given I query an entity type with valid filters
+        When the tool executes
+        Then I receive matching entities
+
+      - Given I query with filters that don't match the schema
+        When the tool validates filters
+        Then I receive a schema validation error
+
+      - Given I query with pagination parameters
+        When the tool executes
+        Then I receive the specified page of results with hasMore indicator
+
+      - Given I query with select fields
+        When the tool executes
+        Then only the specified fields are returned
+
+      - Given I query with orderBy
+        When the tool executes
+        Then results are sorted according to the specified order
+
+    test_scenarios:
+      - name: Query with equality filter
+        type: integration
+        setup: |
+          // Seed test contracts
+          await seedContracts([
+            { id: 'c1', contractNumber: 'ABC123', status: 'active', totalValue: 1000000 },
+            { id: 'c2', contractNumber: 'ABC124', status: 'draft', totalValue: 500000 },
+            { id: 'c3', contractNumber: 'ABC125', status: 'active', totalValue: 2000000 }
+          ]);
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              filters:
+                status: active
+            expect:
+              success: true
+              data.length: 2
+              data.every(c => c.status === 'active'): true
+
+      - name: Query with range filter
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              filters:
+                totalValue_gte: 1000000
+            expect:
+              success: true
+              data.length: 2
+              data.every(c => c.totalValue >= 1000000): true
+
+      - name: Query with pagination
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              limit: 2
+              offset: 0
+            expect:
+              success: true
+              data.length: 2
+              hasMore: true
+
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              limit: 2
+              offset: 2
+            expect:
+              success: true
+              data.length: 1
+              hasMore: false
+
+      - name: Query with field selection
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              select:
+                - id
+                - contractNumber
+                - status
+            expect:
+              success: true
+              data[0].keys.length: 3
+              data[0].id: defined
+              data[0].contractNumber: defined
+              data[0].status: defined
+              data[0].totalValue: undefined
+
+      - name: Query with orderBy
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              orderBy:
+                field: totalValue
+                direction: desc
+            expect:
+              success: true
+              data[0].totalValue: 2000000
+              data[1].totalValue: 1000000
+              data[2].totalValue: 500000
+
+      - name: Reject invalid filter field
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              filters:
+                invalidField: value
+            expect:
+              success: false
+              error.contains: Field 'invalidField' does not exist in contract schema
+
+      - name: Reject invalid limit
+        type: unit
+        steps:
+          - action: validate_params
+            tool: query
+            params:
+              typeName: contract
+              limit: 200
+            expect:
+              success: false
+              error.contains: must be less than or equal to 100
+
+  # ==========================================================================
+  # STORY 3: CRUD Operations
+  # ==========================================================================
+  - id: US-TOOL-003
+    title: As a GenAI agent, I want to create, update, and delete entities
+    description: |
+      I need tools to perform CRUD operations on entities with schema validation
+      and cascade delete rules.
+
+    priority: P0
+    story_points: 5
+
+    acceptance_criteria:
+      - Given I create an entity with valid data
+        When the tool executes
+        Then the entity is created and returned
+
+      - Given I create an entity with missing required fields
+        When the tool validates input
+        Then I receive a validation error listing missing fields
+
+      - Given I update an entity with partial data
+        When the tool executes
+        Then only the specified fields are updated
+
+      - Given I delete an entity with cascade rules
+        When the tool executes
+        Then the entity and related entities are deleted according to rules
+
+      - Given I analyze impact before delete
+        When the tool executes
+        Then I receive a preview of affected entities
+
+    test_scenarios:
+      - name: Create entity with valid data
+        type: integration
+        steps:
+          - action: call_tool
+            tool: create
+            params:
+              typeName: contract
+              input:
+                contractNumber: TEST123
+                title: Test Contract
+                status: draft
+                totalValue: 1000000
+            expect:
+              success: true
+              data.id: defined
+              data.contractNumber: TEST123
+              data.createdAt: defined
+
+      - name: Reject create with missing required fields
+        type: integration
+        steps:
+          - action: call_tool
+            tool: create
+            params:
+              typeName: contract
+              input:
+                title: Test Contract  # missing contractNumber
+            expect:
+              success: false
+              error.contains: Required field 'contractNumber' is missing
+
+      - name: Update entity with partial data
+        type: integration
+        setup: |
+          const contract = await createContract({ contractNumber: 'ABC123', status: 'draft', totalValue: 1000000 });
+        steps:
+          - action: call_tool
+            tool: update
+            params:
+              typeName: contract
+              id: ${contract.id}
+              input:
+                status: active
+            expect:
+              success: true
+              data.status: active
+              data.totalValue: 1000000  # unchanged
+
+      - name: Analyze delete impact
+        type: integration
+        setup: |
+          const contract = await createContract({ contractNumber: 'ABC123' });
+          await createCLIN({ contractId: contract.id, clinNumber: '0001' });
+          await createCLIN({ contractId: contract.id, clinNumber: '0002' });
+        steps:
+          - action: call_tool
+            tool: analyze_impact
+            params:
+              typeName: contract
+              id: ${contract.id}
+              operation: delete
+            expect:
+              success: true
+              affectedEntities.length: 2
+              affectedEntities.every(e => e.type === 'clin'): true
+              safetyLevel: warning
+              recommendation: Verify CLINs should be deleted
+
+      - name: Delete with cascade
+        type: integration
+        setup: |
+          const contract = await createContract({ contractNumber: 'ABC123' });
+          await createCLIN({ contractId: contract.id, clinNumber: '0001' });
+        steps:
+          - action: call_tool
+            tool: delete
+            params:
+              typeName: contract
+              id: ${contract.id}
+              force: true
+            expect:
+              success: true
+              deletedCount: 2  # contract + CLIN
+
+  # ==========================================================================
+  # STORY 4: AWS Service Tools (Glue)
+  # ==========================================================================
+  - id: US-TOOL-004
+    title: As a GenAI agent, I want to access AWS Glue data catalog
+    description: |
+      I need tools to browse Glue databases and tables, retrieve schemas, and
+      understand available data sources for analysis.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I list Glue databases
+        When the tool executes
+        Then I receive all databases with metadata
+
+      - Given I list tables in a database
+        When the tool executes
+        Then I receive all tables with their schemas
+
+      - Given I get a table schema
+        When the tool executes
+        Then I receive the full schema including column types
+
+      - Given I call tool with invalid database
+        When the tool executes
+        Then I receive a descriptive error
+
+    test_scenarios:
+      - name: List Glue databases
+        type: integration
+        setup: |
+          await createGlueDatabase('test_db', { description: 'Test database' });
+          await createGlueDatabase('prod_db', { description: 'Production database' });
+        steps:
+          - action: call_tool
+            tool: glue_get_databases
+            params: {}
+            expect:
+              success: true
+              data.DatabaseList.length: 2
+              data.DatabaseList[0].Name: test_db
+
+      - name: List tables in database
+        type: integration
+        setup: |
+          await createGlueTable('test_db', 'contracts', {
+            columns: [
+              { Name: 'id', Type: 'string' },
+              { Name: 'contractNumber', Type: 'string' },
+              { Name: 'totalValue', Type: 'double' }
+            ]
+          });
+        steps:
+          - action: call_tool
+            tool: glue_get_tables
+            params:
+              DatabaseName: test_db
+            expect:
+              success: true
+              data.TableList.length: 1
+              data.TableList[0].Name: contracts
+
+      - name: Get table schema
+        type: integration
+        steps:
+          - action: call_tool
+            tool: glue_get_table_schema
+            params:
+              DatabaseName: test_db
+              TableName: contracts
+            expect:
+              success: true
+              data.columns.length: 3
+              data.columns[0].Name: id
+              data.columns[0].Type: string
+
+      - name: Handle invalid database
+        type: integration
+        steps:
+          - action: call_tool
+            tool: glue_get_tables
+            params:
+              DatabaseName: nonexistent_db
+            expect:
+              success: false
+              error.contains: Database not found
+
+  # ==========================================================================
+  # STORY 5: AWS Service Tools (Athena)
+  # ==========================================================================
+  - id: US-TOOL-005
+    title: As a GenAI agent, I want to query data using Athena SQL
+    description: |
+      I need tools to execute Athena queries and retrieve results for data analysis.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I submit an Athena query
+        When the tool executes
+        Then the query is submitted and I receive a query execution ID
+
+      - Given I check query results
+        When the query completes
+        Then I receive the result rows
+
+      - Given I submit an invalid SQL query
+        When the tool executes
+        Then I receive a SQL syntax error
+
+    test_scenarios:
+      - name: Execute Athena query
+        type: integration
+        steps:
+          - action: call_tool
+            tool: athena_query
+            params:
+              query: SELECT * FROM contracts WHERE status = 'active' LIMIT 10
+              database: pmbook
+              outputLocation: s3://captify-athena-results/
+            expect:
+              success: true
+              queryExecutionId: defined
+
+      - name: Get query results
+        type: integration
+        setup: |
+          const queryId = await executeAthenaQuery('SELECT * FROM contracts LIMIT 10');
+          await waitForQueryCompletion(queryId);
+        steps:
+          - action: call_tool
+            tool: athena_get_query_results
+            params:
+              queryExecutionId: ${queryId}
+            expect:
+              success: true
+              data.ResultSet.Rows.length: 11  # header + 10 rows
+              data.ResultSet.Rows[0].Data[0].VarCharValue: id  # header
+
+      - name: Handle SQL syntax error
+        type: integration
+        steps:
+          - action: call_tool
+            tool: athena_query
+            params:
+              query: SELECT * FORM contracts  # typo: FORM instead of FROM
+              database: pmbook
+            expect:
+              success: false
+              error.contains: SYNTAX_ERROR
+
+  # ==========================================================================
+  # STORY 6: Widget Rendering Tools
+  # ==========================================================================
+  - id: US-TOOL-006
+    title: As a GenAI agent, I want to render data visualizations for users
+    description: |
+      I need tools to render tables, charts, cards, and graphs so users can
+      visualize query results and analysis.
+
+    priority: P1
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I render a table with data
+        When the tool executes
+        Then I receive a widget annotation for table rendering
+
+      - Given I render a chart with data
+        When the tool executes
+        Then I receive a widget annotation with chart config
+
+      - Given I render a metric card
+        When the tool executes
+        Then I receive a widget annotation with card data
+
+      - Given I render an ontology subgraph
+        When the tool executes
+        Then I receive a widget annotation with nodes and edges
+
+    test_scenarios:
+      - name: Render data table
+        type: integration
+        steps:
+          - action: call_tool
+            tool: display_table
+            params:
+              columns:
+                - key: id
+                  label: ID
+                  type: string
+                - key: contractNumber
+                  label: Contract Number
+                  type: string
+                - key: totalValue
+                  label: Total Value
+                  type: number
+              rows:
+                - id: c1
+                  contractNumber: ABC123
+                  totalValue: 1000000
+                - id: c2
+                  contractNumber: ABC124
+                  totalValue: 500000
+              caption: Active Contracts
+            expect:
+              success: true
+              type: element
+              element: displayTable
+              props.columns.length: 3
+              props.rows.length: 2
+
+      - name: Render bar chart
+        type: integration
+        steps:
+          - action: call_tool
+            tool: display_chart
+            params:
+              type: bar
+              data:
+                - x: Q1
+                  y: 1000000
+                  label: Revenue Q1
+                - x: Q2
+                  y: 1500000
+                  label: Revenue Q2
+                - x: Q3
+                  y: 2000000
+                  label: Revenue Q3
+              title: Quarterly Revenue
+              xLabel: Quarter
+              yLabel: Revenue ($)
+            expect:
+              success: true
+              type: element
+              element: displayChart
+              props.type: bar
+              props.data.length: 3
+
+      - name: Render metric card
+        type: integration
+        steps:
+          - action: call_tool
+            tool: display_card
+            params:
+              title: Total Contracts
+              value: 127
+              description: Active contracts in PMBook
+              icon: FileText
+            expect:
+              success: true
+              type: element
+              element: displayCard
+              props.value: 127
+
+      - name: Render ontology graph
+        type: integration
+        steps:
+          - action: call_tool
+            tool: display_graph
+            params:
+              nodes:
+                - id: contract-1
+                  label: Contract ABC123
+                  type: contract
+                - id: clin-1
+                  label: CLIN 0001
+                  type: clin
+              edges:
+                - id: e1
+                  source: contract-1
+                  target: clin-1
+                  relation: hasMany
+              layout: hierarchical
+            expect:
+              success: true
+              type: element
+              element: displayGraph
+              props.nodes.length: 2
+              props.edges.length: 1
+
+  # ==========================================================================
+  # STORY 7: Tool Registry and Caching
+  # ==========================================================================
+  - id: US-TOOL-007
+    title: As a system, I want to cache tool results for performance
+    description: |
+      I need to cache frequently accessed data (schemas, catalogs) with TTL
+      to improve tool execution performance and reduce AWS costs.
+
+    priority: P1
+    story_points: 2
+
+    acceptance_criteria:
+      - Given I execute a cacheable tool
+        When the result is returned
+        Then the result is cached with specified TTL
+
+      - Given I execute the same tool again
+        When the cache is still valid
+        Then the cached result is returned
+
+      - Given the cache expires
+        When I execute the tool again
+        Then a fresh result is fetched and cached
+
+      - Given I execute a non-cacheable tool
+        When the tool executes
+        Then the result is not cached
+
+    test_scenarios:
+      - name: Cache tool result
+        type: integration
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params: {}
+            expect:
+              success: true
+              cached: false
+              duration_lt: 2000
+
+          - action: call_tool
+            tool: ontology_types
+            params: {}
+            expect:
+              success: true
+              cached: true
+              duration_lt: 50  # cache hit is much faster
+
+      - name: Cache expiration
+        type: integration
+        steps:
+          - action: call_tool
+            tool: ontology_types
+            params: {}
+
+          - action: sleep
+            duration: 6000  # wait for 5min TTL + 1sec
+
+          - action: call_tool
+            tool: ontology_types
+            params: {}
+            expect:
+              cached: false  # cache expired
+
+      - name: Non-cacheable tools
+        type: integration
+        steps:
+          - action: call_tool
+            tool: create
+            params:
+              typeName: contract
+              input:
+                contractNumber: TEST123
+                title: Test
+                status: draft
+            expect:
+              success: true
+              cached: false
+
+          - action: call_tool
+            tool: create
+            params:
+              typeName: contract
+              input:
+                contractNumber: TEST456
+                title: Test 2
+                status: draft
+            expect:
+              success: true
+              cached: false  # create is never cached
+
+  # ==========================================================================
+  # STORY 8: Tool Analytics and Monitoring
+  # ==========================================================================
+  - id: US-TOOL-008
+    title: As a system admin, I want to monitor tool usage and performance
+    description: |
+      I need analytics and monitoring for tool executions to identify issues,
+      optimize performance, and understand usage patterns.
+
+    priority: P2
+    story_points: 2
+
+    acceptance_criteria:
+      - Given tools are executed
+        When I view analytics dashboard
+        Then I see execution count, duration, and error rate for each tool
+
+      - Given a tool has high error rate
+        When the threshold is exceeded
+        Then an alert is triggered
+
+      - Given a tool has high latency
+        When P95 latency exceeds threshold
+        Then an alert is triggered
+
+      - Given I view tool audit log
+        When filtering by user or tool
+        Then I see detailed execution history
+
+    test_scenarios:
+      - name: Track tool execution metrics
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: contract
+              filters:
+                status: active
+
+          - action: get_tool_stats
+            tool_id: ontology_query
+            expect:
+              executionCount: 1
+              avgDuration_defined: true
+              errorRate: 0
+              lastExecuted_defined: true
+
+      - name: Track errors
+        type: integration
+        steps:
+          - action: call_tool
+            tool: query
+            params:
+              typeName: nonexistent
+            expect:
+              success: false
+
+          - action: get_tool_stats
+            tool_id: ontology_query
+            expect:
+              executionCount: 2
+              errorRate: 0.5  # 1 success + 1 error
+
+      - name: Alert on high error rate
+        type: integration
+        setup: |
+          // Configure alert: error rate > 0.1 (10%)
+          await configureAlert('tool_error_rate', { threshold: 0.1, tool: 'ontology_query' });
+        steps:
+          - action: call_tool_multiple_times
+            tool: query
+            params:
+              typeName: nonexistent
+            times: 10
+            expect_error: true
+
+          - action: check_alerts
+            expect:
+              alerts.length: 1
+              alerts[0].type: tool_error_rate
+              alerts[0].tool: ontology_query
+              alerts[0].value: 1.0
+
+testing:
+  unit_tests:
+    framework: vitest
+    coverage_target: 90
+    files:
+      - core/src/services/agent/tools/ontology/**/*.test.ts
+      - core/src/services/agent/tools/aws/**/*.test.ts
+      - core/src/services/agent/tools/widgets/**/*.test.ts
+
+  integration_tests:
+    framework: vitest
+    setup: |
+      // Use DynamoDB Local for testing
+      process.env.AWS_ENDPOINT = 'http://localhost:8000';
+      await setupTestDatabase();
+    teardown: |
+      await cleanupTestDatabase();
+    files:
+      - tests/integration/tools/*.test.ts
+
+  e2e_tests:
+    framework: playwright
+    scenarios:
+      - Agent uses ontology_types to discover entities
+      - Agent queries contracts with filters
+      - Agent creates, updates, deletes entities
+      - Agent accesses Glue catalog
+      - Agent renders data visualizations
+
+deployment:
+  environments:
+    - name: dev
+      auto_deploy: true
+      on: push to main
+
+    - name: staging
+      auto_deploy: false
+      requires_approval: true
+
+    - name: production
+      auto_deploy: false
+      requires_approval: true
+      smoke_tests: true
+
+monitoring:
+  metrics:
+    - name: tool_execution_count
+      type: counter
+      labels: [tool_id, user_id, status]
+
+    - name: tool_execution_duration
+      type: histogram
+      labels: [tool_id]
+      buckets: [50, 100, 500, 1000, 2000, 5000]
+
+    - name: tool_cache_hit_rate
+      type: gauge
+      labels: [tool_id]
+
+    - name: tool_error_rate
+      type: gauge
+      labels: [tool_id]
+
+  alerts:
+    - name: high_error_rate
+      condition: tool_error_rate > 0.01
+      severity: warning
+      notification: slack
+
+    - name: high_latency
+      condition: tool_execution_duration.p95 > 5000
+      severity: warning
+      notification: slack
+
+    - name: low_cache_hit_rate
+      condition: tool_cache_hit_rate < 0.8
+      severity: info
+      notification: slack
+
+documentation:
+  - file: features/01-ai-sdk-tool-standardization.md
+    type: feature_spec
+
+  - file: API.md
+    type: api_reference
+    generate_from: zod_schemas
+
+  - file: EXAMPLES.md
+    type: usage_examples
+
+  - file: ARCHITECTURE.md
+    type: architecture_diagram

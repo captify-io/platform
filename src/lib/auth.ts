@@ -124,6 +124,20 @@ const authConfig: NextAuthConfig = {
         const groups = (profile as any)["cognito:groups"] || [];
         // Extract tenantId from first group starting with 'us-' (e.g., 'us-east-1_bZwSNAzU9_Microsoft')
         const tenantId = groups.find((g: string) => g.startsWith('us-')) || "default";
+
+        // Extract custom security attributes from Cognito profile
+        const customAttrs = profile as any;
+        const organizationId = customAttrs["custom:organizationId"] || null;
+        const clearanceLevel = customAttrs["custom:clearanceLevel"] || "UNCLASSIFIED";
+        const markingsStr = customAttrs["custom:markings"] || "";
+        const compartmentsStr = customAttrs["custom:sciCompartments"] || "";
+        const needToKnow = customAttrs["custom:needToKnow"] === "true";
+        const employeeId = customAttrs["custom:employeeId"] || null;
+
+        // Parse comma-separated strings into arrays
+        const markings = markingsStr ? markingsStr.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
+        const sciCompartments = compartmentsStr ? compartmentsStr.split(',').map((c: string) => c.trim()).filter(Boolean) : [];
+
         const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2)}`;
 
         // Store large Cognito tokens server-side
@@ -158,6 +172,13 @@ const authConfig: NextAuthConfig = {
             : "pending",
           sessionId: sessionId, // Reference to server-side stored tokens
           issuedAt: Math.floor(Date.now() / 1000),
+          // Security attributes from Cognito custom attributes
+          organizationId,
+          clearanceLevel,
+          markings,
+          sciCompartments,
+          needToKnow,
+          employeeId,
         };
       }
 
@@ -242,6 +263,13 @@ const authConfig: NextAuthConfig = {
         groups: token.groups,
         captifyStatus: token.captifyStatus,
         sessionId: token.sessionId, // Reference to server-side tokens
+        // Security attributes from Cognito
+        organizationId: token.organizationId,
+        clearanceLevel: token.clearanceLevel,
+        markings: token.markings,
+        sciCompartments: token.sciCompartments,
+        needToKnow: token.needToKnow,
+        employeeId: token.employeeId,
         user: {
           ...session.user,
           id: token.sub!,

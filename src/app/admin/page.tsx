@@ -1,181 +1,89 @@
 "use client";
 
-import React from "react";
-import { useCaptify } from "@captify-io/core";
-import { redirect } from "next/navigation";
-import type { Session } from "next-auth";
-import {
-  Users,
-  Shield,
-  Settings,
-  Database,
-  Activity,
-  FileText,
-} from "lucide-react";
+/**
+ * Admin Main Page
+ * Orchestrates [sidebar][content] layout with role-aware navigation
+ *
+ * Architecture:
+ * - AdminSidebar: Left navigation with role-based sections
+ * - AdminContent: Main content area showing selected view
+ * - useRolePermissions: Permission checks for admin access
+ *
+ * Access Control:
+ * - Requires user to be in 'captify-admin' or 'captify-operations' group
+ */
 
-// Helper to get user's groups
-function getUserGroups(session: Session | null): string[] {
-  if (!session) return [];
-
-  // Prefer user-level groups
-  const userGroups = (session.user as any)?.groups;
-  if (userGroups && userGroups.length > 0) {
-    return userGroups;
-  }
-
-  // Fall back to session-level groups
-  const sessionGroups = (session as any).groups;
-  if (sessionGroups && sessionGroups.length > 0) {
-    return sessionGroups;
-  }
-
-  return [];
-}
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { AdminSidebar } from './components/admin-sidebar';
+import { AdminContent, type ViewType } from './components/admin-content';
+import { useRolePermissions } from '@captify-io/core/hooks';
+import { SidebarProvider, SidebarInset } from '@captify-io/core';
+import { Shield } from 'lucide-react';
 
 export default function AdminPage() {
-  const { session } = useCaptify();
+  const permissions = useRolePermissions('admin');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Check if user has admin access
-  const userGroups = getUserGroups(session);
-  const hasAdminAccess = userGroups.includes("captify-admin");
+  // Get view from URL or default to overview
+  const viewFromUrl = (searchParams.get('view') as ViewType) || 'overview';
+  const [activeView, setActiveView] = useState<ViewType>(viewFromUrl);
+  const [loading] = useState(false);
 
-  if (!session?.user) {
-    redirect("/auth/signin");
-  }
+  // Sync activeView with URL
+  useEffect(() => {
+    const urlView = (searchParams.get('view') as ViewType) || 'overview';
+    setActiveView(urlView);
+  }, [searchParams]);
 
-  if (!hasAdminAccess) {
+  // Handle view change from sidebar - update URL
+  const handleViewChange = (view: string) => {
+    router.push(`/admin?view=${view}`);
+  };
+
+  // Show access denied if user doesn't have admin access
+  if (!permissions.hasAccess) {
     return (
-      <div className="h-screen w-full bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-16 w-16 mx-auto mb-4 text-destructive" />
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">
-            You do not have permission to access the admin panel.
+      <div className="h-screen w-full flex items-center justify-center bg-background">
+        <div className="text-center max-w-md">
+          <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold mb-2">Access Required</h2>
+          <p className="text-muted-foreground mb-4">
+            You don't have access to the Admin panel. Please contact your administrator to request access.
           </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Required group: captify-admin
-          </p>
+          <div className="text-sm text-muted-foreground">
+            Your current role: <strong>{permissions.role || 'Guest'}</strong>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Required: captify-admin or captify-operations group
+          </div>
         </div>
       </div>
     );
   }
 
+  // Main layout: [Sidebar][Content]
   return (
-    <div className="h-screen w-full bg-background p-6 overflow-auto">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage your Captify platform settings and users
-          </p>
-        </div>
+    <SidebarProvider>
+      <div className="flex h-full w-full">
+        {/* Admin Sidebar */}
+        <AdminSidebar
+          onViewChange={handleViewChange}
+          activeView={activeView}
+        />
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* User Management */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">User Management</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Manage users, roles, and permissions
-            </p>
-            <p className="text-sm text-muted-foreground">
-              View and edit user accounts, assign groups, and manage access levels.
-            </p>
-          </div>
-
-          {/* Security Settings */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Security</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Configure security and authentication
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Manage authentication settings, session timeouts, and security policies.
-              </p>
-            </div>
-          </div>
-
-          {/* System Settings */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">System Settings</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Configure platform settings
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Adjust system configurations, integrations, and general settings.
-              </p>
-            </div>
-          </div>
-
-          {/* Database Management */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Database</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Manage database and data
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                View database status, manage tables, and perform maintenance tasks.
-              </p>
-            </div>
-          </div>
-
-          {/* Activity Logs */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Activity Logs</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                View system activity and audit logs
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Monitor system activity, user actions, and security events.
-              </p>
-            </div>
-          </div>
-
-          {/* Reports */}
-          <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer bg-card">
-            <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Reports</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Generate and view reports
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Create custom reports and analytics for platform usage and performance.
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Content Area */}
+        <SidebarInset className="flex-1">
+          <AdminContent
+            activeView={activeView}
+            onViewChange={handleViewChange}
+            loading={loading}
+          />
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
+
+export const dynamic = "force-dynamic";

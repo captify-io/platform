@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
     let serviceName = serviceParts[1];
     let subService = serviceParts.length > 2 ? serviceParts.slice(2).join('.') : null;
 
-    // Handle namespace services (e.g., 'ontology.widget')
+    // Handle namespace services (e.g., 'ontology.widget', 'fabric.note')
     // These are core services that aren't prefixed with 'platform.'
-    const coreNamespaces = ['ontology'];
+    const coreNamespaces = ['ontology', 'fabric'];
     if (coreNamespaces.includes(packageName)) {
       // Treat as platform service with nested structure
       subService = serviceName;
@@ -328,11 +328,24 @@ export async function POST(request: NextRequest) {
           groups: (session as any).groups,
           isAdmin: (session as any).groups?.includes('Admins'),
           tenantId: (session.user as any)?.tenantId,
+          // Security attributes from Cognito
+          organizationId: (session as any).organizationId,
+          clearanceLevel: (session as any).clearanceLevel || 'UNCLASSIFIED',
+          markings: (session as any).markings || [],
+          sciCompartments: (session as any).sciCompartments || [],
+          needToKnow: (session as any).needToKnow || false,
+          employeeId: (session as any).employeeId,
         },
         idToken: idToken, // From DynamoDB storage
         accessToken: accessToken, // From DynamoDB storage
         groups: (session as any).groups,
         isAdmin: (session as any).groups?.includes('Admins'),
+        // Security context at session level
+        organizationId: (session as any).organizationId,
+        clearanceLevel: (session as any).clearanceLevel || 'UNCLASSIFIED',
+        markings: (session as any).markings || [],
+        sciCompartments: (session as any).sciCompartments || [],
+        needToKnow: (session as any).needToKnow || false,
       };
 
       // Pass both request and credentials to the service

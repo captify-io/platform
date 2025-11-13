@@ -5,7 +5,7 @@ const QUICK_SIGHT_CSP = `
   default-src 'self';
   frame-src 'self' https://*.cloudfront.net https://*.quicksight.aws.amazon.com https://*.a2z.com https://*.amazonaws.com;
   frame-ancestors 'self' https://*.cloudfront.net https://*.quicksight.aws.amazon.com https://*.amazonaws.com https://captify.io;
-  connect-src 'self' blob: https://*.cloudfront.net https://*.quicksight.aws.amazon.com https://*.amazonaws.com https://*.a2z.com https://*.cloudfront.net https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com wss://*.quicksight.aws.amazon.com;
+  connect-src 'self' blob: ws: wss: https://*.cloudfront.net https://*.quicksight.aws.amazon.com https://*.amazonaws.com https://*.a2z.com https://*.cloudfront.net https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com wss://*.quicksight.aws.amazon.com;
   img-src 'self' data: blob: https://*.cloudfront.net https://*.amazonaws.com https://*.quicksight.aws.amazon.com https://*.cloudfront.net https://*.s3.amazonaws.com;
   font-src 'self' data: https://*.cloudfront.net https://*.amazonaws.com https://*.a2z.com https://*.cloudfront.net;
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.cloudfront.net https://*.amazonaws.com https://*.quicksight.aws.amazon.com https://*.cloudfront.net;
@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
   },
 
   // Enable transpilation for @captify-io packages
-  transpilePackages: ["@captify-io/pmbook", "@captify-io/core"],
+  transpilePackages: ["@captify-io/core"],
+
+  // External packages that should not be bundled (Next.js 16+)
+  serverExternalPackages: ["pm2", "shiki"],
 
   // Headers for QuickSight embedding
   async headers() {

@@ -1,0 +1,473 @@
+feature:
+  id: "03"
+  name: "Fabric Frontend UI Components"
+  priority: "P0"
+  story_points: 21
+  estimated_hours: 42
+
+dependencies:
+  - "01-core-services"
+  - "02-prosemirror-wrapper"
+
+components_required:
+  - "@captify-io/core/components/ui"
+  - "@captify-io/core/components/spaces"
+  - "@captify-io/core/hooks"
+
+stories:
+  - id: "US-03-01"
+    title: "Tabbed sidebar with four views"
+    as_a: "Fabric user"
+    i_want: "a sidebar with Folder, Ontology, Search, and Bookmarks tabs"
+    so_that: "I can access different views of my content"
+
+    acceptance_criteria:
+      - condition: "When I click on a sidebar tab"
+        expected: "The content view switches to show that tab's content"
+        test: "expect(screen.getByTestId('folder-view')).toBeVisible()"
+
+      - condition: "When I click the open/close button"
+        expected: "The sidebar collapses/expands"
+        test: "expect(sidebar.classList).toContain('collapsed')"
+
+      - condition: "When sidebar is open"
+        expected: "Active tab is highlighted"
+        test: "expect(activeTab).toHaveClass('bg-accent')"
+
+    edge_cases:
+      - scenario: "Sidebar closed, user clicks tab"
+        expected_behavior: "Sidebar opens to that tab"
+
+      - scenario: "User clicks same tab twice"
+        expected_behavior: "No action, tab stays active"
+
+    test_scenarios:
+      - name: "should render sidebar with four tabs"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+            activeTab: "folder"
+            isOpen: true
+        act: "render(<Sidebar {...props} />)"
+        assert:
+          - "expect(screen.getByText('Folder')).toBeInTheDocument()"
+          - "expect(screen.getByText('Ontology')).toBeInTheDocument()"
+          - "expect(screen.getByText('Search')).toBeInTheDocument()"
+          - "expect(screen.getByText('Bookmarks')).toBeInTheDocument()"
+
+      - name: "should switch tabs when clicked"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+            activeTab: "folder"
+          mocks:
+            onTabChange: jest.fn()
+        act: |
+          render(<Sidebar {...props} />)
+          fireEvent.click(screen.getByText('Search'))
+        assert:
+          - "expect(props.onTabChange).toHaveBeenCalledWith('search')"
+
+      - name: "should toggle sidebar open/close"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+            isOpen: true
+          mocks:
+            onToggle: jest.fn()
+        act: |
+          render(<Sidebar {...props} />)
+          fireEvent.click(screen.getByLabelText('Toggle sidebar'))
+        assert:
+          - "expect(props.onToggle).toHaveBeenCalled()"
+
+  - id: "US-03-02"
+    title: "Folder view with tree navigation"
+    as_a: "Fabric user"
+    i_want: "to see my notes organized in a folder tree"
+    so_that: "I can browse and organize my documentation"
+
+    acceptance_criteria:
+      - condition: "When folder view loads"
+        expected: "All folders and notes in space are displayed"
+        test: "expect(folderTree.children).toHaveLength(5)"
+
+      - condition: "When I click a folder"
+        expected: "Folder expands/collapses to show child notes"
+        test: "expect(folder).toHaveAttribute('aria-expanded', 'true')"
+
+      - condition: "When I click + Note button"
+        expected: "New note is created and opens in editor"
+        test: "expect(editor.tabs).toContain(newNoteId)"
+
+    test_scenarios:
+      - name: "should render folder tree"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  notes:
+                    - id: "note-1"
+                      title: "SOP"
+                      folder: "/sops"
+                    - id: "note-2"
+                      title: "Contract"
+                      folder: "/contracts"
+        act: "render(<FolderView {...props} />)"
+        assert:
+          - "await waitFor(() => expect(screen.getByText('sops')).toBeInTheDocument())"
+          - "expect(screen.getByText('contracts')).toBeInTheDocument()"
+
+      - name: "should expand/collapse folders"
+        type: "component"
+        arrange:
+          props:
+            folders:
+              - id: "folder-1"
+                path: "/sops"
+                children: ["note-1", "note-2"]
+        act: |
+          render(<FolderTree {...props} />)
+          fireEvent.click(screen.getByText('/sops'))
+        assert:
+          - "expect(screen.getByText('note-1')).toBeVisible()"
+
+      - name: "should create new note with + button"
+        type: "integration"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  noteId: "note-new"
+                  title: "Untitled"
+        act: |
+          render(<FolderView spaceId="space-123" />)
+          fireEvent.click(screen.getByText('+ Note'))
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'createNote' }))"
+
+  - id: "US-03-03"
+    title: "Multi-tab editor with auto-save"
+    as_a: "Fabric user"
+    i_want: "to have multiple notes open in tabs with automatic saving"
+    so_that: "I can work on multiple documents without losing changes"
+
+    acceptance_criteria:
+      - condition: "When I open a note"
+        expected: "A new tab opens in the editor area"
+        test: "expect(tabs).toHaveLength(previousTabs.length + 1)"
+
+      - condition: "When I type in the editor"
+        expected: "Auto-save triggers after 500ms"
+        test: "await waitFor(() => expect(saveIndicator).toHaveText('Saved'), { timeout: 600 })"
+
+      - condition: "When I close a tab"
+        expected: "Tab is removed from tab bar"
+        test: "expect(tabs).not.toContainElement(closedTab)"
+
+      - condition: "When I drag a tab"
+        expected: "Tab reorders to new position"
+        test: "expect(tabs[0]).toBe(draggedTab)"
+
+    test_scenarios:
+      - name: "should open note in new tab"
+        type: "component"
+        arrange:
+          props:
+            tabs: []
+          mocks:
+            onOpenNote: jest.fn()
+        act: |
+          render(<EditorArea {...props} />)
+          props.onOpenNote("note-123", "Test Note")
+        assert:
+          - "expect(props.tabs).toContain(expect.objectContaining({ noteId: 'note-123' }))"
+
+      - name: "should auto-save after 500ms"
+        type: "component"
+        arrange:
+          props:
+            noteId: "note-123"
+            content: "Initial"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+        act: |
+          render(<NoteEditor {...props} />)
+          fireEvent.change(editor, { target: { value: 'Updated content' }})
+          await waitFor(() => {}, { timeout: 600 })
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'updateNote' }))"
+
+      - name: "should close tab with × button"
+        type: "component"
+        arrange:
+          props:
+            tabs:
+              - id: "tab-1"
+                noteId: "note-1"
+                title: "Test"
+          mocks:
+            onCloseTab: jest.fn()
+        act: |
+          render(<TabBar {...props} />)
+          fireEvent.click(screen.getByLabelText('Close tab'))
+        assert:
+          - "expect(props.onCloseTab).toHaveBeenCalledWith('tab-1')"
+
+  - id: "US-03-04"
+    title: "Inspector with graph view and backlinks"
+    as_a: "Fabric user"
+    i_want: "to see connections and metadata for the current note"
+    so_that: "I can understand relationships and navigate related content"
+
+    acceptance_criteria:
+      - condition: "When I view a note"
+        expected: "Graph view shows current note and its connections"
+        test: "expect(graph.nodes).toContain(currentNoteId)"
+
+      - condition: "When I click Backlinks tab"
+        expected: "All notes linking to current note are shown"
+        test: "expect(backlinks).toHaveLength(3)"
+
+      - condition: "When I click Outline tab"
+        expected: "Document headings are extracted and displayed"
+        test: "expect(outline).toContain('## Purpose')"
+
+    test_scenarios:
+      - name: "should render graph view with connections"
+        type: "component"
+        arrange:
+          props:
+            noteId: "note-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  nodes:
+                    - id: "note-123"
+                      label: "Current Note"
+                    - id: "note-456"
+                      label: "Linked Note"
+                  edges:
+                    - source: "note-123"
+                      target: "note-456"
+        act: "render(<GraphView {...props} />)"
+        assert:
+          - "await waitFor(() => expect(screen.getByText('Current Note')).toBeInTheDocument())"
+
+      - name: "should show backlinks panel"
+        type: "component"
+        arrange:
+          props:
+            noteId: "note-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  backlinks:
+                    - noteId: "note-1"
+                      title: "SOP"
+                    - noteId: "note-2"
+                      title: "Contract"
+        act: "render(<BacklinksPanel {...props} />)"
+        assert:
+          - "await waitFor(() => expect(screen.getByText('SOP')).toBeInTheDocument())"
+          - "expect(screen.getByText('Contract')).toBeInTheDocument()"
+
+  - id: "US-03-05"
+    title: "Ontology view with entity browser"
+    as_a: "Fabric user"
+    i_want: "to browse ontology entities linked to notes"
+    so_that: "I can explore connections between documentation and entities"
+
+    acceptance_criteria:
+      - condition: "When Ontology tab is active"
+        expected: "Sub-tabs for Objects, Links, Actions, Workflows, Tools are shown"
+        test: "expect(subTabs).toHaveLength(5)"
+
+      - condition: "When I select Objects sub-tab"
+        expected: "All ontology objects linked to notes in space are listed"
+        test: "expect(objects).toContain('contract::ABC-123')"
+
+      - condition: "When I click + button"
+        expected: "Create entity dialog opens"
+        test: "expect(dialog).toHaveAttribute('open', 'true')"
+
+    test_scenarios:
+      - name: "should render ontology view with sub-tabs"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+            activeSubTab: "objects"
+        act: "render(<OntologyView {...props} />)"
+        assert:
+          - "expect(screen.getByText('Objects')).toBeInTheDocument()"
+          - "expect(screen.getByText('Links')).toBeInTheDocument()"
+          - "expect(screen.getByText('Actions')).toBeInTheDocument()"
+
+      - name: "should list linked entities"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  entities:
+                    - type: "contract"
+                      id: "ABC-123"
+                      linkedNotes: ["note-1", "note-2"]
+        act: "render(<OntologyView {...props} />)"
+        assert:
+          - "await waitFor(() => expect(screen.getByText('ABC-123')).toBeInTheDocument())"
+
+  - id: "US-03-06"
+    title: "Search view with full-text search"
+    as_a: "Fabric user"
+    i_want: "to search across all notes by content and metadata"
+    so_that: "I can quickly find relevant information"
+
+    acceptance_criteria:
+      - condition: "When I type in search box"
+        expected: "Results update after 300ms debounce"
+        test: "await waitFor(() => expect(results.length).toBeGreaterThan(0), { timeout: 400 })"
+
+      - condition: "When search returns results"
+        expected: "Matching text is highlighted in snippets"
+        test: "expect(snippet).toContain('<mark>keyword</mark>')"
+
+      - condition: "When I click a result"
+        expected: "Note opens in editor"
+        test: "expect(editor.activeTab.noteId).toBe(clickedResult.noteId)"
+
+    test_scenarios:
+      - name: "should search and return results"
+        type: "component"
+        arrange:
+          props:
+            spaceId: "space-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  results:
+                    - noteId: "note-1"
+                      title: "Contract SOP"
+                      excerpt: "...review **contract** process..."
+                      score: 0.95
+        act: |
+          render(<SearchView {...props} />)
+          fireEvent.change(screen.getByPlaceholderText('Search notes...'), {
+            target: { value: 'contract' }
+          })
+          await waitFor(() => {}, { timeout: 400 })
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'searchNotes' }))"
+          - "expect(screen.getByText('Contract SOP')).toBeInTheDocument()"
+
+  - id: "US-03-07"
+    title: "Bookmarks view with pinning"
+    as_a: "Fabric user"
+    i_want: "to bookmark important notes and group them"
+    so_that: "I can quickly access frequently used documentation"
+
+    acceptance_criteria:
+      - condition: "When I click + Bookmark button"
+        expected: "Current active note is added to bookmarks"
+        test: "expect(bookmarks).toContain(activeNoteId)"
+
+      - condition: "When I create a group"
+        expected: "Bookmark group is created and can contain bookmarks"
+        test: "expect(groups).toContain(newGroup)"
+
+      - condition: "When note has updates"
+        expected: "Update badge shows on watched notes"
+        test: "expect(badge).toHaveText('3')"
+
+    test_scenarios:
+      - name: "should add bookmark when clicked"
+        type: "component"
+        arrange:
+          props:
+            activeNoteId: "note-123"
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  bookmarkId: "bookmark-1"
+        act: |
+          render(<BookmarksView {...props} />)
+          fireEvent.click(screen.getByText('+ Bookmark'))
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'createBookmark' }))"
+
+      - name: "should show update badges on watched notes"
+        type: "component"
+        arrange:
+          props:
+            watchedNotes:
+              - noteId: "note-1"
+                title: "SOP"
+                unreadUpdates: 3
+        act: "render(<BookmarksView {...props} />)"
+        assert:
+          - "expect(screen.getByText('3')).toHaveClass('badge')"
+
+  - id: "US-03-08"
+    title: "Daily notes auto-creation"
+    as_a: "Fabric user"
+    i_want: "daily notes to be automatically created each day"
+    so_that: "I have a structured place for daily documentation"
+
+    acceptance_criteria:
+      - condition: "When I visit Fabric for first time today"
+        expected: "Daily note for today is auto-created"
+        test: "expect(notes).toContainEqual(expect.objectContaining({ title: 'Daily Note - 2025-11-10' }))"
+
+      - condition: "When daily note is created"
+        expected: "Template variables are substituted"
+        test: "expect(content).toContain('Monday')"
+
+      - condition: "When daily note exists"
+        expected: "Daily note opens automatically"
+        test: "expect(editor.activeTab.noteId).toBe(dailyNoteId)"
+
+    test_scenarios:
+      - name: "should create daily note if not exists"
+        type: "integration"
+        arrange:
+          mocks:
+            apiClient.run:
+              - method: "listNotes"
+                resolves:
+                  success: true
+                  data:
+                    notes: []
+              - method: "createNote"
+                resolves:
+                  success: true
+                  data:
+                    noteId: "daily-123"
+                    title: "Daily Note - 2025-11-10"
+        act: "await checkAndCreateDailyNote(spaceId)"
+        assert:
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ operation: 'createNote', data: expect.objectContaining({ title: expect.stringContaining('Daily Note') }) }))"

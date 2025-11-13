@@ -1,0 +1,130 @@
+{
+  "slug": "dataops",
+  "name": "DataOps",
+  "version": "1.0.0",
+  "description": "NextGen DataOps - AI-powered data operations platform",
+  "menu": [
+    {
+      "label": "Dashboard",
+      "href": "/dataops",
+      "icon": "LayoutDashboard",
+      "description": "DataOps overview"
+    },
+    {
+      "label": "Data Sources",
+      "href": "/dataops/sources",
+      "icon": "Database",
+      "description": "Manage data sources"
+    },
+    {
+      "label": "Data Products",
+      "href": "/dataops/products",
+      "icon": "Package",
+      "description": "Data product catalog"
+    },
+    {
+      "label": "Catalog",
+      "href": "/dataops/catalog",
+      "icon": "FolderOpen",
+      "description": "Dataset catalog"
+    },
+    {
+      "label": "Quality",
+      "href": "/dataops/quality",
+      "icon": "ShieldCheck",
+      "description": "Data quality metrics"
+    },
+    {
+      "label": "Lineage",
+      "href": "/dataops/lineage",
+      "icon": "GitBranch",
+      "description": "Data lineage tracking"
+    },
+    {
+      "label": "Compliance",
+      "href": "/dataops/compliance",
+      "icon": "Lock",
+      "description": "IL5 NIST compliance"
+    },
+    {
+      "label": "Pipelines",
+      "href": "/dataops/pipelines",
+      "icon": "Workflow",
+      "description": "Data pipelines"
+    }
+  ],
+  "manifest": {
+    "name": "DataOps",
+    "icon": "Database",
+    "color": "#3b82f6",
+    "category": "data",
+    "tags": ["data", "quality", "lineage", "compliance", "IL5", "NIST"],
+    "visibility": "public",
+    "resources": {
+      "identityPoolId": "us-east-1:cefc0509-4f87-48d5-8238-c64390b62781"
+    }
+  },
+  "features": [
+    {
+      "id": "data-products",
+      "name": "Data Products",
+      "description": "API-accessible data products with SLOs and versioning",
+      "enabled": true,
+      "icon": "Package",
+      "href": "/dataops/products"
+    },
+    {
+      "id": "data-catalog",
+      "name": "Data Catalog",
+      "description": "Searchable catalog of all datasets with quality scores and lineage",
+      "enabled": true,
+      "icon": "FolderOpen",
+      "href": "/dataops/catalog"
+    },
+    {
+      "id": "quality-engine",
+      "name": "Quality Engine",
+      "description": "6-dimensional quality scoring with automated profiling",
+      "enabled": true,
+      "icon": "ShieldCheck",
+      "href": "/dataops/quality"
+    },
+    {
+      "id": "lineage-tracking",
+      "name": "Lineage Tracking",
+      "description": "Interactive lineage graphs with impact analysis",
+      "enabled": true,
+      "icon": "GitBranch",
+      "href": "/dataops/lineage"
+    },
+    {
+      "id": "compliance",
+      "name": "NIST Compliance",
+      "description": "IL5 NIST 800-53 Rev 5 compliance tracking",
+      "enabled": true,
+      "icon": "Lock",
+      "href": "/dataops/compliance"
+    },
+    {
+      "id": "pipeline-builder",
+      "name": "Pipeline Builder",
+      "description": "Visual pipeline builder with 18+ node types",
+      "enabled": true,
+      "icon": "Workflow",
+      "href": "/dataops/pipelines"
+    },
+    {
+      "id": "ai-discovery",
+      "name": "AI Discovery",
+      "description": "Natural language search powered by AWS Kendra",
+      "enabled": true,
+      "icon": "Sparkles",
+      "href": "/dataops/discover"
+    }
+  ],
+  "access": {
+    "requiresApproval": true,
+    "defaultRole": "analyst",
+    "allowedRoles": ["analyst", "data-engineer", "data-steward", "admin"]
+  }
+}

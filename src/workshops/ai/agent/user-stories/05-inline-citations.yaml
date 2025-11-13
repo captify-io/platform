@@ -1,0 +1,336 @@
+feature:
+  id: "05"
+  name: "Inline Citations"
+  priority: "P1"
+  story_points: 6
+  estimated_hours: 12
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/components/ui"
+  - "@captify-io/core/lib/utils"
+  - "@captify-io/core/services/ontology"
+
+aws_services:
+  - dynamodb
+
+tables:
+  - core-ontology-node
+
+indexes:
+  - domain-category-index
+
+stories:
+  - id: "US-05-01"
+    title: "Display citation markers in message text"
+    as_a: "user"
+    i_want: "to see citation markers [1], [2] embedded in message text"
+    so_that: "I know which parts of the answer are sourced from references"
+
+    acceptance_criteria:
+      - condition: "When message contains citation markers"
+        expected: "Markers are rendered as clickable badges"
+        test: "expect(screen.getByText('[1]')).toBeInTheDocument()"
+
+      - condition: "When I click a citation marker"
+        expected: "Corresponding source is highlighted or scrolled to"
+        test: "expect(onCitationClick).toHaveBeenCalledWith(1)"
+
+      - condition: "When message has no citations"
+        expected: "Text is rendered normally without markers"
+        test: "expect(screen.queryByText(/\\[\\d+\\]/)).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should render citation markers as clickable badges"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires on January 15, 2025[1] and has a renewal option[2]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract ABC-123"
+              - id: "2"
+                type: "document"
+                title: "Renewal Terms"
+        act: "render(<MessageWithCitations {...input} />)"
+        assert:
+          - "expect(screen.getByText('[1]')).toBeInTheDocument()"
+          - "expect(screen.getByText('[2]')).toBeInTheDocument()"
+          - "expect(screen.getByText('[1]')).toHaveClass('citation-marker')"
+
+      - name: "should call onCitationClick when marker clicked"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires on January 15, 2025[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract ABC-123"
+            onCitationClick: jest.fn()
+        act: "await userEvent.click(screen.getByText('[1]'))"
+        assert:
+          - "expect(input.onCitationClick).toHaveBeenCalledWith(1)"
+
+      - name: "should render text normally when no citations"
+        type: "unit"
+        arrange:
+          input:
+            content: "This is regular text without any citations."
+            sources: []
+        act: "render(<MessageWithCitations {...input} />)"
+        assert:
+          - "expect(screen.queryByText(/\\[\\d+\\]/)).not.toBeInTheDocument()"
+          - "expect(screen.getByText('This is regular text without any citations.')).toBeInTheDocument()"
+
+  - id: "US-05-02"
+    title: "Show citation tooltip on hover"
+    as_a: "user"
+    i_want: "to see a preview of the source when I hover over a citation"
+    so_that: "I can quickly understand what the citation refers to without scrolling"
+
+    acceptance_criteria:
+      - condition: "When I hover over a citation marker"
+        expected: "Tooltip appears with source title and preview"
+        test: "expect(screen.getByRole('tooltip')).toContainText('Contract ABC-123')"
+
+      - condition: "When citation has a quote"
+        expected: "Tooltip shows the relevant quote from the source"
+        test: "expect(screen.getByRole('tooltip')).toContainText('expires on January 15')"
+
+      - condition: "When I move cursor away"
+        expected: "Tooltip disappears"
+        test: "expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should show tooltip with source title on hover"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract ABC-123"
+                quote: "The agreement shall expire on January 15, 2025"
+        act: "await userEvent.hover(screen.getByText('[1]'))"
+        assert:
+          - "expect(screen.getByRole('tooltip')).toBeInTheDocument()"
+          - "expect(screen.getByRole('tooltip')).toContainText('Contract ABC-123')"
+
+      - name: "should show quote in tooltip when available"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract ABC-123"
+                quote: "The agreement shall expire on January 15, 2025"
+        act: "await userEvent.hover(screen.getByText('[1]'))"
+        assert:
+          - "expect(screen.getByRole('tooltip')).toContainText('The agreement shall expire on January 15, 2025')"
+
+      - name: "should hide tooltip when cursor moves away"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract ABC-123"
+        act: |
+          await userEvent.hover(screen.getByText('[1]'))
+          await userEvent.unhover(screen.getByText('[1]'))
+        assert:
+          - "expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()"
+
+  - id: "US-05-03"
+    title: "Display sources list at bottom of message"
+    as_a: "user"
+    i_want: "to see all sources referenced in the message"
+    so_that: "I can access them directly"
+
+    acceptance_criteria:
+      - condition: "When message has citations"
+        expected: "Sources list is displayed below message content"
+        test: "expect(screen.getByText('Sources')).toBeInTheDocument()"
+
+      - condition: "When I click a source"
+        expected: "Source is opened (ontology entity or document)"
+        test: "expect(onSourceClick).toHaveBeenCalledWith('source-123')"
+
+      - condition: "When message has no citations"
+        expected: "Sources list is not displayed"
+        test: "expect(screen.queryByText('Sources')).not.toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display sources list for cited messages"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires[1] and has renewal terms[2]."
+            sources:
+              - id: "source-1"
+                type: "document"
+                title: "Contract ABC-123"
+                url: "/documents/abc-123"
+              - id: "source-2"
+                type: "ontology"
+                title: "Renewal Terms Entity"
+                url: "/ontology/renewal-terms"
+        act: "render(<MessageWithCitations {...input} />)"
+        assert:
+          - "expect(screen.getByText('Sources')).toBeInTheDocument()"
+          - "expect(screen.getByText('[1] Contract ABC-123')).toBeInTheDocument()"
+          - "expect(screen.getByText('[2] Renewal Terms Entity')).toBeInTheDocument()"
+
+      - name: "should call onSourceClick when source clicked"
+        type: "unit"
+        arrange:
+          input:
+            content: "The contract expires[1]."
+            sources:
+              - id: "source-1"
+                type: "document"
+                title: "Contract ABC-123"
+            onSourceClick: jest.fn()
+        act: "await userEvent.click(screen.getByText('[1] Contract ABC-123'))"
+        assert:
+          - "expect(input.onSourceClick).toHaveBeenCalledWith('source-1')"
+
+      - name: "should not display sources list when no citations"
+        type: "unit"
+        arrange:
+          input:
+            content: "Regular text without citations."
+            sources: []
+        act: "render(<MessageWithCitations {...input} />)"
+        assert:
+          - "expect(screen.queryByText('Sources')).not.toBeInTheDocument()"
+
+  - id: "US-05-04"
+    title: "Show source type with appropriate icon"
+    as_a: "user"
+    i_want: "to see icons indicating source type (document, ontology, file)"
+    so_that: "I can quickly identify the type of source"
+
+    acceptance_criteria:
+      - condition: "When source is a document"
+        expected: "Document icon is displayed"
+        test: "expect(screen.getByTestId('document-icon')).toBeInTheDocument()"
+
+      - condition: "When source is an ontology entity"
+        expected: "Network/graph icon is displayed"
+        test: "expect(screen.getByTestId('ontology-icon')).toBeInTheDocument()"
+
+      - condition: "When source is a file"
+        expected: "File icon is displayed"
+        test: "expect(screen.getByTestId('file-icon')).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display document icon for document sources"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract"
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByTestId('document-icon')).toBeInTheDocument()"
+
+      - name: "should display ontology icon for ontology sources"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "ontology"
+                title: "Entity"
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByTestId('ontology-icon')).toBeInTheDocument()"
+
+      - name: "should display file icon for file sources"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "file"
+                title: "report.pdf"
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByTestId('file-icon')).toBeInTheDocument()"
+
+  - id: "US-05-05"
+    title: "Display confidence score for citations"
+    as_a: "user"
+    i_want: "to see how confident the AI is about each citation"
+    so_that: "I can prioritize which sources to verify"
+
+    acceptance_criteria:
+      - condition: "When source has confidence score"
+        expected: "Score is displayed as percentage or visual indicator"
+        test: "expect(screen.getByText('95%')).toBeInTheDocument()"
+
+      - condition: "When confidence is high (>80%)"
+        expected: "Indicator is green"
+        test: "expect(screen.getByTestId('confidence-indicator')).toHaveClass('text-green-600')"
+
+      - condition: "When confidence is low (<60%)"
+        expected: "Indicator is yellow/red with warning"
+        test: "expect(screen.getByText(/verify/i)).toBeInTheDocument()"
+
+    test_scenarios:
+      - name: "should display confidence score when available"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract"
+                confidence: 0.95
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByText('95%')).toBeInTheDocument()"
+
+      - name: "should show green indicator for high confidence"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract"
+                confidence: 0.95
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByTestId('confidence-indicator')).toHaveClass('text-green-600')"
+
+      - name: "should show warning for low confidence"
+        type: "unit"
+        arrange:
+          input:
+            content: "Text[1]."
+            sources:
+              - id: "1"
+                type: "document"
+                title: "Contract"
+                confidence: 0.45
+        act: "render(<SourcesList {...input} />)"
+        assert:
+          - "expect(screen.getByText(/verify/i)).toBeInTheDocument()"
+          - "expect(screen.getByTestId('confidence-indicator')).toHaveClass('text-yellow-600')"

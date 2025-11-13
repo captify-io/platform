@@ -25,7 +25,6 @@ interface AppAccessResult {
  */
 export function useAppAccess(): AppAccessResult {
   const pathname = usePathname();
-  const { status } = useSession();
   const [hasAccess, setHasAccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [appConfig, setAppConfig] = useState<AppConfig | undefined>();
@@ -33,11 +32,6 @@ export function useAppAccess(): AppAccessResult {
 
   useEffect(() => {
     async function check() {
-      // Wait for session
-      if (status === 'loading') {
-        return;
-      }
-
       // System routes always have access
       if (isSystemRoute(pathname)) {
         setHasAccess(true);
@@ -70,7 +64,7 @@ export function useAppAccess(): AppAccessResult {
     }
 
     check();
-  }, [pathname, status]);
+  }, [pathname]);
 
   return { hasAccess, isLoading, appConfig, reason };
 }

@@ -1,0 +1,393 @@
+feature:
+  id: "01"
+  name: "Core Fabric Services"
+  priority: "P0"
+  story_points: 21
+  estimated_hours: 40
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/services/ontology"
+  - "@captify-io/core/services/aws/dynamodb"
+  - "@captify-io/core/services/aws/s3"
+
+aws_services:
+  - dynamodb
+  - s3
+
+tables:
+  - core-fabric-note
+  - core-fabric-folder
+  - core-fabric-template
+
+indexes:
+  - spaceId-lastModified-index
+  - folder-title-index
+  - tags-index
+
+stories:
+  - id: "US-01-01"
+    title: "Create new note with Y.js state"
+    as_a: "Fabric user"
+    i_want: "to create a new note in my space"
+    so_that: "I can start documenting knowledge"
+
+    acceptance_criteria:
+      - condition: "When I create a note with valid title and spaceId"
+        expected: "A new note is created with initialized Y.js state"
+        test: "expect(result.noteId).toBeDefined() && expect(result.yjsState).toBeDefined()"
+
+      - condition: "When I create a note with a template"
+        expected: "The template content is applied to the new note"
+        test: "expect(result.content).toContain(templateContent)"
+
+      - condition: "When I create a note without permission"
+        expected: "An access denied error is thrown"
+        test: "expect(promise).rejects.toThrow('Access denied')"
+
+    edge_cases:
+      - scenario: "Empty title provided"
+        expected_behavior: "Validation error returned"
+
+      - scenario: "Invalid spaceId"
+        expected_behavior: "Space not found error"
+
+      - scenario: "Template not found"
+        expected_behavior: "Continue without template, log warning"
+
+    test_scenarios:
+      - name: "should create note with valid parameters"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  noteId: "note-123"
+                  title: "Test Note"
+                  yjsState: "Binary()"
+                  createdAt: "2025-11-10T00:00:00Z"
+          input:
+            spaceId: "space-123"
+            title: "Test Note"
+        act: "const result = await createNote(input)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(result.data.noteId).toBe('note-123')"
+          - "expect(result.data.title).toBe('Test Note')"
+          - "expect(result.data.yjsState).toBeDefined()"
+
+      - name: "should apply template when provided"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  noteId: "note-456"
+                  content: "## Purpose\n\nTemplate content here"
+                  frontmatter:
+                    type: "sop"
+          input:
+            spaceId: "space-123"
+            title: "My SOP"
+            template: "template-sop-standard"
+        act: "const result = await createNote(input)"
+        assert:
+          - "expect(result.data.content).toContain('## Purpose')"
+          - "expect(result.data.frontmatter.type).toBe('sop')"
+
+      - name: "should throw error for unauthorized access"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects:
+                error: "Access denied: Insufficient permissions"
+          input:
+            spaceId: "restricted-space"
+            title: "Secret Note"
+        act: "await createNote(input)"
+        assert:
+          - "expect(promise).rejects.toThrow('Access denied')"
+
+  - id: "US-01-02"
+    title: "Retrieve note with Y.js state"
+    as_a: "Fabric user"
+    i_want: "to open an existing note"
+    so_that: "I can view and edit its content"
+
+    acceptance_criteria:
+      - condition: "When I retrieve a note by valid ID"
+        expected: "The note is returned with Y.js state and metadata"
+        test: "expect(result.yjsState).toBeDefined() && expect(result.title).toBeDefined()"
+
+      - condition: "When I retrieve a note I don't have access to"
+        expected: "An access denied error is thrown"
+        test: "expect(promise).rejects.toThrow('Access denied')"
+
+      - condition: "When I retrieve a non-existent note"
+        expected: "A not found error is thrown"
+        test: "expect(promise).rejects.toThrow('Note not found')"
+
+    test_scenarios:
+      - name: "should retrieve note successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  id: "note-123"
+                  title: "Test Note"
+                  yjsState: "Binary()"
+                  spaceId: "space-123"
+                  folder: "/"
+                  tags: ["test"]
+                  lastModified: "2025-11-10T00:00:00Z"
+          input:
+            noteId: "note-123"
+        act: "const result = await getNote(input.noteId)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(result.data.id).toBe('note-123')"
+          - "expect(result.data.yjsState).toBeDefined()"
+          - "expect(result.data.title).toBe('Test Note')"
+
+      - name: "should throw error when note not found"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects:
+                error: "Note not found: nonexistent"
+          input:
+            noteId: "nonexistent"
+        act: "await getNote(input.noteId)"
+        assert:
+          - "expect(promise).rejects.toThrow('Note not found')"
+
+  - id: "US-01-03"
+    title: "Update note with Y.js delta"
+    as_a: "Fabric user"
+    i_want: "to save my edits to a note"
+    so_that: "my changes persist and sync with collaborators"
+
+    acceptance_criteria:
+      - condition: "When I apply a Y.js update to a note"
+        expected: "The update is merged and version incremented"
+        test: "expect(result.yjsVersion).toBe(previousVersion + 1)"
+
+      - condition: "When multiple users edit simultaneously"
+        expected: "All updates are merged conflict-free via CRDT"
+        test: "expect(result.success).toBe(true) && expect(conflicts).toHaveLength(0)"
+
+    test_scenarios:
+      - name: "should apply Y.js update and increment version"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  yjsVersion: 5
+                  lastModified: "2025-11-10T01:00:00Z"
+          input:
+            noteId: "note-123"
+            yjsUpdate: "Binary(update)"
+            userId: "user-789"
+        act: "const result = await updateNote(input)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(result.data.yjsVersion).toBe(5)"
+          - "expect(apiClient.run).toHaveBeenCalledWith(expect.objectContaining({ service: 'platform.fabric', operation: 'updateNote' }))"
+
+  - id: "US-01-04"
+    title: "Delete note with cascade"
+    as_a: "Fabric user"
+    i_want: "to delete a note I no longer need"
+    so_that: "it's removed from my space and storage"
+
+    acceptance_criteria:
+      - condition: "When I delete a note"
+        expected: "The note, Y.js state, and S3 snapshots are all deleted"
+        test: "expect(result.success).toBe(true)"
+
+      - condition: "When I delete a note I don't own"
+        expected: "An access denied error is thrown"
+        test: "expect(promise).rejects.toThrow('Access denied')"
+
+    test_scenarios:
+      - name: "should delete note successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  deletedAt: "2025-11-10T02:00:00Z"
+          input:
+            noteId: "note-123"
+        act: "const result = await deleteNote(input.noteId)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(result.data.deletedAt).toBeDefined()"
+
+  - id: "US-01-05"
+    title: "List notes with filtering"
+    as_a: "Fabric user"
+    i_want: "to browse notes in my space"
+    so_that: "I can find and organize my documentation"
+
+    acceptance_criteria:
+      - condition: "When I list notes in a space"
+        expected: "All accessible notes are returned"
+        test: "expect(result.data.notes).toBeInstanceOf(Array)"
+
+      - condition: "When I filter by folder"
+        expected: "Only notes in that folder are returned"
+        test: "result.data.notes.every(n => n.folder === filterFolder)"
+
+      - condition: "When I filter by tags"
+        expected: "Only notes with all specified tags are returned"
+        test: "result.data.notes.every(n => filterTags.every(t => n.tags.includes(t)))"
+
+    test_scenarios:
+      - name: "should list all notes in space"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  notes:
+                    - id: "note-1"
+                      title: "Note 1"
+                    - id: "note-2"
+                      title: "Note 2"
+          input:
+            spaceId: "space-123"
+        act: "const result = await listNotes(input.spaceId)"
+        assert:
+          - "expect(result.data.notes).toHaveLength(2)"
+          - "expect(result.data.notes[0].id).toBe('note-1')"
+
+      - name: "should filter notes by folder"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  notes:
+                    - id: "note-1"
+                      folder: "/sops"
+          input:
+            spaceId: "space-123"
+            folder: "/sops"
+        act: "const result = await listNotes(input.spaceId, { folder: input.folder })"
+        assert:
+          - "expect(result.data.notes).toHaveLength(1)"
+          - "expect(result.data.notes[0].folder).toBe('/sops')"
+
+  - id: "US-01-06"
+    title: "Create S3 snapshot of note"
+    as_a: "Fabric user"
+    i_want: "my notes automatically backed up to S3"
+    so_that: "I have version history and disaster recovery"
+
+    acceptance_criteria:
+      - condition: "When a snapshot is created"
+        expected: "Y.js state is converted to markdown and saved to S3"
+        test: "expect(result.s3Key).toMatch(/spaces\\/.*\\/fabric\\/notes\\/.*\\.md/)"
+
+      - condition: "When snapshot exceeds 5 minutes since last"
+        expected: "A new version is created automatically"
+        test: "expect(result.version).toBeGreaterThan(previousVersion)"
+
+    test_scenarios:
+      - name: "should create S3 snapshot successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  s3Key: "spaces/space-123/fabric/notes/note-123/v1-20251110.md"
+                  version: 1
+                  size: 1024
+          input:
+            noteId: "note-123"
+        act: "const result = await createSnapshot(input.noteId)"
+        assert:
+          - "expect(result.success).toBe(true)"
+          - "expect(result.data.s3Key).toContain('fabric/notes')"
+          - "expect(result.data.version).toBe(1)"
+
+  - id: "US-01-07"
+    title: "Search notes by content and metadata"
+    as_a: "Fabric user"
+    i_want: "to search for notes by keywords"
+    so_that: "I can quickly find relevant documentation"
+
+    acceptance_criteria:
+      - condition: "When I search with a query"
+        expected: "Matching notes are returned with relevance scores"
+        test: "expect(result.data.results).toBeInstanceOf(Array)"
+
+      - condition: "When search returns results"
+        expected: "Each result includes title, excerpt, and score"
+        test: "result.data.results.every(r => r.title && r.excerpt && r.score)"
+
+      - condition: "When query has no matches"
+        expected: "Empty results array is returned"
+        test: "expect(result.data.results).toHaveLength(0)"
+
+    test_scenarios:
+      - name: "should return matching notes"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  results:
+                    - noteId: "note-123"
+                      title: "Contract SOP"
+                      excerpt: "...contract review process..."
+                      score: 0.95
+          input:
+            spaceId: "space-123"
+            query: "contract review"
+        act: "const result = await searchNotes(input.spaceId, input.query)"
+        assert:
+          - "expect(result.data.results).toHaveLength(1)"
+          - "expect(result.data.results[0].title).toContain('Contract')"
+          - "expect(result.data.results[0].score).toBeGreaterThan(0)"
+
+      - name: "should return empty array when no matches"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  results: []
+          input:
+            spaceId: "space-123"
+            query: "nonexistent keyword"
+        act: "const result = await searchNotes(input.spaceId, input.query)"
+        assert:
+          - "expect(result.data.results).toHaveLength(0)"

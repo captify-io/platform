@@ -1,0 +1,565 @@
+feature:
+  id: ontology-semantic-layer-integration
+  name: Semantic Layer Integration for Enterprise Ontology
+  description: |
+    Integrate the ontology semantic layer into the UI, providing GenAI agents and users with
+    visual tools for inference rules, pattern detection, recommendations, learning insights,
+    and impact analysis.
+  priority: P0
+  story_points: 21
+  estimated_weeks: 2
+  owner: Platform Team
+  tags:
+    - semantic-layer
+    - inference
+    - patterns
+    - recommendations
+    - learning
+    - impact-analysis
+
+services:
+  backend:
+    - core/src/services/ontology/semantic
+    - core/src/services/ontology/semantic/inference.ts
+    - core/src/services/ontology/semantic/patterns.ts
+    - core/src/services/ontology/semantic/recommendations.ts
+    - core/src/services/ontology/semantic/learning.ts
+
+  frontend:
+    - platform/src/app/ontology/semantic
+
+  aws_services:
+    - DynamoDB
+    - S3
+    - Bedrock
+
+tables:
+  - captify-core-semantic-rule
+  - captify-core-detected-pattern
+  - captify-core-recommendation
+  - captify-core-learning-event
+
+user_stories:
+  # ==========================================================================
+  # STORY 1: Visual Inference Rule Builder
+  # ==========================================================================
+  - id: US-SEM-001
+    title: As a data steward, I want to create inference rules visually
+    description: |
+      I need to create rules that automatically infer properties or relationships
+      based on conditions, without writing code.
+
+    priority: P0
+    story_points: 5
+
+    acceptance_criteria:
+      - Given I open the rules builder
+        When I select entity type and add conditions
+        Then I can define actions that execute when conditions are met
+
+      - Given I create a rule with conditions
+        When I test the rule with sample data
+        Then I see which entities match and what actions would execute
+
+      - Given I have a complex rule with multiple conditions
+        When I save the rule
+        Then it is stored and can be activated
+
+      - Given I have an active rule
+        When matching entities are created or updated
+        Then the rule executes and actions are applied
+
+    test_scenarios:
+      - name: Create simple inference rule
+        type: integration
+        steps:
+          - action: open_rule_builder
+            expect:
+              rule_builder_visible: true
+
+          - action: create_rule
+            params:
+              name: Auto-assign priority
+              entityType: task
+              conditions:
+                - field: dueDate
+                  operator: lt
+                  value: +7days
+                - field: status
+                  operator: equals
+                  value: pending
+              actions:
+                - type: set_field
+                  field: priority
+                  value: high
+            expect:
+              success: true
+              rule_id: defined
+
+      - name: Test rule with sample data
+        type: integration
+        setup: |
+          const rule = await createRule({
+            name: 'Auto-assign priority',
+            entityType: 'task',
+            conditions: [
+              { field: 'dueDate', operator: 'lt', value: '+7days' },
+              { field: 'status', operator: 'equals', value: 'pending' }
+            ],
+            actions: [
+              { type: 'set_field', field: 'priority', value: 'high' }
+            ]
+          });
+        steps:
+          - action: test_rule
+            params:
+              ruleId: ${rule.id}
+              sampleData:
+                - id: task-1
+                  dueDate: 2025-11-10
+                  status: pending
+                  priority: medium
+                - id: task-2
+                  dueDate: 2025-12-01
+                  status: pending
+                  priority: medium
+            expect:
+              success: true
+              matches: 1
+              results[0].matched: true
+              results[0].actionsExecuted[0].field: priority
+              results[0].actionsExecuted[0].value: high
+
+      - name: Execute rule on entity create
+        type: integration
+        setup: |
+          const rule = await createAndActivateRule({
+            name: 'Auto-assign priority',
+            entityType: 'task',
+            conditions: [{ field: 'dueDate', operator: 'lt', value: '+7days' }],
+            actions: [{ type: 'set_field', field: 'priority', value: 'high' }]
+          });
+        steps:
+          - action: create_entity
+            params:
+              typeName: task
+              input:
+                title: Urgent task
+                dueDate: 2025-11-10
+                status: pending
+            expect:
+              success: true
+              data.priority: high  # Rule auto-set this
+
+  # ==========================================================================
+  # STORY 2: Pattern Detection Dashboard
+  # ==========================================================================
+  - id: US-SEM-002
+    title: As a data analyst, I want to see detected patterns in my data
+    description: |
+      I need a dashboard showing patterns and anomalies detected in the ontology
+      so I can identify data quality issues and interesting relationships.
+
+    priority: P0
+    story_points: 5
+
+    acceptance_criteria:
+      - Given pattern detection has run
+        When I open the patterns dashboard
+        Then I see all detected patterns with confidence scores
+
+      - Given a pattern is detected
+        When I click on it
+        Then I see details including affected entities and pattern evidence
+
+      - Given an anomaly is detected
+        When I view the anomaly
+        Then I see severity level and recommended actions
+
+      - Given I identify a false positive pattern
+        When I suppress it
+        Then it no longer appears in the dashboard
+
+    test_scenarios:
+      - name: View detected patterns
+        type: integration
+        setup: |
+          await runPatternDetection({
+            types: ['structural', 'temporal', 'semantic']
+          });
+        steps:
+          - action: navigate_to
+            url: /ontology/semantic/patterns
+            expect:
+              patterns_visible: true
+
+          - action: get_patterns
+            expect:
+              patterns.length_gt: 0
+              patterns[0].type: defined
+              patterns[0].confidence: defined
+              patterns[0].detectedAt: defined
+
+      - name: View pattern details
+        type: integration
+        setup: |
+          const pattern = await createTestPattern({
+            name: 'Orphaned relationships',
+            type: 'structural',
+            entities: ['edge-1', 'edge-2', 'edge-3']
+          });
+        steps:
+          - action: click_pattern
+            patternId: ${pattern.id}
+            expect:
+              detail_panel_visible: true
+              detail_panel.entities.length: 3
+              detail_panel.description: defined
+
+      - name: Suppress false positive
+        type: integration
+        setup: |
+          const pattern = await createTestPattern({
+            name: 'False positive pattern',
+            type: 'semantic'
+          });
+        steps:
+          - action: suppress_pattern
+            params:
+              patternId: ${pattern.id}
+              reason: This is expected behavior
+            expect:
+              success: true
+
+          - action: get_patterns
+            expect:
+              patterns.every(p => p.id !== pattern.id): true
+
+  # ==========================================================================
+  # STORY 3: Contextual Recommendations
+  # ==========================================================================
+  - id: US-SEM-003
+    title: As a user, I want to receive contextual recommendations
+    description: |
+      I need recommendations based on my current work context so I can discover
+      relevant data and operations without extensive searching.
+
+    priority: P1
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I am viewing an entity
+        When recommendations are generated
+        Then I see relevant suggestions based on entity type and properties
+
+      - Given a recommendation is displayed
+        When I click accept
+        Then the recommended action is executed
+
+      - Given I reject a recommendation
+        When I provide feedback
+        Then future recommendations are improved
+
+    test_scenarios:
+      - name: Get recommendations for entity
+        type: integration
+        setup: |
+          const contract = await createEntity('contract', {
+            contractNumber: 'ABC123',
+            status: 'draft',
+            totalValue: 1000000
+          });
+        steps:
+          - action: get_recommendations
+            params:
+              entityType: contract
+              entityId: ${contract.id}
+            expect:
+              success: true
+              recommendations.length_gt: 0
+              recommendations[0].type: defined
+              recommendations[0].rationale: defined
+              recommendations[0].confidence: defined
+
+      - name: Accept recommendation
+        type: integration
+        setup: |
+          const recommendation = await createRecommendation({
+            type: 'create',
+            title: 'Create associated CLIN',
+            rationale: 'Contracts typically have at least one CLIN',
+            action: {
+              tool: 'create',
+              parameters: {
+                typeName: 'clin',
+                input: { contractId: 'contract-123' }
+              }
+            }
+          });
+        steps:
+          - action: accept_recommendation
+            recommendationId: ${recommendation.id}
+            expect:
+              success: true
+              result: defined
+
+          - action: get_recommendation
+            recommendationId: ${recommendation.id}
+            expect:
+              status: accepted
+              acceptedAt: defined
+
+  # ==========================================================================
+  # STORY 4: Learning Insights Dashboard
+  # ==========================================================================
+  - id: US-SEM-004
+    title: As a system admin, I want to see learning insights about ontology usage
+    description: |
+      I need insights into how users query and interact with the ontology so I can
+      optimize schemas, indexes, and user experience.
+
+    priority: P1
+    story_points: 5
+
+    acceptance_criteria:
+      - Given users have queried the ontology
+        When I view query pattern insights
+        Then I see most frequent queries, filters, and entity types
+
+      - Given the ontology has evolved
+        When I view evolution timeline
+        Then I see nodes/edges added, modified, deleted over time
+
+      - Given users have performed operations
+        When I view performance metrics
+        Then I see query latency, cache hit rates, error rates
+
+      - Given data exists in the ontology
+        When I view data quality metrics
+        Then I see completeness, consistency, accuracy scores
+
+    test_scenarios:
+      - name: View query patterns
+        type: integration
+        setup: |
+          await recordLearningEvents([
+            { type: 'query', entityType: 'contract', operation: 'query', success: true },
+            { type: 'query', entityType: 'contract', operation: 'query', success: true },
+            { type: 'query', entityType: 'user', operation: 'get', success: true }
+          ]);
+        steps:
+          - action: get_query_patterns
+            params:
+              timeRange:
+                start: 2025-11-01
+                end: 2025-11-07
+            expect:
+              success: true
+              topEntityTypes[0].type: contract
+              topEntityTypes[0].count: 2
+
+      - name: View ontology evolution
+        type: integration
+        setup: |
+          await createEvolutionEvents([
+            { event: 'node_created', details: 'Created task type', timestamp: '2025-11-01' },
+            { event: 'edge_created', details: 'Created task->user relationship', timestamp: '2025-11-02' }
+          ]);
+        steps:
+          - action: get_ontology_evolution
+            params:
+              timeRange:
+                start: 2025-11-01
+                end: 2025-11-07
+            expect:
+              success: true
+              events.length: 2
+              events[0].event: node_created
+
+      - name: View performance metrics
+        type: integration
+        steps:
+          - action: get_performance_metrics
+            params:
+              timeRange:
+                start: 2025-11-01
+                end: 2025-11-07
+            expect:
+              success: true
+              avgQueryLatency: defined
+              p95QueryLatency: defined
+              cacheHitRate: defined
+              errorRate: defined
+
+      - name: View data quality metrics
+        type: integration
+        steps:
+          - action: get_data_quality_metrics
+            expect:
+              success: true
+              completeness: defined  # % of fields filled
+              consistency: defined    # % passing validation
+              accuracy: defined       # % matching patterns
+              timeliness: defined     # % updated recently
+
+  # ==========================================================================
+  # STORY 5: Impact Analysis Preview
+  # ==========================================================================
+  - id: US-SEM-005
+    title: As a user, I want to preview the impact of changes before executing them
+    description: |
+      I need to see what will be affected before I delete or update entities so I can
+      avoid unintended consequences and data loss.
+
+    priority: P0
+    story_points: 3
+
+    acceptance_criteria:
+      - Given I attempt to delete an entity
+        When I trigger impact analysis
+        Then I see affected entities (cascade deletes, orphans)
+
+      - Given impact analysis shows high risk
+        When I view the assessment
+        Then I see severity level and recommended actions
+
+      - Given I proceed with deletion
+        When impact exists
+        Then I must confirm understanding of consequences
+
+      - Given I want to understand relationships
+        When I view impact graph
+        Then I see visual representation of affected entities
+
+    test_scenarios:
+      - name: Analyze delete impact
+        type: integration
+        setup: |
+          const contract = await createEntity('contract', { contractNumber: 'ABC123' });
+          await createEntity('clin', { contractId: contract.id, clinNumber: '0001' });
+          await createEntity('clin', { contractId: contract.id, clinNumber: '0002' });
+        steps:
+          - action: analyze_impact
+            params:
+              typeName: contract
+              id: ${contract.id}
+              operation: delete
+            expect:
+              success: true
+              affectedEntities.length: 2
+              affectedEntities.every(e => e.type === 'clin'): true
+              safetyLevel: warning
+              recommendation: defined
+
+      - name: Show impact graph
+        type: integration
+        setup: |
+          const contract = await createEntity('contract', { contractNumber: 'ABC123' });
+          await createEntity('clin', { contractId: contract.id });
+          await createEntity('task', { clinId: '${clin.id}' });
+        steps:
+          - action: get_impact_graph
+            params:
+              typeName: contract
+              id: ${contract.id}
+              operation: delete
+            expect:
+              success: true
+              nodes.length_gte: 3
+              edges.length_gte: 2
+
+      - name: Require confirmation for high-risk operations
+        type: integration
+        setup: |
+          const contract = await createEntity('contract', { contractNumber: 'ABC123' });
+          await createMultipleEntities('clin', 10, { contractId: contract.id });
+        steps:
+          - action: delete_entity_ui
+            params:
+              typeName: contract
+              id: ${contract.id}
+            expect:
+              confirmation_dialog_visible: true
+              confirmation_text.contains: '10 entities will be affected'
+              confirmation_required: true
+
+testing:
+  unit_tests:
+    framework: vitest
+    coverage_target: 90
+    files:
+      - platform/src/app/ontology/semantic/**/*.test.tsx
+
+  integration_tests:
+    framework: vitest
+    setup: |
+      await setupTestDatabase();
+      await seedSemanticData();
+    teardown: |
+      await cleanupTestDatabase();
+    files:
+      - tests/integration/semantic/*.test.ts
+
+  e2e_tests:
+    framework: playwright
+    scenarios:
+      - User creates inference rule
+      - User views detected patterns
+      - User receives and accepts recommendation
+      - User views learning insights
+      - User previews delete impact
+
+deployment:
+  environments:
+    - name: dev
+      auto_deploy: true
+      on: push to main
+
+    - name: staging
+      auto_deploy: false
+      requires_approval: true
+
+    - name: production
+      auto_deploy: false
+      requires_approval: true
+      smoke_tests: true
+
+monitoring:
+  metrics:
+    - name: rule_execution_count
+      type: counter
+      labels: [rule_id, entity_type, status]
+
+    - name: pattern_detection_duration
+      type: histogram
+      labels: [pattern_type]
+      buckets: [1000, 5000, 10000, 30000]
+
+    - name: recommendation_acceptance_rate
+      type: gauge
+      labels: [recommendation_type]
+
+    - name: learning_events_count
+      type: counter
+      labels: [event_type, entity_type]
+
+  alerts:
+    - name: rule_execution_failure_rate_high
+      condition: rule_execution_failure_rate > 0.05
+      severity: warning
+      notification: slack
+
+    - name: pattern_detection_slow
+      condition: pattern_detection_duration.p95 > 60000
+      severity: warning
+      notification: slack
+
+documentation:
+  - file: features/02-semantic-layer-integration.md
+    type: feature_spec
+
+  - file: SEMANTIC-LAYER-GUIDE.md
+    type: user_guide
+
+  - file: RULES-API.md
+    type: api_reference

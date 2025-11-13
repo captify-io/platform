@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useCaptify } from "@captify-io/core";
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import {
@@ -32,7 +32,7 @@ function getUserGroups(session: Session | null): string[] {
 }
 
 export default function AdminAppsPage() {
-  const { session } = useCaptify();
+  const { data: session } = useSession();
   const [apps, setApps] = useState<AppRegistryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

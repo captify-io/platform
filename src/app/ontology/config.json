@@ -2,69 +2,77 @@
   "slug": "ontology",
   "name": "Ontology",
   "version": "1.0.0",
-  "description": "Data model and ontology management",
+  "description": "Ontology management - view and manage nodes, edges, activity, and compliance",
   "menu": [
     {
       "label": "Nodes",
-      "href": "/ontology/nodes",
-      "icon": "Circle",
+      "href": "/ontology",
+      "icon": "Database",
       "description": "Ontology nodes"
     },
     {
       "label": "Edges",
       "href": "/ontology/edges",
-      "icon": "ArrowRight",
+      "icon": "GitBranch",
       "description": "Ontology relationships"
     },
     {
-      "label": "Visualizer",
-      "href": "/ontology/visualizer",
-      "icon": "Network",
-      "description": "Visual ontology explorer"
+      "label": "Activity",
+      "href": "/ontology/activity",
+      "icon": "Activity",
+      "description": "CloudTrail activity viewer"
     },
     {
-      "label": "Schema",
-      "href": "/ontology/schema",
-      "icon": "FileCode",
-      "description": "Schema definitions"
+      "label": "Compliance",
+      "href": "/ontology/compliance",
+      "icon": "Shield",
+      "description": "NIST 800-53 Rev 5 compliance"
     }
   ],
   "manifest": {
     "name": "Ontology",
-    "icon": "Network",
+    "icon": "Database",
     "color": "#8b5cf6",
     "category": "system",
-    "tags": ["ontology", "data model", "schema", "graph"],
+    "tags": ["ontology", "data-model", "security", "compliance"],
     "visibility": "public"
   },
   "features": [
     {
-      "id": "node-management",
+      "id": "nodes",
       "name": "Node Management",
-      "description": "Manage ontology nodes and entities",
+      "description": "View and manage all ontology nodes",
       "enabled": true,
-      "icon": "Circle",
-      "href": "/ontology/nodes"
+      "icon": "Database",
+      "href": "/ontology"
     },
     {
-      "id": "edge-management",
+      "id": "edges",
       "name": "Edge Management",
-      "description": "Manage ontology relationships",
+      "description": "View and manage ontology relationships",
       "enabled": true,
-      "icon": "ArrowRight",
+      "icon": "GitBranch",
       "href": "/ontology/edges"
     },
     {
-      "id": "visualizer",
-      "name": "Ontology Visualizer",
-      "description": "Visual graph explorer",
-      "enabled": true,
-      "icon": "Network",
-      "href": "/ontology/visualizer"
+      "id": "activity",
+      "name": "Activity Tracking",
+      "description": "CloudTrail event viewer for ontology access",
+      "enabled": false,
+      "icon": "Activity",
+      "href": "/ontology/activity"
+    },
+    {
+      "id": "compliance",
+      "name": "Compliance Tracking",
+      "description": "NIST 800-53 Rev 5 compliance monitoring",
+      "enabled": false,
+      "icon": "Shield",
+      "href": "/ontology/compliance"
     }
   ],
   "access": {
-    "requiresApproval": true,
+    "requiresApproval": false,
     "defaultRole": "developer",
     "allowedRoles": ["developer", "architect", "admin"]
   }

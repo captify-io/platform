@@ -1,0 +1,455 @@
+feature:
+  id: "01"
+  name: "Dropdown Search Component"
+  priority: "P0"
+  story_points: 8
+  estimated_hours: 16
+
+dependencies: []
+
+services_required:
+  - "@captify-io/core/lib/api"
+  - "@captify-io/core/services/data/search"
+  - "@captify-io/core/services/ontology/node"
+  - "@captify-io/core/services/aws/kendra"
+  - "@captify-io/core/components/ui/dialog"
+  - "@captify-io/core/components/ui/input"
+
+aws_services:
+  - dynamodb
+  - kendra
+  - cognito
+
+tables:
+  - core-search-index
+  - core-ontology-node
+  - core-recent-activity
+
+indexes:
+  - token-index  # For full-text search
+  - typeId-index  # For search index stats
+
+stories:
+  - id: "US-01-01"
+    title: "Search ontology nodes by name"
+    as_a: "User"
+    i_want: "To search for ontology types by name"
+    so_that: "I can quickly find entity types, categories, and domains"
+
+    acceptance_criteria:
+      - condition: "When I type 'admin'"
+        expected: "Ontology nodes with 'admin' in name appear in results"
+        test: "expect(results.filter(r => r.type === 'ONTOLOGY').length).toBeGreaterThan(0)"
+
+      - condition: "When I type 'ad'"
+        expected: "Partial matches like 'Admin' appear"
+        test: "expect(results.some(r => r.title.toLowerCase().includes('ad'))).toBe(true)"
+
+      - condition: "When query matches node name"
+        expected: "Result shows domain, category, and icon"
+        test: "expect(ontologyResult).toHaveProperty('domain')"
+
+    edge_cases:
+      - scenario: "Empty query"
+        expected_behavior: "No ontology search performed, shows recent items"
+
+      - scenario: "Query with special characters"
+        expected_behavior: "Characters are properly tokenized, search still works"
+
+      - scenario: "No matching ontology nodes"
+        expected_behavior: "Returns empty array for ontology section"
+
+    test_scenarios:
+      - name: "should search ontology nodes successfully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  credentials:
+                    accessKeyId: "test-key"
+                    secretAccessKey: "test-secret"
+                    sessionToken: "test-token"
+                    region: "us-east-1"
+            searchFullTextObjects:
+              resolves:
+                - id: "core-user"
+                  name: "User"
+                  domain: "Core"
+                  category: "entity"
+                  icon: "User"
+                  description: "User entity"
+          input:
+            query: "admin"
+        act: "const results = await searchOntology(input.query)"
+        assert:
+          - "expect(results).toBeDefined()"
+          - "expect(results.length).toBeGreaterThan(0)"
+          - "expect(results[0].type).toBe('ONTOLOGY')"
+          - "expect(results[0]).toHaveProperty('domain')"
+
+      - name: "should handle ontology search errors gracefully"
+        type: "unit"
+        arrange:
+          mocks:
+            searchFullTextObjects:
+              rejects: new Error("Search failed")
+        act: "const results = await searchOntology('test')"
+        assert:
+          - "expect(results).toEqual([])"
+
+  - id: "US-01-02"
+    title: "Search entity records across all types"
+    as_a: "User"
+    i_want: "To search for actual entity records like users, contracts, tasks"
+    so_that: "I can quickly find specific data I'm looking for"
+
+    acceptance_criteria:
+      - condition: "When I type 'john'"
+        expected: "Entity items with 'john' in searchable fields appear"
+        test: "expect(results.filter(r => r.type === 'ITEM').length).toBeGreaterThan(0)"
+
+      - condition: "When entities match query"
+        expected: "Results show entity type, app source, and table"
+        test: "expect(entityResult).toHaveProperty('itemType')"
+
+      - condition: "When multiple entity types match"
+        expected: "Results include top 5 from each entity type"
+        test: "expect(results.length).toBeLessThanOrEqual(5 * entityTypeCount)"
+
+    edge_cases:
+      - scenario: "No entity types have fullTextSearch configured"
+        expected_behavior: "Returns empty array, no errors"
+
+      - scenario: "Entity type has no matching records"
+        expected_behavior: "That entity type omitted from results"
+
+      - scenario: "Search index not populated"
+        expected_behavior: "Returns empty results, logs warning"
+
+    test_scenarios:
+      - name: "should search entities across all types"
+        type: "integration"
+        arrange:
+          mocks:
+            getAllNodes:
+              resolves:
+                - id: "core-user"
+                  category: "entity"
+                  properties:
+                    fullTextSearch:
+                      - field: "name"
+                        analyzer: "standard"
+                    dataSource: "core-user"
+                - id: "pmbook-contract"
+                  category: "entity"
+                  properties:
+                    fullTextSearch:
+                      - field: "title"
+                        analyzer: "standard"
+                    dataSource: "pmbook-contract"
+            searchFullTextObjects:
+              resolves:
+                - id: "user-123"
+                  name: "John Doe"
+                  email: "john@example.com"
+          input:
+            query: "john"
+        act: "const results = await searchEntities(input.query)"
+        assert:
+          - "expect(results).toBeDefined()"
+          - "expect(results.some(r => r.type === 'ITEM')).toBe(true)"
+          - "expect(results[0]).toHaveProperty('itemType')"
+          - "expect(results[0]).toHaveProperty('table')"
+
+      - name: "should limit results per entity type"
+        type: "unit"
+        arrange:
+          mocks:
+            searchFullTextObjects:
+              resolves:
+                - { id: "item-1", name: "Test Item 1" }
+                - { id: "item-2", name: "Test Item 2" }
+                - { id: "item-3", name: "Test Item 3" }
+                - { id: "item-4", name: "Test Item 4" }
+                - { id: "item-5", name: "Test Item 5" }
+                - { id: "item-6", name: "Test Item 6" }
+                - { id: "item-7", name: "Test Item 7" }
+                - { id: "item-8", name: "Test Item 8" }
+                - { id: "item-9", name: "Test Item 9" }
+                - { id: "item-10", name: "Test Item 10" }
+        act: "const results = await searchEntityType(mockNode, 'test')"
+        assert:
+          - "expect(results.length).toBeLessThanOrEqual(5)"
+
+  - id: "US-01-03"
+    title: "Search documents via Kendra"
+    as_a: "User"
+    i_want: "To search uploaded documents and files"
+    so_that: "I can find relevant documentation and files"
+
+    acceptance_criteria:
+      - condition: "When I type 'contract'"
+        expected: "Matching documents from Kendra appear"
+        test: "expect(results.filter(r => r.type === 'DOCUMENT').length).toBeGreaterThan(0)"
+
+      - condition: "When document matches"
+        expected: "Result shows title, excerpt, and document URI"
+        test: "expect(documentResult).toHaveProperty('documentUri')"
+
+      - condition: "When multiple Kendra indices configured"
+        expected: "Searches all indices in parallel"
+        test: "expect(kendraQueries).toHaveLength(allIndices.length)"
+
+    edge_cases:
+      - scenario: "No Kendra indices configured"
+        expected_behavior: "Returns empty array, no errors"
+
+      - scenario: "Kendra query times out"
+        expected_behavior: "Returns partial results from other sources"
+
+      - scenario: "Document no longer exists in S3"
+        expected_behavior: "Result still shown, error on click handled gracefully"
+
+    test_scenarios:
+      - name: "should search documents via Kendra"
+        type: "integration"
+        arrange:
+          mocks:
+            apiClient.run:
+              resolves:
+                success: true
+                data:
+                  resultItems:
+                    - DocumentId: "doc-123"
+                      DocumentTitle: { Text: "Service Contract" }
+                      DocumentExcerpt: { Text: "This is a contract..." }
+                      DocumentURI: "s3://bucket/contract.pdf"
+                      Type: "DOCUMENT"
+          input:
+            query: "contract"
+            indexId: "kendra-index-1"
+        act: "const results = await searchDocuments(input.query)"
+        assert:
+          - "expect(results).toBeDefined()"
+          - "expect(results.some(r => r.type === 'DOCUMENT')).toBe(true)"
+          - "expect(results[0]).toHaveProperty('documentUri')"
+
+      - name: "should handle Kendra errors gracefully"
+        type: "unit"
+        arrange:
+          mocks:
+            apiClient.run:
+              rejects: new Error("Kendra unavailable")
+        act: "const results = await searchDocuments('test')"
+        assert:
+          - "expect(results).toEqual([])"
+
+  - id: "US-01-04"
+    title: "Display grouped search results in dropdown"
+    as_a: "User"
+    i_want: "To see search results organized by type in a dropdown"
+    so_that: "I can quickly scan and find what I need"
+
+    acceptance_criteria:
+      - condition: "When search returns results"
+        expected: "Dropdown opens below input with results"
+        test: "expect(dropdown).toBeVisible()"
+
+      - condition: "When results include multiple types"
+        expected: "Results grouped with headers: Ontology, Items, Documents"
+        test: "expect(screen.getByText('Ontology')).toBeInTheDocument()"
+
+      - condition: "When no results found"
+        expected: "Shows 'No results found' message"
+        test: "expect(screen.getByText('No results found')).toBeInTheDocument()"
+
+      - condition: "When query is empty"
+        expected: "Shows recent items instead of search results"
+        test: "expect(screen.getByText('Recent Items')).toBeInTheDocument()"
+
+    edge_cases:
+      - scenario: "Very long result title"
+        expected_behavior: "Title truncates with ellipsis"
+
+      - scenario: "Result has no icon"
+        expected_behavior: "Default icon shown"
+
+      - scenario: "Dropdown reaches max height"
+        expected_behavior: "Scroll area appears, scrollable with mouse/keyboard"
+
+    test_scenarios:
+      - name: "should display grouped results in dropdown"
+        type: "integration"
+        arrange:
+          mocks:
+            performSearch:
+              resolves:
+                - { id: "core-user", type: "ONTOLOGY", title: "User" }
+                - { id: "user-123", type: "ITEM", title: "John Doe" }
+                - { id: "doc-456", type: "DOCUMENT", title: "Contract.pdf" }
+          setup:
+            - "render(<SearchDropdown open={true} />)"
+            - "const input = screen.getByPlaceholderText('Search...')"
+            - "fireEvent.change(input, { target: { value: 'test' } })"
+        act: "await waitFor(() => screen.getByText('Ontology'))"
+        assert:
+          - "expect(screen.getByText('Ontology')).toBeInTheDocument()"
+          - "expect(screen.getByText('Items')).toBeInTheDocument()"
+          - "expect(screen.getByText('Documents')).toBeInTheDocument()"
+          - "expect(screen.getByText('User')).toBeInTheDocument()"
+          - "expect(screen.getByText('John Doe')).toBeInTheDocument()"
+
+      - name: "should show recent items when query is empty"
+        type: "integration"
+        arrange:
+          mocks:
+            loadRecentItems:
+              resolves:
+                - { id: "item-1", title: "Recent Item 1", type: "task" }
+          setup:
+            - "render(<SearchDropdown open={true} />)"
+        act: "await waitFor(() => screen.getByText('Recent Items'))"
+        assert:
+          - "expect(screen.getByText('Recent Items')).toBeInTheDocument()"
+          - "expect(screen.getByText('Recent Item 1')).toBeInTheDocument()"
+
+  - id: "US-01-05"
+    title: "Navigate with keyboard in search results"
+    as_a: "Power user"
+    i_want: "To navigate search results with arrow keys and select with Enter"
+    so_that: "I can quickly access results without using my mouse"
+
+    acceptance_criteria:
+      - condition: "When I press Down arrow"
+        expected: "Next result is highlighted"
+        test: "expect(highlightedIndex).toBe(1)"
+
+      - condition: "When I press Up arrow"
+        expected: "Previous result is highlighted"
+        test: "expect(highlightedIndex).toBe(0)"
+
+      - condition: "When I press Enter on highlighted result"
+        expected: "Navigation occurs to that result"
+        test: "expect(router.push).toHaveBeenCalledWith(expectedUrl)"
+
+      - condition: "When I press Escape"
+        expected: "Dropdown closes"
+        test: "expect(onOpenChange).toHaveBeenCalledWith(false)"
+
+    edge_cases:
+      - scenario: "Press Down on last item"
+        expected_behavior: "Wraps to first item"
+
+      - scenario: "Press Up on first item"
+        expected_behavior: "Wraps to last item"
+
+      - scenario: "No results to navigate"
+        expected_behavior: "Arrow keys do nothing"
+
+    test_scenarios:
+      - name: "should navigate results with arrow keys"
+        type: "integration"
+        arrange:
+          setup:
+            - "render(<SearchDropdown open={true} results={mockResults} />)"
+            - "const input = screen.getByPlaceholderText('Search...')"
+        act: |
+          fireEvent.keyDown(input, { key: 'ArrowDown' })
+        assert:
+          - "expect(getHighlightedResult()).toBe(mockResults[0])"
+
+      - name: "should select result with Enter key"
+        type: "integration"
+        arrange:
+          mocks:
+            router.push: jest.fn()
+          setup:
+            - "render(<SearchDropdown open={true} results={mockResults} />)"
+            - "const input = screen.getByPlaceholderText('Search...')"
+            - "fireEvent.keyDown(input, { key: 'ArrowDown' })"
+        act: |
+          fireEvent.keyDown(input, { key: 'Enter' })
+        assert:
+          - "expect(router.push).toHaveBeenCalled()"
+
+      - name: "should close dropdown with Escape key"
+        type: "unit"
+        arrange:
+          mocks:
+            onOpenChange: jest.fn()
+          setup:
+            - "render(<SearchDropdown open={true} onOpenChange={onOpenChange} />)"
+            - "const input = screen.getByPlaceholderText('Search...')"
+        act: |
+          fireEvent.keyDown(input, { key: 'Escape' })
+        assert:
+          - "expect(onOpenChange).toHaveBeenCalledWith(false)"
+
+  - id: "US-01-06"
+    title: "Click search result to navigate to detail page"
+    as_a: "User"
+    i_want: "To click a search result and go to its detail page"
+    so_that: "I can view or edit the item I found"
+
+    acceptance_criteria:
+      - condition: "When I click an ontology result"
+        expected: "Navigate to /core/ontology/{domain}/{type}/{id}"
+        test: "expect(router.push).toHaveBeenCalledWith('/core/ontology/core/node/core-user')"
+
+      - condition: "When I click an entity result"
+        expected: "Navigate to /{app}/items/{id}"
+        test: "expect(router.push).toHaveBeenCalledWith('/pmbook/items/contract-123')"
+
+      - condition: "When I click a document result"
+        expected: "Open document download or viewer"
+        test: "expect(window.open).toHaveBeenCalled()"
+
+    edge_cases:
+      - scenario: "Entity detail page doesn't exist"
+        expected_behavior: "404 page shown, user can navigate back"
+
+      - scenario: "Document has been deleted from S3"
+        expected_behavior: "Error message shown, dropdown stays open"
+
+      - scenario: "User lacks permission to view item"
+        expected_behavior: "Access denied page shown"
+
+    test_scenarios:
+      - name: "should navigate to ontology detail on click"
+        type: "integration"
+        arrange:
+          mocks:
+            router.push: jest.fn()
+          setup:
+            - "const ontologyResult = { id: 'core-user', type: 'ONTOLOGY', domain: 'Core' }"
+            - "render(<SearchResult result={ontologyResult} onClick={handleClick} />)"
+        act: "fireEvent.click(screen.getByText(ontologyResult.title))"
+        assert:
+          - "expect(router.push).toHaveBeenCalledWith(expect.stringContaining('/core/ontology'))"
+
+      - name: "should navigate to entity detail on click"
+        type: "integration"
+        arrange:
+          mocks:
+            router.push: jest.fn()
+          setup:
+            - "const itemResult = { id: 'contract-123', type: 'ITEM', table: 'pmbook-contract' }"
+            - "render(<SearchResult result={itemResult} onClick={handleClick} />)"
+        act: "fireEvent.click(screen.getByText(itemResult.title))"
+        assert:
+          - "expect(router.push).toHaveBeenCalledWith('/pmbook/items/contract-123')"
+
+      - name: "should open document on click"
+        type: "unit"
+        arrange:
+          mocks:
+            window.open: jest.fn()
+          setup:
+            - "const docResult = { id: 'doc-123', type: 'DOCUMENT', documentUri: 's3://bucket/file.pdf' }"
+            - "render(<SearchResult result={docResult} onClick={handleClick} />)"
+        act: "fireEvent.click(screen.getByText(docResult.title))"
+        assert:
+          - "expect(window.open).toHaveBeenCalled()"
