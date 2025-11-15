@@ -55,7 +55,7 @@ export default function FabricPage() {
   }
 
   return (
-    <div className="h-screen w-full">
+    <div className="h-full w-full">
       <Fabric spaceId={spaceId} mode="full" />
     </div>
   );

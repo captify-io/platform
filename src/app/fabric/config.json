@@ -5,10 +5,22 @@
   "description": "Obsidian-inspired living documentation with real-time collaboration, ProseMirror rich text editing, and AI-powered assistance",
   "menu": [
     {
-      "label": "Notes",
+      "label": "Editor",
       "href": "/fabric",
       "icon": "FileText",
-      "description": "Browse all notes"
+      "description": "Document editor"
+    },
+    {
+      "label": "Ontology",
+      "href": "/fabric/ontology",
+      "icon": "Network",
+      "description": "Entity type definitions and relationships"
+    },
+    {
+      "label": "Flow",
+      "href": "/fabric/flow",
+      "icon": "Workflow",
+      "description": "Workflow and process automation"
     },
     {
       "label": "Folders",
@@ -49,20 +61,28 @@
   },
   "features": [
     {
-      "id": "notes",
-      "name": "Living Notes",
-      "description": "Y.js powered real-time collaborative notes with markdown and rich text",
+      "id": "editor",
+      "name": "Document Editor",
+      "description": "ProseMirror rich text editor with custom schema, comments, and AI assistance",
       "enabled": true,
       "icon": "FileText",
       "href": "/fabric"
     },
     {
-      "id": "editor",
-      "name": "ProseMirror Editor",
-      "description": "Rich text editor with custom schema, comments, and AI assistance",
+      "id": "ontology",
+      "name": "Ontology Manager",
+      "description": "Define and manage entity types, properties, and relationships",
       "enabled": true,
-      "icon": "Edit",
-      "href": "/fabric/editor"
+      "icon": "Network",
+      "href": "/fabric/ontology"
+    },
+    {
+      "id": "flow",
+      "name": "Workflow Designer",
+      "description": "Visual workflow builder for process automation and orchestration",
+      "enabled": true,
+      "icon": "Workflow",
+      "href": "/fabric/flow"
     },
     {
       "id": "collaboration",

@@ -1,0 +1,87 @@
+{
+  "slug": "workspace",
+  "name": "Workspace",
+  "version": "1.0.0",
+  "description": "Workspace collaboration hub for projects, issues, and team coordination",
+  "menu": [
+    {
+      "label": "Requests",
+      "href": "/workspace/requests",
+      "icon": "Inbox",
+      "description": "Incoming requests and triage"
+    },
+    {
+      "label": "Projects",
+      "href": "/workspace/projects",
+      "icon": "FolderKanban",
+      "description": "Projects and deliverables"
+    },
+    {
+      "label": "Issues",
+      "href": "/workspace/issues",
+      "icon": "CheckCircle2",
+      "description": "Track work and tasks"
+    },
+    {
+      "label": "Teams",
+      "href": "/workspace/teams",
+      "icon": "Users",
+      "description": "Team management and collaboration"
+    }
+  ],
+  "manifest": {
+    "name": "Workspace",
+    "icon": "Layers",
+    "color": "#3b82f6",
+    "category": "workspace",
+    "tags": ["workspace", "projects", "issues", "collaboration", "team"],
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "id": "requests",
+      "name": "Requests",
+      "description": "Centralized inbox for requests and triage",
+      "enabled": true,
+      "icon": "Inbox",
+      "href": "/workspace/requests"
+    },
+    {
+      "id": "projects",
+      "name": "Projects",
+      "description": "Project management with status tracking and collaboration",
+      "enabled": true,
+      "icon": "FolderKanban",
+      "href": "/workspace/projects"
+    },
+    {
+      "id": "issues",
+      "name": "Issues",
+      "description": "Issue tracking and task management",
+      "enabled": true,
+      "icon": "CheckCircle2",
+      "href": "/workspace/issues"
+    },
+    {
+      "id": "teams",
+      "name": "Teams",
+      "description": "Team management and collaboration",
+      "enabled": true,
+      "icon": "Users",
+      "href": "/workspace/teams"
+    },
+    {
+      "id": "fabric-integration",
+      "name": "Fabric Editor",
+      "description": "Document-based project editor with real-time collaboration",
+      "enabled": true,
+      "icon": "FileText",
+      "href": "/workspace/projects"
+    }
+  ],
+  "access": {
+    "requiresApproval": false,
+    "defaultRole": "member",
+    "allowedRoles": ["member", "admin"]
+  }
+}
